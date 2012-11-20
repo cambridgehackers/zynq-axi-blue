@@ -1,0 +1,15 @@
+##############################################################################
+## Filename:          /home/oriol/MIT/projects/ZedBoard/project_bcl/project_bcl.srcs/sources_1/edk/module_bcl/drivers/bcl_glue_v1_00_a/data/bcl_glue_v2_1_0.mdd
+## Description:       Microprocessor Driver Definition
+## Date:              Mon Oct 15 17:26:58 2012 (by Create and Import Peripheral Wizard)
+##############################################################################
+
+OPTION psf_version = 2.1.0;
+
+BEGIN DRIVER bcl_glue
+
+  OPTION supported_peripherals = (bcl_glue);
+  OPTION depends = (common_v1_00_a);
+  OPTION copyfiles = all;
+
+END DRIVER
