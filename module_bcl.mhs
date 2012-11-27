@@ -11,8 +11,6 @@
  PARAMETER VERSION = 2.1.0
 
 
- PORT LEDs_4Bits_TRI_IO = LEDs_4Bits_TRI_IO, DIR = O, VEC = [3:0]
- PORT GPIO_SW_TRI_IO = GPIO_SW_TRI_IO, DIR = IO
  PORT processing_system7_0_MIO = processing_system7_0_MIO, DIR = IO, VEC = [53:0]
  PORT processing_system7_0_PS_SRSTB = processing_system7_0_PS_SRSTB, DIR = I
  PORT processing_system7_0_PS_CLK = processing_system7_0_PS_CLK, DIR = I, SIGIS = CLK
@@ -96,31 +94,15 @@ BEGIN processing_system7
  PARAMETER C_FCLK_CLK3_FREQ = 50000000
  PARAMETER C_USE_CR_FABRIC = 1
  PARAMETER C_USE_S_AXI_HP0 = 1
- PARAMETER C_S_AXI_HP0_BASEADDR = 0x00000000
- PARAMETER C_S_AXI_HP0_HIGHADDR = 0x07ffffff
- PARAMETER C_USE_S_AXI_HP1 = 1
- PARAMETER C_S_AXI_HP1_BASEADDR = 0x08000000
- PARAMETER C_S_AXI_HP1_HIGHADDR = 0x0fffffff
- PARAMETER C_USE_S_AXI_HP2 = 1
- PARAMETER C_S_AXI_HP2_BASEADDR = 0x10000000
- PARAMETER C_S_AXI_HP2_HIGHADDR = 0x17ffffff
- PARAMETER C_USE_S_AXI_HP3 = 1
- PARAMETER C_S_AXI_HP3_BASEADDR = 0x18000000
- PARAMETER C_S_AXI_HP3_HIGHADDR = 0x1fffffff
- PARAMETER C_INTERCONNECT_S_AXI_HP1_MASTERS = bcl_glue_1.M_AXI
- PARAMETER C_INTERCONNECT_S_AXI_HP2_MASTERS = bcl_glue_2.M_AXI
- PARAMETER C_INTERCONNECT_S_AXI_HP3_MASTERS = bcl_glue_3.M_AXI
- PARAMETER C_INTERCONNECT_S_AXI_HP0_MASTERS = bcl_glue_0.M_AXI
- PARAMETER C_S_AXI_HP0_DATA_WIDTH = 64
- PARAMETER C_S_AXI_HP1_DATA_WIDTH = 64
- PARAMETER C_S_AXI_HP2_DATA_WIDTH = 64
- PARAMETER C_S_AXI_HP3_DATA_WIDTH = 64
+ PARAMETER C_USE_S_AXI_HP1 = 0
+ PARAMETER C_USE_S_AXI_HP2 = 0
+ PARAMETER C_USE_S_AXI_HP3 = 0
+ PARAMETER C_USE_M_AXI_GP1 = 1
  PARAMETER C_EMIO_GPIO_WIDTH = 64
+ PARAMETER C_INTERCONNECT_S_AXI_HP0_MASTERS = foo_master_0.M_AXI
  BUS_INTERFACE M_AXI_GP0 = axi4lite_0
- BUS_INTERFACE S_AXI_HP1 = axi_interconnect_1
- BUS_INTERFACE S_AXI_HP2 = axi_interconnect_2
- BUS_INTERFACE S_AXI_HP3 = axi_interconnect_3
- BUS_INTERFACE S_AXI_HP0 = axi_interconnect_0
+ BUS_INTERFACE M_AXI_GP1 = axi_interconnect_0
+ BUS_INTERFACE S_AXI_HP0 = axi_interconnect_1
  PORT MIO = processing_system7_0_MIO
  PORT PS_SRSTB = processing_system7_0_PS_SRSTB
  PORT PS_CLK = processing_system7_0_PS_CLK
@@ -144,159 +126,100 @@ BEGIN processing_system7
  PORT DDR_VRP = processing_system7_0_DDR_VRP
  PORT FCLK_CLK0 = processing_system7_0_FCLK_CLK0
  PORT M_AXI_GP0_ARESETN = processing_system7_0_M_AXI_GP0_ARESETN
- PORT M_AXI_GP0_ACLK = processing_system7_0_FCLK_CLK0
- PORT FCLK_RESET0_N = processing_system7_0_FCLK_RESET0_N
- PORT S_AXI_HP0_ACLK = processing_system7_0_FCLK_CLK0
- PORT S_AXI_HP0_ARESETN = processing_system7_0_S_AXI_HP0_ARESETN
- PORT S_AXI_HP1_ARESETN = processing_system7_0_S_AXI_HP1_ARESETN
- PORT S_AXI_HP2_ARESETN = processing_system7_0_S_AXI_HP2_ARESETN
- PORT S_AXI_HP1_ACLK = processing_system7_0_FCLK_CLK0
- PORT S_AXI_HP2_ACLK = processing_system7_0_FCLK_CLK0
- PORT S_AXI_HP3_ACLK = processing_system7_0_FCLK_CLK0
- PORT S_AXI_HP3_ARESETN = processing_system7_0_S_AXI_HP3_ARESETN
+ PORT M_AXI_GP0_ACLK = processing_system7_0_FCLK_CLK3
  PORT FCLK_CLK1 = processing_system7_0_FCLK_CLK1
  PORT FCLK_CLK2 = processing_system7_0_FCLK_CLK2
-END
-
-BEGIN bcl_glue
- PARAMETER INSTANCE = bcl_glue_3
- PARAMETER HW_VER = 1.00.a
- PARAMETER C_BASEADDR = 0x6f660000
- PARAMETER C_HIGHADDR = 0x6f66ffff
- BUS_INTERFACE S_AXI = axi4lite_0
- BUS_INTERFACE M_AXI = axi_interconnect_3
- BUS_INTERFACE FSL = bcl_glue_3_FSL
- PORT S_AXI_ACLK = processing_system7_0_FCLK_CLK0
- PORT m_axi_aclk = processing_system7_0_FCLK_CLK0
- PORT timer = bcl_core_hw_timer
- PORT reset_timer = bcl_glue_3_reset_timer
- PORT hw_timer = bcl_core_hw_hw_timer
-END
-
-BEGIN bcl_glue
- PARAMETER INSTANCE = bcl_glue_2
- PARAMETER HW_VER = 1.00.a
- PARAMETER C_BASEADDR = 0x6f640000
- PARAMETER C_HIGHADDR = 0x6f64ffff
- BUS_INTERFACE S_AXI = axi4lite_0
- BUS_INTERFACE M_AXI = axi_interconnect_2
- BUS_INTERFACE FSL = bcl_glue_2_FSL
- PORT S_AXI_ACLK = processing_system7_0_FCLK_CLK0
- PORT m_axi_aclk = processing_system7_0_FCLK_CLK0
- PORT timer = bcl_core_hw_timer
- PORT reset_timer = bcl_glue_2_reset_timer
- PORT hw_timer = bcl_core_hw_hw_timer
-END
-
-BEGIN bcl_glue
- PARAMETER INSTANCE = bcl_glue_1
- PARAMETER HW_VER = 1.00.a
- PARAMETER C_BASEADDR = 0x6f620000
- PARAMETER C_HIGHADDR = 0x6f62ffff
- BUS_INTERFACE S_AXI = axi4lite_0
- BUS_INTERFACE M_AXI = axi_interconnect_1
- BUS_INTERFACE FSL = bcl_glue_1_FSL
- PORT S_AXI_ACLK = processing_system7_0_FCLK_CLK0
- PORT m_axi_aclk = processing_system7_0_FCLK_CLK0
- PORT timer = bcl_core_hw_timer
- PORT reset_timer = bcl_glue_1_reset_timer
- PORT hw_timer = bcl_core_hw_hw_timer
-END
-
-BEGIN bcl_glue
- PARAMETER INSTANCE = bcl_glue_0
- PARAMETER HW_VER = 1.00.a
- PARAMETER C_BASEADDR = 0x6f600000
- PARAMETER C_HIGHADDR = 0x6f60ffff
- BUS_INTERFACE S_AXI = axi4lite_0
- BUS_INTERFACE M_AXI = axi_interconnect_0
- BUS_INTERFACE FSL = bcl_glue_0_FSL
- PORT S_AXI_ACLK = processing_system7_0_FCLK_CLK0
- PORT m_axi_aclk = processing_system7_0_FCLK_CLK0
- PORT timer = bcl_core_hw_timer
- PORT reset_timer = bcl_glue_0_reset_timer
- PORT hw_timer = bcl_core_hw_hw_timer
-END
-
-BEGIN bcl_core
- PARAMETER INSTANCE = bcl_core_hw
- PARAMETER HW_VER = 1.00.a
- BUS_INTERFACE FSL_3 = bcl_glue_3_FSL
- BUS_INTERFACE FSL_2 = bcl_glue_2_FSL
- BUS_INTERFACE FSL_1 = bcl_glue_1_FSL
- BUS_INTERFACE FSL_0 = bcl_glue_0_FSL
- PORT CLK = processing_system7_0_FCLK_CLK0
- PORT RST_N = processing_system7_0_FCLK_RESET0_N
- PORT timer = bcl_core_hw_timer
- PORT reset_timer0 = bcl_glue_0_reset_timer
- PORT reset_timer1 = bcl_glue_1_reset_timer
- PORT reset_timer2 = bcl_glue_2_reset_timer
- PORT reset_timer3 = bcl_glue_3_reset_timer
- PORT hw_timer = bcl_core_hw_hw_timer
-END
-
-BEGIN axi_interconnect
- PARAMETER INSTANCE = axi_interconnect_3
- PARAMETER HW_VER = 1.06.a
- PORT INTERCONNECT_ARESETN = processing_system7_0_S_AXI_HP3_ARESETN
- PORT INTERCONNECT_ACLK = processing_system7_0_FCLK_CLK0
-END
-
-BEGIN axi_interconnect
- PARAMETER INSTANCE = axi_interconnect_2
- PARAMETER HW_VER = 1.06.a
- PORT INTERCONNECT_ARESETN = processing_system7_0_S_AXI_HP2_ARESETN
- PORT INTERCONNECT_ACLK = processing_system7_0_FCLK_CLK0
-END
-
-BEGIN axi_interconnect
- PARAMETER INSTANCE = axi_interconnect_1
- PARAMETER HW_VER = 1.06.a
- PORT INTERCONNECT_ACLK = processing_system7_0_FCLK_CLK0
- PORT INTERCONNECT_ARESETN = processing_system7_0_S_AXI_HP1_ARESETN
-END
-
-BEGIN axi_interconnect
- PARAMETER INSTANCE = axi_interconnect_0
- PARAMETER HW_VER = 1.06.a
- PARAMETER C_INTERCONNECT_CONNECTIVITY_MODE = 1
- PORT INTERCONNECT_ACLK = processing_system7_0_FCLK_CLK0
- PORT INTERCONNECT_ARESETN = processing_system7_0_S_AXI_HP0_ARESETN
+ PORT FCLK_RESET0_N = processing_system7_0_FCLK_RESET0_N
+ PORT IRQ_F2P = foo_lite_slave_0_interrupt & foo_slave_0_interrupt & mailbox_0_Interrupt_0 & mailbox_0_Interrupt_1 & foo_master_0_interrupt
+ PORT FCLK_CLK3 = processing_system7_0_FCLK_CLK3
+ PORT M_AXI_GP1_ARESETN = processing_system7_0_M_AXI_GP1_ARESETN
+ PORT M_AXI_GP1_ACLK = processing_system7_0_FCLK_CLK3
+ PORT S_AXI_HP0_ACLK = processing_system7_0_FCLK_CLK0
+ PORT S_AXI_HP0_ARESETN = processing_system7_0_S_AXI_HP0_ARESETN
 END
 
 BEGIN axi_interconnect
  PARAMETER INSTANCE = axi4lite_0
  PARAMETER HW_VER = 1.06.a
  PARAMETER C_INTERCONNECT_CONNECTIVITY_MODE = 0
- PORT interconnect_aclk = processing_system7_0_FCLK_CLK0
  PORT INTERCONNECT_ARESETN = processing_system7_0_M_AXI_GP0_ARESETN
+ PORT interconnect_aclk = processing_system7_0_FCLK_CLK3
 END
 
-BEGIN axi_gpio
- PARAMETER INSTANCE = LEDs_4Bits
- PARAMETER HW_VER = 1.01.b
- PARAMETER C_GPIO_WIDTH = 4
- PARAMETER C_ALL_INPUTS = 0
- PARAMETER C_INTERRUPT_PRESENT = 0
- PARAMETER C_IS_DUAL = 0
- PARAMETER C_BASEADDR = 0x41200000
- PARAMETER C_HIGHADDR = 0x4120ffff
+BEGIN foo_lite_slave
+ PARAMETER INSTANCE = foo_lite_slave_0
+ PARAMETER HW_VER = 1.00.a
+ PARAMETER C_BASEADDR = 0x63400000
+ PARAMETER C_HIGHADDR = 0x6340ffff
  BUS_INTERFACE S_AXI = axi4lite_0
- PORT S_AXI_ACLK = processing_system7_0_FCLK_CLK0
- PORT GPIO_IO_O = LEDs_4Bits_TRI_IO
+ PORT S_AXI_ACLK = processing_system7_0_FCLK_CLK3
+ PORT interrupt = foo_lite_slave_0_interrupt
 END
 
-BEGIN axi_gpio
- PARAMETER INSTANCE = GPIO_SW
- PARAMETER HW_VER = 1.01.b
- PARAMETER C_GPIO_WIDTH = 1
- PARAMETER C_ALL_INPUTS = 1
- PARAMETER C_INTERRUPT_PRESENT = 0
- PARAMETER C_IS_DUAL = 0
- PARAMETER C_BASEADDR = 0x41220000
- PARAMETER C_HIGHADDR = 0x4122ffff
+BEGIN foo_slave
+ PARAMETER INSTANCE = foo_slave_0
+ PARAMETER HW_VER = 1.00.a
+ PARAMETER C_S_AXI_MEM0_BASEADDR = 0x6ae00000
+ PARAMETER C_S_AXI_MEM0_HIGHADDR = 0x6ae0ffff
  BUS_INTERFACE S_AXI = axi4lite_0
- PORT S_AXI_ACLK = processing_system7_0_FCLK_CLK0
- PORT GPIO_IO = GPIO_SW_TRI_IO
+ PORT S_AXI_ACLK = processing_system7_0_FCLK_CLK3
+ PORT interrupt = foo_slave_0_interrupt
+END
+
+BEGIN mailbox
+ PARAMETER INSTANCE = mailbox_0
+ PARAMETER HW_VER = 1.01.a
+ PARAMETER C_INTERCONNECT_PORT_0 = 2
+ PARAMETER C_INTERCONNECT_PORT_1 = 2
+ PARAMETER C_INTERCONNECT_S1_AXI_MASTERS = processing_system7_0.M_AXI_GP1
+ PARAMETER C_S0_AXI_BASEADDR = 0x43800000
+ PARAMETER C_S0_AXI_HIGHADDR = 0x4380ffff
+ PARAMETER C_S1_AXI_BASEADDR = 0x80010000
+ PARAMETER C_S1_AXI_HIGHADDR = 0x80010fff
+ BUS_INTERFACE S0_AXI = axi4lite_0
+ BUS_INTERFACE S1_AXI = axi_interconnect_0
+ PORT S0_AXI_ACLK = processing_system7_0_FCLK_CLK3
+ PORT Interrupt_0 = mailbox_0_Interrupt_0
+ PORT Interrupt_1 = mailbox_0_Interrupt_1
+ PORT S1_AXI_ACLK = processing_system7_0_FCLK_CLK3
+END
+
+BEGIN mutex
+ PARAMETER INSTANCE = mutex_0
+ PARAMETER HW_VER = 1.00.a
+ PARAMETER C_NUM_PLB = 0
+ PARAMETER C_NUM_AXI = 1
+ PARAMETER C_S0_AXI_BASEADDR = 0x43600000
+ PARAMETER C_S0_AXI_HIGHADDR = 0x4360ffff
+ BUS_INTERFACE S0_AXI = axi4lite_0
+ PORT S0_AXI_ACLK = processing_system7_0_FCLK_CLK3
+END
+
+BEGIN axi_interconnect
+ PARAMETER INSTANCE = axi_interconnect_0
+ PARAMETER HW_VER = 1.06.a
+ PORT INTERCONNECT_ARESETN = processing_system7_0_M_AXI_GP1_ARESETN
+ PORT INTERCONNECT_ACLK = processing_system7_0_FCLK_CLK3
+END
+
+BEGIN foo_master
+ PARAMETER INSTANCE = foo_master_0
+ PARAMETER HW_VER = 1.00.a
+ PARAMETER C_S_AXI_MEM0_BASEADDR = 0x7e400000
+ PARAMETER C_S_AXI_MEM0_HIGHADDR = 0x7e40ffff
+ PARAMETER C_S_AXI_ID_WIDTH = 12
+ BUS_INTERFACE M_AXI = axi_interconnect_1
+ BUS_INTERFACE S_AXI = axi4lite_0
+ PORT S_AXI_ACLK = processing_system7_0_FCLK_CLK3
+ PORT m_axi_aclk = processing_system7_0_FCLK_CLK0
+ PORT interrupt = foo_master_0_interrupt
+END
+
+BEGIN axi_interconnect
+ PARAMETER INSTANCE = axi_interconnect_1
+ PARAMETER HW_VER = 1.06.a
+ PARAMETER C_INTERCONNECT_CONNECTIVITY_MODE = 1
+ PORT INTERCONNECT_ACLK = processing_system7_0_FCLK_CLK0
+ PORT INTERCONNECT_ARESETN = processing_system7_0_S_AXI_HP0_ARESETN
 END
 
