@@ -1,0 +1,14 @@
+##############################################################################
+## Filename:          /home/jamey/bluespec/zedboard_axi_blue/pcores/foo_master_v1_00_a/data/foo_master_v2_1_0.pao
+## Description:       Peripheral Analysis Order
+## Date:              Wed Nov 21 14:38:14 2012 (by Create and Import Peripheral Wizard)
+##############################################################################
+
+lib proc_common_v3_00_a  all 
+lib axi_slave_burst_v1_00_a  all 
+lib axi_master_burst_v1_00_a  all 
+lib foo_master_v1_00_a foo_master vhdl
+lib foo_master_v1_00_a mkIpSlaveWithMaster verilog
+lib foo_master_v1_00_a mkFifoToAxi verilog
+lib foo_master_v1_00_a RegFile verilog
+lib foo_master_v1_00_a SizedFIFO verilog
