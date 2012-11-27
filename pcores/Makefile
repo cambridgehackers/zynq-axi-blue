@@ -1,9 +1,9 @@
 
 mk%.v: %.bsv
-	cd $(dir $*); bsc -verilog -u -g mk$(notdir $*).v $(notdir $*).bsv
+	cd $(dir $*); bsc -verilog -u -g mk$(notdir $*) $(notdir $*).bsv
 
 %.v: %.bsv
-	cd $(dir $*); bsc -verilog -u -g $(notdir $*).v $(notdir $*).bsv
+	cd $(dir $*); bsc -verilog -u -g $(notdir $*) $(notdir $*).bsv
 
 ALL_VERILOG=
 
