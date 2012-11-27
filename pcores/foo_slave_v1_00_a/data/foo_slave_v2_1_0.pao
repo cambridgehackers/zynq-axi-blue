@@ -10,3 +10,4 @@ lib foo_slave_v1_00_a user_logic vhdl
 lib foo_slave_v1_00_a foo_slave vhdl
 lib foo_slave_v1_00_a mkIpSlave verilog
 lib foo_slave_v1_00_a RegFile verilog
+lib foo_slave_v1_00_a FIFO2 verilog
