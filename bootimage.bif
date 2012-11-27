@@ -1,6 +1,6 @@
 the_ROM_image:
 {
 	[bootloader]zynq_fsbl.elf
-	implementation/system.bit
+	implementation/module_bcl.bit
 	u-boot.elf
 }
