@@ -10,11 +10,13 @@ endfunction
 interface ToBit32#(type a);
    interface Put#(a) put;
    interface Get#(Maybe#(Bit#(32))) get;
+   method Bool notEmpty();
 endinterface
    
 interface FromBit32#(type a);
    interface Put#(Bit#(32)) put;          
    interface Get#(a) get;
+   method Bool notEmpty();
 endinterface
 
 module mkToBit32(ToBit32#(a))
@@ -60,6 +62,9 @@ module mkToBit32(ToBit32#(a))
        endmethod
    endinterface
                
+   method Bool notEmpty();
+       return fifo.notEmpty;
+   endmethod
 endmodule
 
 module mkFromBit32(FromBit32#(a))
@@ -100,4 +105,7 @@ module mkFromBit32(FromBit32#(a))
        endmethod
    endinterface
    
+   method Bool notEmpty();
+       return fifo.notEmpty;
+   endmethod
 endmodule

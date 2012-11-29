@@ -1,8 +1,4 @@
-
-interface DUT;
-    method Action setParams(Bit#(32) a, Bit#(32) b);
-    method ActionValue#(Bit#(32)) result();
-endinterface
+import TypesAndInterfaces::*;
 
 module mkDUT(DUT);
 

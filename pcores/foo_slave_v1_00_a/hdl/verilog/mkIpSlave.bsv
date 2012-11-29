@@ -25,11 +25,8 @@ module mkIpSlave(XIP);
    Reg#(Bit#(32)) getWordCount <- mkReg(0);
    Reg#(Bit#(32)) putWordCount <- mkReg(0);
 
-   rule timer if (rf.sub(12'h008) != 0);
-      let newval = rf.sub(12'h008) - 1;
-      rf.upd(12'h008, newval);
-      if (newval == 32'd0)
-          interrupted <= True;
+   rule fifoNotEmpty if (responseFifo.notEmpty && !interrupted);
+       interrupted <= True;
    endrule
 
    method Action put(Bit#(12) addr, Bit#(32) v);
