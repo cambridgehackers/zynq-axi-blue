@@ -56,12 +56,15 @@ module mkIpSlave(XIP);
          end
        else
            begin
-               let r = responseFifo.first(); 
                let v = 0;
-               if (r matches tagged Valid .b) begin
-                   v = b;
-                   responseFifo.deq;
-                   getWordCount <= getWordCount + 1;
+               if (responseFifo.notEmpty)
+               begin
+                   let r = responseFifo.first(); 
+                   if (r matches tagged Valid .b) begin
+                       v = b;
+                       responseFifo.deq;
+                       getWordCount <= getWordCount + 1;
+                   end
                end
                return v;
            end
