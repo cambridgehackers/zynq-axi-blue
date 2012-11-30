@@ -15,10 +15,7 @@ module mkIpSlave(XIP);
 
    FromBit32#(DutRequest) requestFifo <- mkFromBit32();
    ToBit32#(DutResponse) responseFifo <- mkToBit32();
-   DUTWrapper dutWrapper <- mkDUTWrapper();
-
-   mkConnection(requestFifo.get, dutWrapper.req);
-   mkConnection(dutWrapper.resp, responseFifo.put);
+   DUTWrapper dutWrapper <- mkDUTWrapper(requestFifo, responseFifo);
 
    RegFile#(Bit#(12), Bit#(32)) rf <- mkRegFile(0, 12'hfff);
    Reg#(Bool) interrupted <- mkReg(False);
@@ -37,7 +34,7 @@ module mkIpSlave(XIP);
        else
          begin
            putWordCount <= putWordCount + 1;
-           requestFifo.put.put(v);
+           requestFifo.enq(v);
          end
    endmethod
 
@@ -59,11 +56,13 @@ module mkIpSlave(XIP);
          end
        else
            begin
-               let r <- responseFifo.get.get(); 
+               let r = responseFifo.first(); 
                let v = 0;
-               if (r matches tagged Valid .b)
+               if (r matches tagged Valid .b) begin
                    v = b;
-               getWordCount <= getWordCount + 1;
+                   responseFifo.deq;
+                   getWordCount <= getWordCount + 1;
+               end
                return v;
            end
    endmethod

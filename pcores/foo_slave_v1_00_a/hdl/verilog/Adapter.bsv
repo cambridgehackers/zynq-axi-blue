@@ -8,14 +8,16 @@ function Bit#(a) rtruncate(Bit#(b) x) provisos(Add#(k,a,b));
 endfunction
 
 interface ToBit32#(type a);
-   interface Put#(a) put;
-   interface Get#(Maybe#(Bit#(32))) get;
+   method Action enq(a v);          
+   method Maybe#(Bit#(32)) first;
+   method Action deq();
    method Bool notEmpty();
 endinterface
    
 interface FromBit32#(type a);
-   interface Put#(Bit#(32)) put;          
-   interface Get#(a) get;
+   method Action enq(Bit#(32) v);
+   method a first();
+   method Action deq();
    method Bool notEmpty();
 endinterface
 
@@ -29,38 +31,34 @@ module mkToBit32(ToBit32#(a))
    FIFOF#(Bit#(asz))   fifo <- mkUGFIFOF();
    Reg#(Bit#(32))      count <- mkReg(0);
 
-   interface Put put;
-       method Action put(a val) if (fifo.notFull);
-          fifo.enq(pack(val));   
-       endmethod
-   endinterface
+   method Action enq(a val) if (fifo.notFull);
+      fifo.enq(pack(val));   
+   endmethod
 
-   interface Get get;
-       method ActionValue#(Maybe#(Bit#(32))) get();
-           if (fifo.notEmpty)
-           begin 
-               let val = fifo.first();
-               Bit#(asz32) vx = zeroExtend(val >> (32 * count));
-               Bit#(32) x = vx[31:0];
-
-               if (count == max)
-                  begin 
-                     count <= 0;
-                     fifo.deq();
-                  end
-               else
-                  begin
-                     count <= count + 1;
-                  end   
-
-               return tagged Valid x;
-           end
-           else
-           begin
-               return tagged Invalid;
-           end
-       endmethod
-   endinterface
+   method Maybe#(Bit#(32)) first();
+    if (fifo.notEmpty)
+       begin 
+           let val = fifo.first();
+           Bit#(asz32) vx = zeroExtend(val >> (32 * count));
+           Bit#(32) x = vx[31:0];
+           return tagged Valid x;
+       end
+    else
+       begin
+           return tagged Invalid;
+       end
+   endmethod
+   method Action deq() if (fifo.notEmpty);
+       if (count == max)
+          begin 
+             count <= 0;
+             fifo.deq();
+          end
+       else
+          begin
+             count <= count + 1;
+          end   
+   endmethod
                
    method Bool notEmpty();
        return fifo.notEmpty;
@@ -79,31 +77,30 @@ module mkFromBit32(FromBit32#(a))
    Reg#(Bit#(asz))    buff <- mkReg(0);
    Reg#(Bit#(32))    count <- mkReg(0);   
    
-   interface Put put;
-       method Action put(Bit#(32) x) if (fifo.notFull);
-          Bit#(asz32) concatedvalue = {x,buff};
-          Bit#(asz) newval = rtruncate(concatedvalue);
-          if (count == max)
-             begin 
-                count <= 0;
-                buff  <= ?;
-                Bit#(asz) longval = truncate({x,buff} >> ((offset==0) ? 32'd32 : zeroExtend(offset)));
-                fifo.enq(longval);
-             end
-          else
-             begin
-                count <= count+1;
-                buff  <= newval; 
-             end
-       endmethod
-   endinterface
+   method Action enq(Bit#(32) x) if (fifo.notFull);
+      Bit#(asz32) concatedvalue = {x,buff};
+      Bit#(asz) newval = rtruncate(concatedvalue);
+      if (count == max)
+         begin 
+            count <= 0;
+            buff  <= ?;
+            Bit#(asz) longval = truncate({x,buff} >> ((offset==0) ? 32'd32 : zeroExtend(offset)));
+            fifo.enq(longval);
+         end
+      else
+         begin
+            count <= count+1;
+            buff  <= newval; 
+         end
+   endmethod
    
-   interface Get get;
-       method ActionValue#(a) get if (fifo.notEmpty());
-           fifo.deq;
-           return unpack(fifo.first);
-       endmethod
-   endinterface
+   method a first if (fifo.notEmpty());
+       return unpack(fifo.first);
+   endmethod
+
+   method Action deq if (fifo.notEmpty());
+       fifo.deq;
+   endmethod
    
    method Bool notEmpty();
        return fifo.notEmpty;
