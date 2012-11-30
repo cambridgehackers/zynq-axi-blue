@@ -4,7 +4,7 @@
 int main(int argc, const char **argv)
 {
     DUT *dut = DUT::createDUT("foobridge1");
-    dut->ior(0x0fad0000, 0x00000bad);
-    dut->iorShift(0x0fad0000, 0x00000bad);
+    dut->ior(0x0fad0000, 0x00093bad);
+    dut->iorShift(0x0f0d0000, 0x00047bed);
     return 0;
 }

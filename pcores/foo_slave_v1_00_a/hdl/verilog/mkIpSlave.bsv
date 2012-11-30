@@ -19,16 +19,23 @@ module mkIpSlave(XIP);
 
    RegFile#(Bit#(12), Bit#(32)) rf <- mkRegFile(0, 12'hfff);
    Reg#(Bool) interrupted <- mkReg(False);
+   Reg#(Bool) interruptCleared <- mkReg(False);
    Reg#(Bit#(32)) getWordCount <- mkReg(0);
    Reg#(Bit#(32)) putWordCount <- mkReg(0);
+   Reg#(Bit#(32)) underflowCount <- mkReg(0);
 
-   rule fifoNotEmpty if (responseFifo.notEmpty && !interrupted);
-       interrupted <= True;
+   rule interrupted_rule;
+       interrupted <= responseFifo.notEmpty;
+   endrule
+   rule reset_interrupt_cleared_rule if (!interrupted);
+       interruptCleared <= False;
    endrule
 
    method Action put(Bit#(12) addr, Bit#(32) v);
-       if (addr == 12'h000 && v[0] == 1'b1)
-           interrupted <= False;
+       if (addr == 12'h000 && v[0] == 1'b1 && interrupted)
+       begin
+           interruptCleared <= True;
+       end
        if (addr < 12'h100)
            rf.upd(addr, v);
        else
@@ -44,19 +51,25 @@ module mkIpSlave(XIP);
            let v = rf.sub(addr);
            if (addr == 12'h000)
                v[0] = interrupted ? 1'd1 : 1'd0 ;
+           if (addr == 12'h008)
+               v = underflowCount;
            if (addr == 12'h010)
                v = dutWrapper.reqCount;
            if (addr == 12'h014)
-               v = dutWrapper.respCount;
+               v = dutWrapper.req2Count;
            if (addr == 12'h018)
-               v = putWordCount;
+               v = dutWrapper.respCount;
            if (addr == 12'h01C)
+               v = dutWrapper.resp2Count;
+           if (addr == 12'h020)
+               v = putWordCount;
+           if (addr == 12'h024)
                v = getWordCount;
            return v;
          end
        else
            begin
-               let v = 0;
+               let v = 32'h050a050a;
                if (responseFifo.notEmpty)
                begin
                    let r = responseFifo.first(); 
@@ -65,6 +78,10 @@ module mkIpSlave(XIP);
                        responseFifo.deq;
                        getWordCount <= getWordCount + 1;
                    end
+               end
+               else
+               begin
+                   underflowCount <= underflowCount + 1;
                end
                return v;
            end
@@ -75,7 +92,7 @@ module mkIpSlave(XIP);
    endmethod
 
    method Bit#(1) interrupt();
-       if (rf.sub(12'h04)[0] == 1'd1)
+       if (rf.sub(12'h04)[0] == 1'd1 && !interruptCleared)
            return interrupted ? 1'd1 : 1'd0;
        else
            return 1'd0;
