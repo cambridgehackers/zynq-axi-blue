@@ -48,7 +48,9 @@ module mkToBit32(ToBit32#(a))
            return tagged Invalid;
        end
    endmethod
-   method Action deq() if (fifo.notEmpty);
+   method Action deq();
+     if (fifo.notEmpty)
+     begin
        if (count == max)
           begin 
              count <= 0;
@@ -58,6 +60,7 @@ module mkToBit32(ToBit32#(a))
           begin
              count <= count + 1;
           end   
+     end
    endmethod
                
    method Bool notEmpty();
