@@ -45,6 +45,7 @@ msg.request.a = a;
 msg.request.b = b;
 
     p->sendMessage(&msg);
+    p->receiveMessage(&msg);
     return msg.response.response;
 };
 
@@ -74,6 +75,7 @@ msg.request.x = x;
 msg.request.y = y;
 
     p->sendMessage(&msg);
+    p->receiveMessage(&msg);
     return msg.response.response;
 };
 
@@ -124,5 +126,6 @@ unsigned int DUT::result (  )
     msg.request.channelNumber = baseChannelNumber + 3;
 
     p->sendMessage(&msg);
+    p->receiveMessage(&msg);
     return msg.response.response;
 };
