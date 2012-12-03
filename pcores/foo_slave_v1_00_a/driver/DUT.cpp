@@ -8,10 +8,10 @@ DUT *DUT::createDUT(const char *instanceName)
     return instance;
 }
 
-
 DUT::DUT(UshwInstance *p, int baseChannelNumber)
  : p(p), baseChannelNumber(baseChannelNumber)
 {
+  p->messageHandlers = new UshwInstance::MessageHandler [DUT::DUTNumChannels]();
 }
 DUT::~DUT()
 {
@@ -26,27 +26,19 @@ struct Request {
 unsigned int b;
 unsigned int a;
 
-int channelNumber;
 } request;
-struct Response {
-//fix Adapter.bsv to unreverse these
-int response;
-int responseChannel;
-} response;
+int channelNumber;
 };
 
-int DUT::ior ( unsigned int a, unsigned int b )
+void DUT::ior ( unsigned int a, unsigned int b )
 {
     DUTiorMSG msg;
-    msg.argsize = sizeof(msg.request);
-    msg.resultsize = sizeof(msg.response);
-    msg.request.channelNumber = baseChannelNumber + 0;
+    msg.size = sizeof(msg.request) + sizeof(msg.channelNumber);
+    msg.channelNumber = baseChannelNumber + 0;
 msg.request.a = a;
 msg.request.b = b;
 
     p->sendMessage(&msg);
-    p->receiveMessage(&msg);
-    return msg.response.response;
 };
 
 struct DUTiorShiftMSG : public UshwMessage
@@ -56,76 +48,17 @@ struct Request {
 unsigned int y;
 unsigned int x;
 
-int channelNumber;
 } request;
-struct Response {
-//fix Adapter.bsv to unreverse these
-int response;
-int responseChannel;
-} response;
+int channelNumber;
 };
 
-int DUT::iorShift ( unsigned int x, unsigned int y )
+void DUT::iorShift ( unsigned int x, unsigned int y )
 {
     DUTiorShiftMSG msg;
-    msg.argsize = sizeof(msg.request);
-    msg.resultsize = sizeof(msg.response);
-    msg.request.channelNumber = baseChannelNumber + 1;
+    msg.size = sizeof(msg.request) + sizeof(msg.channelNumber);
+    msg.channelNumber = baseChannelNumber + 1;
 msg.request.x = x;
 msg.request.y = y;
 
     p->sendMessage(&msg);
-    p->receiveMessage(&msg);
-    return msg.response.response;
-};
-
-struct DUTresultIorShiftMSG : public UshwMessage
-{
-struct Request {
-//fix Adapter.bsv to unreverse these
-
-int channelNumber;
-} request;
-struct Response {
-//fix Adapter.bsv to unreverse these
-unsigned int response;
-int responseChannel;
-} response;
-};
-
-unsigned int DUT::resultIorShift (  )
-{
-    DUTresultIorShiftMSG msg;
-    msg.argsize = sizeof(msg.request);
-    msg.resultsize = sizeof(msg.response);
-    msg.request.channelNumber = baseChannelNumber + 2;
-
-    p->sendMessage(&msg);
-    return msg.response.response;
-};
-
-struct DUTresultMSG : public UshwMessage
-{
-struct Request {
-//fix Adapter.bsv to unreverse these
-
-int channelNumber;
-} request;
-struct Response {
-//fix Adapter.bsv to unreverse these
-unsigned int response;
-int responseChannel;
-} response;
-};
-
-unsigned int DUT::result (  )
-{
-    DUTresultMSG msg;
-    msg.argsize = sizeof(msg.request);
-    msg.resultsize = sizeof(msg.response);
-    msg.request.channelNumber = baseChannelNumber + 3;
-
-    p->sendMessage(&msg);
-    p->receiveMessage(&msg);
-    return msg.response.response;
 };

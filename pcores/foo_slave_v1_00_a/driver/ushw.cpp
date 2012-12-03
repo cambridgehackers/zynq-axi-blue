@@ -40,6 +40,8 @@
 #define USHW_PUT _IOWR('B', 18, UshwMessage)
 #define USHW_GET _IOWR('B', 19, UshwMessage)
 
+UshwInterface ushw;
+
 void UshwInstance::close()
 {
     if (fd > 0) {
@@ -54,6 +56,7 @@ UshwInstance::UshwInstance(const char *instanceName)
     char path[128];
     snprintf(path, sizeof(path), "/dev/%s", instanceName);
     this->fd = open(path, O_RDWR);
+    ushw.registerInstance(this);
 }
 
 UshwInstance::~UshwInstance()
@@ -73,22 +76,76 @@ int UshwInstance::sendMessage(UshwMessage *msg)
 {
     int rc = ioctl(fd, USHW_PUT, msg);
     if (rc)
-        fprintf(stderr, "sendMessage rc=%d errno=%d:%s\n", rc, errno, strerror(errno));
+        fprintf(stderr, "sendMessage fd=%d rc=%d errno=%d:%s PUTGET=%x PUT=%x GET=%x\n", fd, rc, errno, strerror(errno),
+                USHW_PUTGET, USHW_PUT, USHW_GET);
     return rc;
 }
+
 int UshwInstance::receiveMessage(UshwMessage *msg)
 {
-    struct pollfd fds[1] = {
-        { fd, POLLIN, 0 }
-    };
-    int rc = poll(fds, sizeof(fds)/sizeof(struct pollfd), 1000);
-    if (rc > 0)
-        fprintf(stderr, "poll returned rc=%d\n", rc);
-    else
-        fprintf(stderr, "poll returned rc=%d errno=%d:%s\n", rc, errno, strerror(errno));
+    int status  = ioctl(fd, USHW_GET, msg);
+    if (status) {
+        fprintf(stderr, "receiveMessage rc=%d errno=%d:%s\n", status, errno, strerror(errno));
+        return -status;
+    }
+    return 1;
+}
 
-    rc = ioctl(fd, USHW_GET, msg);
-    if (rc)
-        fprintf(stderr, "receiveMessage rc=%d errno=%d:%s\n", rc, errno, strerror(errno));
-    return rc;
+UshwInterface::UshwInterface()
+    : fds(0), numFds(0)
+{
+}
+
+UshwInterface::~UshwInterface()
+{
+    if (fds) {
+        free(fds);
+        fds = 0;
+    }
+}
+
+int UshwInterface::registerInstance(UshwInstance *instance)
+{
+    numFds++;
+    instances = (UshwInstance **)realloc(instances, numFds*sizeof(UshwInstance *));
+    instances[numFds-1] = instance;
+    fds = (struct pollfd *)realloc(fds, numFds*sizeof(struct pollfd));
+    struct pollfd *pollfd = &fds[numFds-1];
+    memset(pollfd, 0, sizeof(struct pollfd));
+    pollfd->fd = instance->fd;
+    pollfd->events = POLLIN;
+    return 0;
+}
+
+int UshwInterface::exec()
+{
+    unsigned int *buf = new unsigned int[1024];
+    UshwMessage *msg = (UshwMessage *)(buf);
+    fprintf(stderr, "exec()\n");
+    int messageReceived = 0;
+
+    int rc;
+    while ((rc = poll(ushw.fds, ushw.numFds, 1000)) >= 0) {
+        for (int i = 0; i < ushw.numFds; i++) {
+            if (ushw.fds[i].revents == 0)
+                continue;
+            UshwInstance *instance = ushw.instances[i];
+            int messageReceived = instance->receiveMessage(msg);
+            if (!messageReceived)
+                continue;
+            size_t size = msg->size;
+            if (!size)
+                continue;
+            int channel = *(buf+1+(size-1)/4); // channel number is last word of message
+            if (1) fprintf(stderr, "channel %x messageHandlers=%p\n", channel, instance->messageHandlers);
+            if (instance->messageHandlers && instance->messageHandlers[channel])
+                instance->messageHandlers[channel](msg);
+        }
+    }
+    if (rc < 0) {
+        fprintf(stderr, "poll returned rc=%d errno=%d:%s\n", rc, errno, strerror(errno));
+        return rc;
+    }
+
+    return 0;
 }
