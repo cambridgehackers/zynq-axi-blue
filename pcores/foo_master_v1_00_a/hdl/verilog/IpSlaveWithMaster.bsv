@@ -1,5 +1,9 @@
 import RegFile::*;
+import Adapter::*;
 import FifoToAxi::*;
+import DUTWrapper::*;
+import GetPut::*;
+import Connectable::*;
 
 interface IpSlaveWithMaster;
    method Action put(Bit#(12) addr, Bit#(32) v);
@@ -11,55 +15,90 @@ endinterface
 
 module mkIpSlaveWithMaster(IpSlaveWithMaster);
 
-   FifoToAxi fifoToAxi <- mkFifoToAxi;
+   FifoToAxi fifoToAxi <- mkFifoToAxi();
+
+   FromBit32#(DutRequest) requestFifo <- mkFromBit32();
+   ToBit32#(DutResponse) responseFifo <- mkToBit32();
+   DUTWrapper dutWrapper <- mkDUTWrapper(requestFifo, responseFifo);
 
    RegFile#(Bit#(12), Bit#(32)) rf <- mkRegFile(0, 12'hfff);
-
-   Reg#(Bool) thresholdEdgeDetected <- mkReg(False);
-
    Reg#(Bool) interrupted <- mkReg(False);
-   rule fifoAboveThreshold if (!thresholdEdgeDetected && fifoToAxi.aboveThreshold());
-       interrupted <= True;
-       thresholdEdgeDetected <= True;
+   Reg#(Bool) interruptCleared <- mkReg(False);
+   Reg#(Bit#(32)) getWordCount <- mkReg(0);
+   Reg#(Bit#(32)) putWordCount <- mkReg(0);
+   Reg#(Bit#(32)) underflowCount <- mkReg(0);
+
+   rule interrupted_rule;
+       interrupted <= responseFifo.notEmpty;
    endrule
-   rule fifoBelowThreshold if (thresholdEdgeDetected && !fifoToAxi.aboveThreshold());
-       thresholdEdgeDetected <= False;
+   rule reset_interrupt_cleared_rule if (!interrupted);
+       interruptCleared <= False;
    endrule
 
    method Action put(Bit#(12) addr, Bit#(32) v);
-       if (addr == 12'h000 && v[0] == 1)
-           interrupted <= False;
-       if (addr < 12'h010)
+       if (addr == 12'h000 && v[0] == 1'b1 && interrupted)
+       begin
+           interruptCleared <= True;
+       end
+       if (addr < 12'h100)
            rf.upd(addr, v);
-       else if (addr == 12'h010)
-           fifoToAxi.base <= v;
-       else if (addr == 12'h014)
-           fifoToAxi.bounds <= v;
-       else if (addr == 12'h018)
-           fifoToAxi.threshold <= v;
        else
-           fifoToAxi.enq(v);
+         begin
+           putWordCount <= putWordCount + 1;
+           requestFifo.enq(v);
+         end
    endmethod
+
    method ActionValue#(Bit#(32)) get(Bit#(12) addr);
-       if (addr < 12'h010)
-           return rf.sub(addr);
-       else if (addr == 12'h010)
-           return fifoToAxi.base;
-       else if (addr == 12'h014)
-           return fifoToAxi.bounds;
-       else if (addr == 12'h018)
-           return fifoToAxi.threshold;
+       if (addr < 12'h100)
+         begin
+           let v = rf.sub(addr);
+           if (addr == 12'h000)
+               v[0] = interrupted ? 1'd1 : 1'd0 ;
+           if (addr == 12'h008)
+               v = 32'h02142011;
+           if (addr == 12'h010)
+               v = dutWrapper.reqCount;
+           if (addr == 12'h014)
+               v = dutWrapper.respCount;
+           if (addr == 12'h018)
+               v = underflowCount;
+           if (addr == 12'h020)
+               v = putWordCount;
+           if (addr == 12'h024)
+               v = getWordCount;
+           return v;
+         end
        else
-           return 32'h5a5aBeef;
+           begin
+               let v = 32'h050a050a;
+               if (responseFifo.notEmpty)
+               begin
+                   let r = responseFifo.first(); 
+                   if (r matches tagged Valid .b) begin
+                       v = b;
+                       responseFifo.deq;
+                       getWordCount <= getWordCount + 1;
+                   end
+               end
+               else
+               begin
+                   underflowCount <= underflowCount + 1;
+               end
+               return v;
+           end
    endmethod
+
    method Bit#(1) error();
        return 0;
    endmethod
+
    method Bit#(1) interrupt();
-       if (rf.sub(12'h04)[0] == 1'd1)
-           return interrupted ? 1'b1 : 1'b0; //rf.sub(12'h00)[0];
+       if (rf.sub(12'h04)[0] == 1'd1 && !interruptCleared)
+           return interrupted ? 1'd1 : 1'd0;
        else
            return 1'd0;
    endmethod
+
    interface AxiMasterWrite axi = fifoToAxi.axi;
 endmodule

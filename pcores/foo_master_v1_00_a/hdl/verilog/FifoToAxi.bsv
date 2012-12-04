@@ -30,22 +30,26 @@ interface FifoToAxi;
    interface Reg#(Bit#(32)) base;
    interface Reg#(Bit#(32)) bounds;
    interface Reg#(Bit#(32)) threshold;
+   interface Reg#(Bool) enabled;
+   interface Reg#(Bit#(32)) ptr;
    method Bool aboveThreshold();
    method Bool notEmpty();
    method Bool notFull();
    interface AxiMasterWrite axi;
    method Action enq(Bit#(32) value);
+   method ActionValue#(Bit#(32)) getResponse();
 endinterface
 
 module mkFifoToAxi(FifoToAxi);
 
-   Reg#(Bit#(1)) enabledReg <- mkReg(0);
+   Reg#(Bool) enabledReg <- mkReg(False);
    Reg#(Bit#(32)) baseReg <- mkReg(0);
    Reg#(Bit#(32)) boundsReg <- mkReg(0);
    Reg#(Bit#(32)) thresholdReg <- mkReg(0);
    Reg#(Bit#(32)) ptrReg <- mkReg(0);
-   FIFOF#(Bit#(32)) fifo <- mkSizedFIFOF(8);
+   FIFOF#(Bit#(32)) fifo <- mkSizedFIFOF(32);
    Reg#(Bit#(8)) burstCountReg <- mkReg(0);
+   FIFOF#(Bit#(2)) responseFifo <- mkSizedFIFOF(32);
 
    rule updateBurstCount if (!fifo.notFull());
        burstCountReg <= 8'd8 - 1;
@@ -61,7 +65,7 @@ module mkFifoToAxi(FifoToAxi);
 
    interface Reg base;
        method Action _write(Bit#(32) base);
-          if (enabledReg == 1'b0) begin
+          if (!enabledReg) begin
               baseReg <= base;
               ptrReg <= base;
           end
@@ -73,7 +77,7 @@ module mkFifoToAxi(FifoToAxi);
 
    interface Reg bounds;
        method Action _write(Bit#(32) bounds);
-          if (enabledReg == 1'b0) begin
+          if (!enabledReg) begin
               boundsReg <= bounds;
           end
        endmethod
@@ -83,6 +87,7 @@ module mkFifoToAxi(FifoToAxi);
    endinterface
 
    interface Reg threshold = thresholdReg;
+   interface Reg enabled = enabledReg;
 
    method Bool aboveThreshold;
        return ptrReg >= thresholdReg;
@@ -90,7 +95,7 @@ module mkFifoToAxi(FifoToAxi);
 
    interface AxiMasterWrite axi;
 
-       method ActionValue#(Bit#(32)) writeAddr() if (burstCountReg != 0 && enabledReg == 1'b1);
+       method ActionValue#(Bit#(32)) writeAddr() if (burstCountReg != 0 && enabledReg);
            let ptrValue = ptrReg;
            ptrReg <= ptrReg + 4;
            burstCountReg <= burstCountReg - 1;
@@ -128,11 +133,16 @@ module mkFifoToAxi(FifoToAxi);
        endmethod
 
        method Action writeResponse(Bit#(2) responseCode);
+           responseFifo.enq(responseCode);
        endmethod
    endinterface
 
    method Action enq(Bit#(32) value);
        fifo.enq(value);
+   endmethod
+   method ActionValue#(Bit#(32)) getResponse() if (responseFifo.notEmpty);
+       responseFifo.deq;
+       return extend(responseFifo.first);
    endmethod
 
 endmodule
