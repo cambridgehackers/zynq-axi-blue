@@ -56,11 +56,7 @@ module mkIpSlave(XIP);
            if (addr == 12'h010)
                v = dutWrapper.reqCount;
            if (addr == 12'h014)
-               v = dutWrapper.req2Count;
-           if (addr == 12'h018)
                v = dutWrapper.respCount;
-           if (addr == 12'h01C)
-               v = dutWrapper.resp2Count;
            if (addr == 12'h020)
                v = putWordCount;
            if (addr == 12'h024)
