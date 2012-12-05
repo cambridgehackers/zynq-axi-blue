@@ -10,7 +10,8 @@ interface IpSlaveWithMaster;
    method ActionValue#(Bit#(32)) get(Bit#(12) addr);
    method Bit#(1) error();
    method Bit#(1) interrupt();
-   interface AxiMasterWrite axi;
+   interface AxiMasterWrite axiw;
+   interface AxiMasterRead axir;
 endinterface
 
 module mkIpSlaveWithMaster(IpSlaveWithMaster);
@@ -52,8 +53,11 @@ module mkIpSlaveWithMaster(IpSlaveWithMaster);
          begin
            let v = rf.sub(addr);
            if (addr == 12'h000)
+           begin
                v[0] = interrupted ? 1'd1 : 1'd0 ;
-           if (addr == 12'h008)
+               v[16] = responseFifo.notFull ? 1'd1 : 1'd0;
+           end
+           if (addr == 12'h00c)
                v = 32'h02142011;
            if (addr == 12'h010)
                v = dutWrapper.reqCount;
@@ -98,5 +102,6 @@ module mkIpSlaveWithMaster(IpSlaveWithMaster);
            return 1'd0;
    endmethod
 
-   interface AxiMasterWrite axi = dutWrapper.axi;
+   interface AxiMasterWrite axiw = dutWrapper.axiw;
+   interface AxiMasterWrite axir = dutWrapper.axir;
 endmodule

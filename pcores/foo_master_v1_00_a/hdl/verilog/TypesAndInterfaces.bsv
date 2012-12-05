@@ -9,7 +9,14 @@ interface DUT;
 
     method Action readFifoStatus(Bit#(12) addr);
     method ActionValue#(Bit#(32)) fifoStatus();
-
     method ActionValue#(Bit#(32)) axiResponse();
+
+    method Action readRange(Bit#(32) addr);
+    method Action readFromFifoStatus(Bit#(12) addr);
+    method ActionValue#(Bit#(32)) fromFifoStatus();
+    method ActionValue#(Bit#(32)) axirResponse();
+    method ActionValue#(Bit#(32)) readValue();
+
     interface AxiMasterWrite axiw;
+    interface AxiMasterRead axir;
 endinterface

@@ -12,6 +12,7 @@ interface ToBit32#(type a);
    method Maybe#(Bit#(32)) first;
    method Action deq();
    method Bool notEmpty();
+   method Bool notFull();
 endinterface
    
 interface FromBit32#(type a);
@@ -19,6 +20,7 @@ interface FromBit32#(type a);
    method a first();
    method Action deq();
    method Bool notEmpty();
+   method Bool notFull();
 endinterface
 
 module mkToBit32(ToBit32#(a))
@@ -28,7 +30,7 @@ module mkToBit32(ToBit32#(a))
    Bit#(32) size = fromInteger(valueOf(asz));
    Bit#(32) max  = (size >> 5) + ((size[4:0] == 0) ? 0 : 1)-1;
    
-   FIFOF#(Bit#(asz))   fifo <- mkUGFIFOF();
+   FIFOF#(Bit#(asz))   fifo <- mkUGSizedFIFOF(32);
    Reg#(Bit#(32))      count <- mkReg(0);
 
    method Action enq(a val) if (fifo.notFull);
@@ -63,9 +65,8 @@ module mkToBit32(ToBit32#(a))
      end
    endmethod
                
-   method Bool notEmpty();
-       return fifo.notEmpty;
-   endmethod
+   method Bool notEmpty = fifo.notEmpty;
+   method Bool notFull = fifo.notFull;
 endmodule
 
 module mkFromBit32(FromBit32#(a))
@@ -105,7 +106,6 @@ module mkFromBit32(FromBit32#(a))
        fifo.deq;
    endmethod
    
-   method Bool notEmpty();
-       return fifo.notEmpty;
-   endmethod
+   method Bool notEmpty() = fifo.notEmpty;
+   method Bool notFull() = fifo.notFull;
 endmodule

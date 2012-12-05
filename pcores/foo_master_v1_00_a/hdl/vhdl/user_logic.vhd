@@ -204,12 +204,16 @@ architecture IMP of user_logic is
   signal ip_slave_en_put : std_logic;
   signal ip_slave_en_get : std_logic;
 
-  signal RDY_axi_writeAddr : std_logic;
-  signal RDY_axi_writeData : std_logic;
-  signal RDY_axi_writeResponse : std_logic;
-  signal WILL_FIRE_axi_writeAddr : std_logic;
-  signal WILL_FIRE_axi_writeData : std_logic;
-  signal WILL_FIRE_axi_writeResponse : std_logic;
+  signal RDY_axiw_writeAddr : std_logic;
+  signal RDY_axiw_writeData : std_logic;
+  signal RDY_axiw_writeResponse : std_logic;
+  signal RDY_axir_readAddr : std_logic;
+  signal RDY_axir_readData : std_logic;
+  signal WILL_FIRE_axiw_writeAddr : std_logic;
+  signal WILL_FIRE_axiw_writeData : std_logic;
+  signal WILL_FIRE_axiw_writeResponse : std_logic;
+  signal WILL_FIRE_axir_readAddr : std_logic;
+  signal WILL_FIRE_axir_readData : std_logic;
 
 begin
 
@@ -265,56 +269,76 @@ begin
 
       interrupt => interrupt,
 
-      EN_axi_writeAddr => WILL_FIRE_axi_writeAddr,
-      axi_writeAddr => m_axi_awaddr,
-      RDY_axi_writeAddr => RDY_axi_writeAddr,
+      EN_axiw_writeAddr => WILL_FIRE_axiw_writeAddr,
+      axiw_writeAddr => m_axi_awaddr,
+      RDY_axiw_writeAddr => RDY_axiw_writeAddr,
 
-      axi_writeBurstLen => m_axi_awlen,
-      -- RDY_axi_writeBurstLen,
+      axiw_writeBurstLen => m_axi_awlen,
+      -- RDY_axiw_writeBurstLen,
 
-      axi_writeBurstWidth => m_axi_awsize,
-      -- RDY_axi_writeBurstWidth,
+      axiw_writeBurstWidth => m_axi_awsize,
+      -- RDY_axiw_writeBurstWidth,
 
-      axi_writeBurstType => m_axi_awburst,
-      -- RDY_axi_writeBurstType,
+      axiw_writeBurstType => m_axi_awburst,
+      -- RDY_axiw_writeBurstType,
 
-      axi_writeBurstProt => m_axi_awprot,
-      -- RDY_axi_writeBurstProt,
+      axiw_writeBurstProt => m_axi_awprot,
+      -- RDY_axiw_writeBurstProt,
 
-      axi_writeBurstCache => m_axi_awcache,
-      -- RDY_axi_writeBurstCache,
+      axiw_writeBurstCache => m_axi_awcache,
+      -- RDY_axiw_writeBurstCache,
 
-      EN_axi_writeData => WILL_FIRE_axi_writeData,
-      axi_writeData => m_axi_wdata,
-      RDY_axi_writeData => RDY_axi_writeData,
+      EN_axiw_writeData => WILL_FIRE_axiw_writeData,
+      axiw_writeData => m_axi_wdata,
+      RDY_axiw_writeData => RDY_axiw_writeData,
 
-      axi_writeDataByteEnable => m_axi_wstrb,
-      -- RDY_axi_writeDataByteEnable,
+      axiw_writeDataByteEnable => m_axi_wstrb,
+      -- RDY_axiw_writeDataByteEnable,
 
-      axi_writeLastDataBeat => m_axi_wlast,
-      -- RDY_axi_writeLastDataBeat,
+      axiw_writeLastDataBeat => m_axi_wlast,
+      -- RDY_axiw_writeLastDataBeat,
 
-      EN_axi_writeResponse => WILL_FIRE_axi_writeResponse,
-      axi_writeResponse_responseCode => m_axi_bresp,
-      RDY_axi_writeResponse => RDY_axi_writeResponse
+      EN_axiw_writeResponse => WILL_FIRE_axiw_writeResponse,
+      axiw_writeResponse_responseCode => m_axi_bresp,
+      RDY_axiw_writeResponse => RDY_axiw_writeResponse,
+
+      EN_axir_readAddr => WILL_FIRE_axir_readAddr,
+      axir_readAddr => m_axi_araddr,
+      RDY_axir_readAddr => RDY_axir_readAddr,
+
+      axir_readBurstLen => m_axi_arlen,
+      -- RDY_axir_readBurstLen,
+
+      axir_readBurstWidth => m_axi_arsize,
+      -- RDY_axir_readBurstWidth,
+
+      axir_readBurstType => m_axi_arburst,
+      -- RDY_axir_readBurstType,
+
+      axir_readBurstProt => m_axi_arprot,
+      -- RDY_axir_readBurstProt,
+
+      axir_readBurstCache => m_axi_arcache,
+      -- RDY_axir_readBurstCache,
+
+      axir_readData_data => m_axi_rdata,
+      axir_readData_resp => m_axi_rresp,
+      axir_readData_last => m_axi_rlast,
+      EN_axir_readData => WILL_FIRE_axir_readData,
+      RDY_axir_readData => RDY_axir_readData
       );
 
   -- scheduler
-  WILL_FIRE_axi_writeAddr <= (m_axi_awready and RDY_axi_writeAddr);
-  WILL_FIRE_axi_writeData <= (m_axi_wready and RDY_axi_writeData);
-  WILL_FIRE_axi_writeResponse <= (m_axi_bvalid and RDY_axi_writeResponse);
-  m_axi_awvalid <= RDY_axi_writeAddr;
-  m_axi_wvalid <= RDY_axi_writeData;
-  m_axi_bready <= RDY_axi_writeResponse;
+  WILL_FIRE_axir_readAddr <= (m_axi_arready and RDY_axir_readAddr);
+  WILL_FIRE_axir_readData <= (m_axi_rvalid and RDY_axir_readData);
+  m_axi_arvalid <= RDY_axir_readAddr;
+  m_axi_rready <= RDY_axir_readData;
 
-  -- no M_AXI reads
-  m_axi_arvalid <= '0';
-  m_axi_araddr <= "00000000000000000000000000000000";
-  m_axi_arlen <= "00000000";
-  m_axi_arsize <= "000";
-  m_axi_arburst <= "00";
-  m_axi_arprot <= "000";
-  m_axi_arcache <= "0000";
-  m_axi_rready <= '0';
+  WILL_FIRE_axiw_writeAddr <= (m_axi_awready and RDY_axiw_writeAddr);
+  WILL_FIRE_axiw_writeData <= (m_axi_wready and RDY_axiw_writeData);
+  WILL_FIRE_axiw_writeResponse <= (m_axi_bvalid and RDY_axiw_writeResponse);
+  m_axi_awvalid <= RDY_axiw_writeAddr;
+  m_axi_wvalid <= RDY_axiw_writeData;
+  m_axi_bready <= RDY_axiw_writeResponse;
 
 end IMP;
