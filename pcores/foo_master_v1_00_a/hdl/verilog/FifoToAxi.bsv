@@ -5,8 +5,8 @@ interface AxiMasterRead;
    method ActionValue#(Bit#(32)) readAddr();
    method Bit#(8) readBurstLen();
    method Bit#(3) readBurstWidth();
-   method Bit#(2) readBurstType();  // drive with 2'b
-   method Bit#(3) readBurstProt(); // drive with 4'b000
+   method Bit#(2) readBurstType();  // drive with 2'b01
+   method Bit#(3) readBurstProt(); // drive with 3'b000
    method Bit#(4) readBurstCache(); // drive with 4'b0011
 
    method Action readData(Bit#(32) data, Bit#(2) resp, Bit#(1) last);
@@ -16,8 +16,8 @@ interface AxiMasterWrite;
    method ActionValue#(Bit#(32)) writeAddr();
    method Bit#(8) writeBurstLen();
    method Bit#(3) writeBurstWidth();
-   method Bit#(2) writeBurstType();  // drive with 2'b
-   method Bit#(3) writeBurstProt(); // drive with 4'b000
+   method Bit#(2) writeBurstType();  // drive with 2'b01
+   method Bit#(3) writeBurstProt(); // drive with 3'b000
    method Bit#(4) writeBurstCache(); // drive with 4'b0011
 
    method ActionValue#(Bit#(32)) writeData();
@@ -35,6 +35,9 @@ interface FifoToAxi;
    method Bool aboveThreshold();
    method Bool notEmpty();
    method Bool notFull();
+
+   method Bit#(32) readStatus(Bit#(12) addr);
+
    interface AxiMasterWrite axi;
    method Action enq(Bit#(32) value);
    method ActionValue#(Bit#(32)) getResponse();
@@ -47,12 +50,18 @@ module mkFifoToAxi(FifoToAxi);
    Reg#(Bit#(32)) boundsReg <- mkReg(0);
    Reg#(Bit#(32)) thresholdReg <- mkReg(0);
    Reg#(Bit#(32)) ptrReg <- mkReg(0);
-   FIFOF#(Bit#(32)) fifo <- mkSizedFIFOF(32);
+   Reg#(Bit#(32)) addrsWrittenCount <- mkReg(0);
+   Reg#(Bit#(32)) wordsWrittenCount <- mkReg(0);
+   Reg#(Bit#(32)) wordsEnqCount <- mkReg(0);
+   Reg#(Bit#(32)) lastDataBeatCount <- mkReg(0);
+   FIFOF#(Bit#(32)) dfifo <- mkSizedFIFOF(8);
    Reg#(Bit#(8)) burstCountReg <- mkReg(0);
-   FIFOF#(Bit#(2)) responseFifo <- mkSizedFIFOF(32);
+   Reg#(Bool) operationInProgress <- mkReg(False);
+   FIFOF#(Bit#(2)) axiBrespFifo <- mkSizedFIFOF(32);
 
-   rule updateBurstCount if (!fifo.notFull());
-       burstCountReg <= 8'd8 - 1;
+   rule updateBurstCount if (!dfifo.notFull() && !operationInProgress && enabledReg);
+       burstCountReg <= 8'd8;
+       operationInProgress <= True;
    endrule
 
    method Bool notEmpty();
@@ -64,7 +73,7 @@ module mkFifoToAxi(FifoToAxi);
    endmethod
 
    interface Reg base;
-       method Action _write(Bit#(32) base);
+       method Action _write(Bit#(32) base) if (!operationInProgress);
           if (!enabledReg) begin
               baseReg <= base;
               ptrReg <= base;
@@ -76,7 +85,7 @@ module mkFifoToAxi(FifoToAxi);
    endinterface
 
    interface Reg bounds;
-       method Action _write(Bit#(32) bounds);
+       method Action _write(Bit#(32) bounds) if (!operationInProgress);
           if (!enabledReg) begin
               boundsReg <= bounds;
           end
@@ -93,21 +102,60 @@ module mkFifoToAxi(FifoToAxi);
        return ptrReg >= thresholdReg;
    endmethod
 
-   interface AxiMasterWrite axi;
+   method Bit#(32) readStatus(Bit#(12) addr);
+   Bit#(32) v = 32'h02142042;
+   if (addr == 12'h000)
+       v =  baseReg;
+   else if (addr == 12'h004)
+       v = boundsReg;
+   else if (addr == 12'h008)
+       v = ptrReg;
+   else if (addr == 12'h00C)
+       v = extend(burstCountReg);
+   else if (addr == 12'h010)
+       v = enabledReg ? 32'heeeeeeee : 32'hdddddddd;
+   else if (addr == 12'h014)
+   begin
+       v = 0;
+       v[3:0] = axiBrespFifo.notEmpty ? 4'h1 : 4'he;
+       v[15:12] = axiBrespFifo.notFull ? 4'h0 : 4'hf;
+   end
+   else if (addr == 12'h018)
+   begin
+       v = 0;
+       v[3:0] = dfifo.notEmpty ? 4'h1 : 4'he;
+       v[15:12] = dfifo.notFull ? 4'h0 : 4'hf;
+   end
+   else if (addr == 12'h01C)
+   begin
+       v[31:24] = 8'hbb;
+       v[23:16] = operationInProgress ? 8'haa : 8'h11;
+       v[15:0] = extend(burstCountReg);
+   end
+   else if (addr == 12'h020)
+       v = wordsEnqCount;
+   else if (addr == 12'h024)
+       v = addrsWrittenCount;
+   else if (addr == 12'h028)
+       v = wordsWrittenCount;
+   else if (addr == 12'h02C)
+       v = lastDataBeatCount;
+   return v;
+   endmethod
 
-       method ActionValue#(Bit#(32)) writeAddr() if (burstCountReg != 0 && enabledReg);
+   interface AxiMasterWrite axi;
+       method ActionValue#(Bit#(32)) writeAddr() if (operationInProgress);
+           addrsWrittenCount <= addrsWrittenCount + 1;
            let ptrValue = ptrReg;
-           ptrReg <= ptrReg + 4;
-           burstCountReg <= burstCountReg - 1;
            return ptrReg;
        endmethod
        method Bit#(8) writeBurstLen();
-           return burstCountReg;
+           return burstCountReg-1;
        endmethod
        method Bit#(3) writeBurstWidth();
-           return 3'b010; // 'b010: 32bit, 'b011: 64bit
+           return 3'b010; // 3'b010: 32bit, 3'b011: 64bit, 3'b100: 128bit
        endmethod
-       method Bit#(2) writeBurstType();  // drive with 2'b
+       method Bit#(2) writeBurstType();  // drive with 2'b01 increment address
            return 2'b01; // increment address
        endmethod
        method Bit#(3) writeBurstProt(); // drive with 3'b000
@@ -117,32 +165,43 @@ module mkFifoToAxi(FifoToAxi);
            return 4'b0011;
        endmethod
 
-       method ActionValue#(Bit#(32)) writeData();
-           let d = fifo.first;
-           fifo.deq;
+       method ActionValue#(Bit#(32)) writeData() if (operationInProgress && dfifo.notEmpty);
+           ptrReg <= ptrReg + 4;
+           if (burstCountReg == 8'd1 || burstCountReg == 8'd0)
+           begin
+               operationInProgress <= False;
+               lastDataBeatCount <= lastDataBeatCount + 1;
+           end
+           burstCountReg <= burstCountReg - 1;
+           wordsWrittenCount <= wordsWrittenCount + 1;
+
+           let d = dfifo.first;
+           dfifo.deq;
            return d;
        endmethod
        method Bit#(4) writeDataByteEnable();
            return 4'b1111;
        endmethod
        method Bit#(1) writeLastDataBeat(); // last data beat
-           if (burstCountReg == 4)
+           if (burstCountReg == 8'd1)
                return 1'b1;
            else
                return 1'b0;
        endmethod
 
-       method Action writeResponse(Bit#(2) responseCode);
-           responseFifo.enq(responseCode);
+       method Action writeResponse(Bit#(2) responseCode) if (axiBrespFifo.notFull);
+           axiBrespFifo.enq(responseCode);
        endmethod
    endinterface
 
    method Action enq(Bit#(32) value);
-       fifo.enq(value);
+       wordsEnqCount <= wordsEnqCount + 1;
+       dfifo.enq(value);
    endmethod
-   method ActionValue#(Bit#(32)) getResponse() if (responseFifo.notEmpty);
-       responseFifo.deq;
-       return extend(responseFifo.first);
+   method ActionValue#(Bit#(32)) getResponse() if (axiBrespFifo.notEmpty);
+       axiBrespFifo.deq;
+       return extend(axiBrespFifo.first);
    endmethod
 
 endmodule
+

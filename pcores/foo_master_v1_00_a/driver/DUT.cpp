@@ -118,3 +118,23 @@ msg.request.v = v;
 
     p->sendMessage(&msg);
 };
+
+struct DUTreadFifoStatusMSG : public UshwMessage
+{
+struct Request {
+//fix Adapter.bsv to unreverse these
+unsigned int addr;
+
+} request;
+int channelNumber;
+};
+
+void DUT::readFifoStatus ( unsigned int addr )
+{
+    DUTreadFifoStatusMSG msg;
+    msg.size = sizeof(msg.request) + sizeof(msg.channelNumber);
+    msg.channelNumber = baseChannelNumber + 5;
+msg.request.addr = addr;
+
+    p->sendMessage(&msg);
+};

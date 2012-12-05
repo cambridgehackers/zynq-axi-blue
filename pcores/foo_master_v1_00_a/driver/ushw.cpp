@@ -124,7 +124,7 @@ unsigned long UshwInterface::alloc(size_t size)
     alloc.size = size;
     int rc = ioctl(ushw.fds[0].fd, USHW_ALLOC, &alloc);
     fprintf(stderr, "alloc size=%d rc=%d alloc.kptr=%p\n", size, rc, alloc.kptr);
-    return rc;
+    return (unsigned long)alloc.kptr-0xc0000000;
 }
 
 int UshwInterface::exec()

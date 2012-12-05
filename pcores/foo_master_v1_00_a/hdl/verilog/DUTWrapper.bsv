@@ -4,11 +4,13 @@ import Connectable::*;
 import Adapter::*;
 import TypesAndInterfaces::*;
 import DUT::*;
+import FifoToAxi::*;
 
 
 interface DUTWrapper;
    interface Reg#(Bit#(32)) reqCount;
    interface Reg#(Bit#(32)) respCount;
+   interface AxiMasterWrite axi;
 endinterface
 
 
@@ -34,12 +36,18 @@ typedef union tagged {
         Bit#(32) v;
     } Enq$Request;
 
+    struct {
+        Bit#(12) addr;
+    } Readfifostatus$Request;
+
   Bit#(0) DutRequestUnused;
 } DutRequest deriving (Bits);
 
 typedef union tagged {
 
-    Bit#(32) Getresponse$Response;
+    Bit#(32) Fifostatus$Response;
+
+    Bit#(32) Axiresponse$Response;
 
   Bit#(0) DutResponseUnused;
 } DutResponse deriving (Bits);
@@ -82,9 +90,22 @@ module mkDUTWrapper#(FromBit32#(DutRequest) requestFifo, ToBit32#(DutResponse) r
         requestFired <= requestFired + 1;
     endrule
 
-    rule getResponse$response;
-        Bit#(32) r <- dut.getResponse();
-        let response = tagged Getresponse$Response r;
+    rule handle$readFifoStatus$request if (requestFifo.first matches tagged Readfifostatus$Request .sp);
+        requestFifo.deq;
+        dut.readFifoStatus(sp.addr);
+        requestFired <= requestFired + 1;
+    endrule
+
+    rule fifoStatus$response;
+        Bit#(32) r <- dut.fifoStatus();
+        let response = tagged Fifostatus$Response r;
+        responseFifo.enq(response);
+        responseFired <= responseFired + 1;
+    endrule
+
+    rule axiResponse$response;
+        Bit#(32) r <- dut.axiResponse();
+        let response = tagged Axiresponse$Response r;
         responseFifo.enq(response);
         responseFired <= responseFired + 1;
     endrule
@@ -92,4 +113,5 @@ module mkDUTWrapper#(FromBit32#(DutRequest) requestFifo, ToBit32#(DutResponse) r
 
     interface Reg reqCount = requestFired;
     interface Reg respCount = responseFired;
+    interface axi = dut.axiw;
 endmodule

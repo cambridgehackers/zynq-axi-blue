@@ -2,7 +2,7 @@
 class DUT {
 public:
     enum DUTResponseChannel {
-        GetResponseResponseChannel, DUTNumChannels
+        FifoStatusResponseChannel, AxiResponseResponseChannel, DUTNumChannels
     };
     int connectHandler(DUTResponseChannel c, UshwInstance::MessageHandler h) {
         p->messageHandlers[c] = h;
@@ -15,6 +15,7 @@ public:
     void setThreshold ( unsigned int );
     void setEnabled ( unsigned int );
     void enq ( unsigned int );
+    void readFifoStatus ( unsigned int );
 private:
     DUT(UshwInstance *, int baseChannelNumber=0);
     ~DUT();

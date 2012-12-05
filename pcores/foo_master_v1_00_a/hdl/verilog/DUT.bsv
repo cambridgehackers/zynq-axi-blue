@@ -1,11 +1,13 @@
 import TypesAndInterfaces::*;
 import FifoToAxi::*;
+import FIFOF::*;
 
 module mkDUT(DUT);
 
     FifoToAxi fifoToAxi <-mkFifoToAxi();
     Reg#(Maybe#(Bit#(32))) resultReg <- mkReg(tagged Invalid);
     Reg#(Maybe#(Bit#(32))) result2Reg <- mkReg(tagged Invalid);
+    FIFOF#(Bit#(32)) fifoStatusFifo <- mkSizedFIFOF(16);
 
     method Action setBase(Bit#(32) base);
         fifoToAxi.base <= base;
@@ -22,7 +24,16 @@ module mkDUT(DUT);
     method Action enq(Bit#(32) v);
         fifoToAxi.enq(v);
     endmethod
-    method ActionValue#(Bit#(32)) getResponse();
+
+    method Action readFifoStatus(Bit#(12) addr);
+        fifoStatusFifo.enq(fifoToAxi.readStatus(addr));
+    endmethod
+    method ActionValue#(Bit#(32)) fifoStatus() if (fifoStatusFifo.notEmpty);
+        fifoStatusFifo.deq;
+        return fifoStatusFifo.first;
+    endmethod
+
+    method ActionValue#(Bit#(32)) axiResponse();
         let r <- fifoToAxi.getResponse();
         return r;
     endmethod

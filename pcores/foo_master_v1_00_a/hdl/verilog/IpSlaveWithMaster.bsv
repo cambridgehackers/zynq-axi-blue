@@ -15,8 +15,6 @@ endinterface
 
 module mkIpSlaveWithMaster(IpSlaveWithMaster);
 
-   FifoToAxi fifoToAxi <- mkFifoToAxi();
-
    FromBit32#(DutRequest) requestFifo <- mkFromBit32();
    ToBit32#(DutResponse) responseFifo <- mkToBit32();
    DUTWrapper dutWrapper <- mkDUTWrapper(requestFifo, responseFifo);
@@ -100,5 +98,5 @@ module mkIpSlaveWithMaster(IpSlaveWithMaster);
            return 1'd0;
    endmethod
 
-   interface AxiMasterWrite axi = fifoToAxi.axi;
+   interface AxiMasterWrite axi = dutWrapper.axi;
 endmodule

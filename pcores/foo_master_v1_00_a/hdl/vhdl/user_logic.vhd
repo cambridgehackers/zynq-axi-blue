@@ -204,6 +204,13 @@ architecture IMP of user_logic is
   signal ip_slave_en_put : std_logic;
   signal ip_slave_en_get : std_logic;
 
+  signal RDY_axi_writeAddr : std_logic;
+  signal RDY_axi_writeData : std_logic;
+  signal RDY_axi_writeResponse : std_logic;
+  signal WILL_FIRE_axi_writeAddr : std_logic;
+  signal WILL_FIRE_axi_writeData : std_logic;
+  signal WILL_FIRE_axi_writeResponse : std_logic;
+
 begin
 
   --USER logic implementation added here
@@ -258,9 +265,9 @@ begin
 
       interrupt => interrupt,
 
-      EN_axi_writeAddr => m_axi_awready,
+      EN_axi_writeAddr => WILL_FIRE_axi_writeAddr,
       axi_writeAddr => m_axi_awaddr,
-      RDY_axi_writeAddr => m_axi_awvalid,
+      RDY_axi_writeAddr => RDY_axi_writeAddr,
 
       axi_writeBurstLen => m_axi_awlen,
       -- RDY_axi_writeBurstLen,
@@ -277,9 +284,9 @@ begin
       axi_writeBurstCache => m_axi_awcache,
       -- RDY_axi_writeBurstCache,
 
-      EN_axi_writeData => m_axi_wready,
+      EN_axi_writeData => WILL_FIRE_axi_writeData,
       axi_writeData => m_axi_wdata,
-      RDY_axi_writeData => m_axi_wvalid,
+      RDY_axi_writeData => RDY_axi_writeData,
 
       axi_writeDataByteEnable => m_axi_wstrb,
       -- RDY_axi_writeDataByteEnable,
@@ -287,10 +294,18 @@ begin
       axi_writeLastDataBeat => m_axi_wlast,
       -- RDY_axi_writeLastDataBeat,
 
+      EN_axi_writeResponse => WILL_FIRE_axi_writeResponse,
       axi_writeResponse_responseCode => m_axi_bresp,
-      EN_axi_writeResponse => m_axi_bvalid,
-      RDY_axi_writeResponse => m_axi_bready
+      RDY_axi_writeResponse => RDY_axi_writeResponse
       );
+
+  -- scheduler
+  WILL_FIRE_axi_writeAddr <= (m_axi_awready and RDY_axi_writeAddr);
+  WILL_FIRE_axi_writeData <= (m_axi_wready and RDY_axi_writeData);
+  WILL_FIRE_axi_writeResponse <= (m_axi_bvalid and RDY_axi_writeResponse);
+  m_axi_awvalid <= RDY_axi_writeAddr;
+  m_axi_wvalid <= RDY_axi_writeData;
+  m_axi_bready <= RDY_axi_writeResponse;
 
   -- no M_AXI reads
   m_axi_arvalid <= '0';
