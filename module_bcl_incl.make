@@ -132,6 +132,7 @@ pcores/foo_slave_v1_00_a/hdl/vhdl/user_logic.vhd \
 pcores/foo_slave_v1_00_a/hdl/vhdl/foo_slave.vhd \
 pcores/foo_slave_v1_00_a/hdl/verilog/mkIpSlave.v \
 pcores/foo_slave_v1_00_a/hdl/verilog/RegFile.v \
+pcores/foo_slave_v1_00_a/hdl/verilog/FIFO2.v \
 /home/xilinx/14.3/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_master_burst_v1_00_a/hdl/vhdl/axi_master_burst_rdmux.vhd \
 /home/xilinx/14.3/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_master_burst_v1_00_a/hdl/vhdl/axi_master_burst_wr_demux.vhd \
 /home/xilinx/14.3/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_master_burst_v1_00_a/hdl/vhdl/axi_master_burst_skid2mm_buf.vhd \
@@ -153,20 +154,23 @@ pcores/foo_slave_v1_00_a/hdl/verilog/RegFile.v \
 /home/xilinx/14.3/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_master_burst_v1_00_a/hdl/vhdl/axi_master_burst_wr_llink.vhd \
 /home/xilinx/14.3/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_master_burst_v1_00_a/hdl/vhdl/axi_master_burst.vhd \
 pcores/foo_master_v1_00_a/hdl/vhdl/foo_master.vhd \
+pcores/foo_master_v1_00_a/hdl/vhdl/user_logic.vhd \
 pcores/foo_master_v1_00_a/hdl/verilog/mkIpSlaveWithMaster.v \
 pcores/foo_master_v1_00_a/hdl/verilog/mkFifoToAxi.v \
 pcores/foo_master_v1_00_a/hdl/verilog/RegFile.v \
+pcores/foo_master_v1_00_a/hdl/verilog/FIFO2.v \
 pcores/foo_master_v1_00_a/hdl/verilog/SizedFIFO.v
 
 WRAPPER_NGC_FILES = implementation/module_bcl_processing_system7_0_wrapper.ngc \
 implementation/module_bcl_axi4lite_0_wrapper.ngc \
 implementation/module_bcl_foo_lite_slave_0_wrapper.ngc \
 implementation/module_bcl_foo_slave_0_wrapper.ngc \
-implementation/module_bcl_mailbox_0_wrapper.ngc \
-implementation/module_bcl_mutex_0_wrapper.ngc \
 implementation/module_bcl_axi_interconnect_0_wrapper.ngc \
+implementation/module_bcl_axi_interconnect_1_wrapper.ngc \
 implementation/module_bcl_foo_master_0_wrapper.ngc \
-implementation/module_bcl_axi_interconnect_1_wrapper.ngc
+implementation/module_bcl_foo_master_1_wrapper.ngc \
+implementation/module_bcl_axi_interconnect_2_wrapper.ngc \
+implementation/module_bcl_mutex_0_wrapper.ngc
 
 POSTSYN_NETLIST = implementation/$(SYSTEM).ngc
 
