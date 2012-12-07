@@ -40,6 +40,7 @@
 #define USHW_PUTGET _IOWR('B', 17, UshwMessage)
 #define USHW_PUT _IOWR('B', 18, UshwMessage)
 #define USHW_GET _IOWR('B', 19, UshwMessage)
+#define USHW_REGS _IOWR('B', 20, UshwMessage)
 
 UshwInterface ushw;
 
@@ -125,6 +126,13 @@ unsigned long UshwInterface::alloc(size_t size)
     int rc = ioctl(ushw.fds[0].fd, USHW_ALLOC, &alloc);
     fprintf(stderr, "alloc size=%d rc=%d alloc.kptr=%p\n", size, rc, alloc.kptr);
     return (unsigned long)alloc.kptr-0xc0000000;
+}
+
+int UshwInterface::dumpRegs()
+{
+    int foo = 0;
+    int rc = ioctl(ushw.fds[0].fd, USHW_REGS, &foo);
+    return rc;
 }
 
 int UshwInterface::exec()
