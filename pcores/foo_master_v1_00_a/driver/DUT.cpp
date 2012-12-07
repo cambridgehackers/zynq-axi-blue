@@ -139,6 +139,26 @@ msg.request.addr = addr;
     p->sendMessage(&msg);
 };
 
+struct DUTconfigureMSG : public UshwMessage
+{
+struct Request {
+//fix Adapter.bsv to unreverse these
+unsigned int v;
+
+} request;
+int channelNumber;
+};
+
+void DUT::configure ( unsigned int v )
+{
+    DUTconfigureMSG msg;
+    msg.size = sizeof(msg.request) + sizeof(msg.channelNumber);
+    msg.channelNumber = baseChannelNumber + 6;
+msg.request.v = v;
+
+    p->sendMessage(&msg);
+};
+
 struct DUTreadRangeMSG : public UshwMessage
 {
 struct Request {
@@ -153,7 +173,7 @@ void DUT::readRange ( unsigned int addr )
 {
     DUTreadRangeMSG msg;
     msg.size = sizeof(msg.request) + sizeof(msg.channelNumber);
-    msg.channelNumber = baseChannelNumber + 6;
+    msg.channelNumber = baseChannelNumber + 7;
 msg.request.addr = addr;
 
     p->sendMessage(&msg);
@@ -173,8 +193,28 @@ void DUT::readFromFifoStatus ( unsigned int addr )
 {
     DUTreadFromFifoStatusMSG msg;
     msg.size = sizeof(msg.request) + sizeof(msg.channelNumber);
-    msg.channelNumber = baseChannelNumber + 7;
+    msg.channelNumber = baseChannelNumber + 8;
 msg.request.addr = addr;
+
+    p->sendMessage(&msg);
+};
+
+struct DUTrunTestMSG : public UshwMessage
+{
+struct Request {
+//fix Adapter.bsv to unreverse these
+unsigned int numWords;
+
+} request;
+int channelNumber;
+};
+
+void DUT::runTest ( unsigned int numWords )
+{
+    DUTrunTestMSG msg;
+    msg.size = sizeof(msg.request) + sizeof(msg.channelNumber);
+    msg.channelNumber = baseChannelNumber + 9;
+msg.request.numWords = numWords;
 
     p->sendMessage(&msg);
 };
