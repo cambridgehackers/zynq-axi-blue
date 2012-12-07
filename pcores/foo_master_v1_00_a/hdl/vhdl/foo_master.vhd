@@ -169,6 +169,7 @@ entity foo_master is
     --USER generics added here
     C_M_AXI_DATA_WIDTH             : integer              := 32;
     C_M_AXI_ADDR_WIDTH             : integer              := 32;
+    C_M_AXI_ID_WIDTH               : integer              := 1;
     -- ADD USER GENERICS ABOVE THIS LINE ---------------
 
     -- DO NOT EDIT BELOW THIS LINE ---------------------
@@ -238,6 +239,7 @@ entity foo_master is
     md_error                       : out std_logic;
     m_axi_arready                  : in  std_logic;
     m_axi_arvalid                  : out std_logic;
+    m_axi_arid                     : out std_logic_vector(C_M_AXI_ID_WIDTH-1 downto 0);
     m_axi_araddr                   : out std_logic_vector(C_M_AXI_ADDR_WIDTH-1 downto 0);
     m_axi_arlen                    : out std_logic_vector(7 downto 0);
     m_axi_arsize                   : out std_logic_vector(2 downto 0);
@@ -246,11 +248,13 @@ entity foo_master is
     m_axi_arcache                  : out std_logic_vector(3 downto 0);
     m_axi_rready                   : out std_logic;
     m_axi_rvalid                   : in  std_logic;
+    m_axi_rid                      : in  std_logic_vector(C_M_AXI_ID_WIDTH-1 downto 0);
     m_axi_rdata                    : in  std_logic_vector(C_M_AXI_DATA_WIDTH-1 downto 0);
     m_axi_rresp                    : in  std_logic_vector(1 downto 0);
     m_axi_rlast                    : in  std_logic;
     m_axi_awready                  : in  std_logic;
     m_axi_awvalid                  : out std_logic;
+    m_axi_awid                     : out std_logic_vector(C_M_AXI_ID_WIDTH-1 downto 0);
     m_axi_awaddr                   : out std_logic_vector(C_M_AXI_ADDR_WIDTH-1 downto 0);
     m_axi_awlen                    : out std_logic_vector(7 downto 0);
     m_axi_awsize                   : out std_logic_vector(2 downto 0);
@@ -263,6 +267,7 @@ entity foo_master is
     m_axi_wstrb                    : out std_logic_vector((C_M_AXI_DATA_WIDTH)/8 - 1 downto 0);
     m_axi_wlast                    : out std_logic;
     m_axi_bready                   : out std_logic;
+    m_axi_bid                      : in std_logic_vector(C_M_AXI_ID_WIDTH-1 downto 0);
     m_axi_bvalid                   : in  std_logic;
     m_axi_bresp                    : in  std_logic_vector(1 downto 0)
    -- DO NOT EDIT ABOVE THIS LINE ---------------------
@@ -439,6 +444,7 @@ begin
       --USER generics mapped here
       C_M_AXI_ADDR_WIDTH => C_M_AXI_ADDR_WIDTH,
       C_M_AXI_DATA_WIDTH => C_M_AXI_DATA_WIDTH,
+      C_M_AXI_ID_WIDTH => C_M_AXI_ID_WIDTH,
       -- MAP USER GENERICS ABOVE THIS LINE ---------------
 
       C_SLV_AWIDTH                   => USER_SLV_AWIDTH,
@@ -455,6 +461,7 @@ begin
       md_error				=> md_error,
       m_axi_arready			=> m_axi_arready,
       m_axi_arvalid			=> m_axi_arvalid,
+      m_axi_arid			=> m_axi_arid,
       m_axi_araddr			=> m_axi_araddr,
       m_axi_arlen			=> m_axi_arlen,
       m_axi_arsize			=> m_axi_arsize,
@@ -463,11 +470,13 @@ begin
       m_axi_arcache			=> m_axi_arcache,
       m_axi_rready			=> m_axi_rready,
       m_axi_rvalid			=> m_axi_rvalid,
+      m_axi_rid				=> m_axi_rid,
       m_axi_rdata			=> m_axi_rdata,
       m_axi_rresp			=> m_axi_rresp,
       m_axi_rlast			=> m_axi_rlast,
       m_axi_awready			=> m_axi_awready,
       m_axi_awvalid			=> m_axi_awvalid,
+      m_axi_awid			=> m_axi_awid,
       m_axi_awaddr			=> m_axi_awaddr,
       m_axi_awlen			=> m_axi_awlen,
       m_axi_awsize			=> m_axi_awsize,
@@ -480,6 +489,7 @@ begin
       m_axi_wstrb			=> m_axi_wstrb,
       m_axi_wlast			=> m_axi_wlast,
       m_axi_bready			=> m_axi_bready,
+      m_axi_bid				=> m_axi_bid,
       m_axi_bvalid			=> m_axi_bvalid,
       m_axi_bresp			=> m_axi_bresp,
 

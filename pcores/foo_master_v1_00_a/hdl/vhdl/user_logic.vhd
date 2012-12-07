@@ -97,7 +97,8 @@ entity user_logic is
     -- ADD USER GENERICS BELOW THIS LINE ---------------
     --USER generics added here
     C_M_AXI_ADDR_WIDTH : integer := 32;
-    C_M_AXI_DATA_WIDTH : integer := 32;
+    C_M_AXI_DATA_WIDTH : integer := 64;
+    C_M_AXI_ID_WIDTH : integer := 1;
     -- ADD USER GENERICS ABOVE THIS LINE ---------------
 
     -- DO NOT EDIT BELOW THIS LINE ---------------------
@@ -117,6 +118,7 @@ entity user_logic is
     md_error                       : out std_logic;
     m_axi_arready                  : in  std_logic;
     m_axi_arvalid                  : out std_logic;
+    m_axi_arid                     : out std_logic_vector(C_M_AXI_ID_WIDTH-1 downto 0);
     m_axi_araddr                   : out std_logic_vector(C_M_AXI_ADDR_WIDTH-1 downto 0);
     m_axi_arlen                    : out std_logic_vector(7 downto 0);
     m_axi_arsize                   : out std_logic_vector(2 downto 0);
@@ -125,11 +127,13 @@ entity user_logic is
     m_axi_arcache                  : out std_logic_vector(3 downto 0);
     m_axi_rready                   : out std_logic;
     m_axi_rvalid                   : in  std_logic;
+    m_axi_rid                      : in  std_logic_vector(C_M_AXI_ID_WIDTH-1 downto 0);
     m_axi_rdata                    : in  std_logic_vector(C_M_AXI_DATA_WIDTH-1 downto 0);
     m_axi_rresp                    : in  std_logic_vector(1 downto 0);
     m_axi_rlast                    : in  std_logic;
     m_axi_awready                  : in  std_logic;
     m_axi_awvalid                  : out std_logic;
+    m_axi_awid                     : out std_logic_vector(C_M_AXI_ID_WIDTH-1 downto 0);
     m_axi_awaddr                   : out std_logic_vector(C_M_AXI_ADDR_WIDTH-1 downto 0);
     m_axi_awlen                    : out std_logic_vector(7 downto 0);
     m_axi_awsize                   : out std_logic_vector(2 downto 0);
@@ -142,6 +146,7 @@ entity user_logic is
     m_axi_wstrb                    : out std_logic_vector((C_M_AXI_DATA_WIDTH)/8 - 1 downto 0);
     m_axi_wlast                    : out std_logic;
     m_axi_bready                   : out std_logic;
+    m_axi_bid                      : in std_logic_vector(C_M_AXI_ID_WIDTH-1 downto 0);
     m_axi_bvalid                   : in  std_logic;
     m_axi_bresp                    : in  std_logic_vector(1 downto 0);
 
@@ -341,4 +346,7 @@ begin
   m_axi_wvalid <= RDY_axiw_writeData;
   m_axi_bready <= RDY_axiw_writeResponse;
 
+  -- currently constant
+  m_axi_arid <= "0";
+  m_axi_awid <= "0";
 end IMP;
