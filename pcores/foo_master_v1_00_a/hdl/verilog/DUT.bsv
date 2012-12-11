@@ -21,9 +21,10 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+import FIFOF::*;
 import TypesAndInterfaces::*;
 import FifoToAxi::*;
-import FIFOF::*;
+import TbAxi::*;
 
 interface Timer#(type width);
     method Action start();
@@ -77,6 +78,8 @@ module mkDUT(DUT);
     Reg#(Bool) writeQueuedSent <- mkReg(False);
     Reg#(Bool) readCompletedSent <- mkReg(False);
     Reg#(Bool) firstReadSent <- mkReg(False);
+
+    AxiTester axiTester <- mkAxiTester(fifoToAxi, fifoFromAxi, 1204);
 
     rule enqTestData if (testReg && writeCountReg < numWordsReg);
         let v = valueReg * 7;
@@ -226,6 +229,18 @@ module mkDUT(DUT);
         testCompletedReg <= False;
         testReg <= False;
         return testResultReg;
+    endmethod
+
+    method Action runTest2(Bit#(32) numWords);
+        axiTester.start(fifoToAxi.base, numWords);
+        writeTimer.start();
+    endmethod
+
+    method ActionValue#(Bit#(32)) test2Completed();
+        let v <- axiTester.completed;
+        let t = writeTimer.elapsed();
+        writeTimer.stop();
+        return t;
     endmethod
 
     interface AxiMasterWrite axiw = fifoToAxi.axi;

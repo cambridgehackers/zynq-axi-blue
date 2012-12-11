@@ -58,6 +58,10 @@ typedef union tagged {
         Bit#(32) numWords;
     } RunTest$Request;
 
+    struct {
+        Bit#(32) base;
+    } RunTest2$Request;
+
   Bit#(0) DutRequestUnused;
 } DutRequest deriving (Bits);
 
@@ -83,6 +87,8 @@ typedef union tagged {
 
     Bit#(32) ReadCompleted$Response;
 
+    Bit#(32) Test2Completed$Response;
+
   Bit#(0) DutResponseUnused;
 } DutResponse deriving (Bits);
 
@@ -97,7 +103,7 @@ module mkDUTWrapper#(FromBit32#(DutRequest) requestFifo, ToBit32#(DutResponse) r
     Reg#(Bit#(16)) responseTimerReg <- mkReg(0);
     Reg#(Bit#(16)) responseTimeLimitReg <- mkReg(maxBound);
 
-    Bit#(4) maxTag = 10;
+    Bit#(4) maxTag = 11;
 
     rule handleJunkRequest if (pack(requestFifo.first)[4+32-1:32] > maxTag);
         requestFifo.deq;
@@ -259,6 +265,20 @@ module mkDUTWrapper#(FromBit32#(DutRequest) requestFifo, ToBit32#(DutResponse) r
     rule readCompleted$response;
         Bit#(32) r <- dut.readCompleted();
         let response = tagged ReadCompleted$Response r;
+        responseFifo.enq(response);
+        responseFired <= responseFired + 1;
+    endrule
+
+    rule handle$runTest2$request if (requestFifo.first matches tagged RunTest2$Request .sp);
+        requestFifo.deq;
+        dut.runTest2(sp.base);
+        requestFired <= requestFired + 1;
+        requestTimerReg <= 0;
+    endrule
+
+    rule test2Completed$response;
+        Bit#(32) r <- dut.test2Completed();
+        let response = tagged Test2Completed$Response r;
         responseFifo.enq(response);
         responseFired <= responseFired + 1;
     endrule

@@ -23,6 +23,7 @@
 
 import RegFile::*;
 import Adapter::*;
+import AxiMasterSlave::*;
 import FifoToAxi::*;
 import DUTWrapper::*;
 import GetPut::*;

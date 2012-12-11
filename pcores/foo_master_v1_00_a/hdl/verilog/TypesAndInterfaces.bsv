@@ -21,6 +21,7 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+import AxiMasterSlave::*;
 import FifoToAxi::*;
 
 interface DUT;
@@ -48,6 +49,9 @@ interface DUT;
     method ActionValue#(Bit#(32)) writeCompleted();
     method ActionValue#(Bit#(32)) firstRead();
     method ActionValue#(Bit#(32)) readCompleted();
+
+    method Action runTest2(Bit#(32) base);
+    method ActionValue#(Bit#(32)) test2Completed();
 
     interface AxiMasterWrite#(64,8) axiw;
     interface AxiMasterRead#(64) axir;

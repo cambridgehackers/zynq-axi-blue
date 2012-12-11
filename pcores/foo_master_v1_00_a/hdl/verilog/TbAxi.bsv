@@ -21,95 +21,12 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import FifoToAxi::*;
 import RegFile::*;
 import FIFOF::*;
+import AxiMasterSlave::*;
+import FifoToAxi::*;
  
-module mkAxiSlaveRegFile(AxiSlave#(busWidth, busWidthBytes)) provisos(Div#(busWidth,8,busWidthBytes));
-    RegFile#(Bit#(12), Bit#(busWidth)) rf <- mkRegFile(0, maxBound);
-    Reg#(Bit#(12)) readAddrReg <- mkReg(0);
-    Reg#(Bit#(12)) writeAddrReg <- mkReg(0);
-    Reg#(Bit#(8)) readBurstCountReg <- mkReg(0);
-    Reg#(Bit#(8)) writeBurstCountReg <- mkReg(0);
-
-    Bool verbose = False;
-    interface AxiSlaveRead read;
-        method Action readAddr(Bit#(32) addr, Bit#(8) burstLen, Bit#(3) burstWidth,
-                               Bit#(2) burstType, Bit#(3) burstProt, Bit#(4) burstCache) if (readBurstCountReg == 0);
-            readAddrReg <= truncate(addr);                               
-            readBurstCountReg <= burstLen+1;            
-        endmethod
-
-        method ActionValue#(Bit#(busWidth)) readData(Bit#(busWidthBytes) byteEnable, Bit#(1) last) if (readBurstCountReg > 0);
-            let data = rf.sub(readAddrReg);
-            if (verbose) $display("readData %h %h %d", readAddrReg, data, readBurstCountReg);
-            readBurstCountReg <= readBurstCountReg - 1;
-            readAddrReg <= readAddrReg + fromInteger(valueOf(busWidthBytes));
-            return data;
-        endmethod
-    endinterface
-
-    interface AxiSlaveWrite write;
-       method Action writeAddr(Bit#(32) addr, Bit#(8) burstLen, Bit#(3) burstWidth,
-                               Bit#(2) burstType, Bit#(3) burstProt, Bit#(4) burstCache) if (writeBurstCountReg == 0);
-           writeAddrReg <= truncate(addr);
-           writeBurstCountReg <= burstLen+1;
-       endmethod
-
-       method ActionValue#(Bit#(2)) writeData(Bit#(busWidth) data, Bit#(busWidthBytes) byteEnable, Bit#(1) last) if (writeBurstCountReg > 0);
-           if (verbose) $display("writeData %h %h %d", writeAddrReg, data, writeBurstCountReg);
-           rf.upd(writeAddrReg, data);
-           writeAddrReg <= writeAddrReg + fromInteger(valueOf(busWidthBytes));
-           writeBurstCountReg <= writeBurstCountReg - 1;
-           return 2'b00;
-       endmethod
-    endinterface
-endmodule
-
-module mkMasterSlaveConnection#(AxiMasterWrite#(busWidth, busWidthBytes) axiw,
-                                AxiMasterRead#(busWidth) axir,
-                                AxiSlave#(busWidth, busWidthBytes) axiSlave)();
-       
-    Reg#(Bit#(8)) writeBurstCountReg <- mkReg(0);
-    Bool verbose = False;
-
-    rule readAddr;
-        Bit#(32) addr <-axir.readAddr;
-        let burstLen = axir.readBurstLen;
-        let burstWidth = axir.readBurstWidth;
-        let burstType = axir.readBurstType;
-        let burstProt = axir.readBurstProt;
-        let burstCache = axir.readBurstCache;
-        axiSlave.read.readAddr(addr, burstLen, burstWidth, burstType, burstProt, burstCache);
-        if (verbose) $display("        readAddr %h %d", addr, burstLen+1);
-    endrule
-    rule readData;
-        let data <- axiSlave.read.readData(maxBound, 0);
-        axir.readData(data, 2'b00, 0);
-        if (verbose) $display("        readData %h", data);
-    endrule
-    rule writeAddr;
-        Bit#(32) addr <- axiw.writeAddr;
-        let burstLen = axiw.writeBurstLen;
-        let burstWidth = axiw.writeBurstWidth;
-        let burstType = axiw.writeBurstType;
-        let burstProt = axiw.writeBurstProt;
-        let burstCache = axiw.writeBurstCache;
-        axiSlave.write.writeAddr(addr, burstLen, burstWidth, burstType, burstProt, burstCache);
-        if (verbose) $display("        writeAddr %h %d", addr, burstLen+1);
-    endrule
-    rule writeData;
-        let data <- axiw.writeData;
-        let byteEnable = axiw.writeDataByteEnable;
-        let last = axiw.writeLastDataBeat;
-        let response <- axiSlave.write.writeData(data, byteEnable, last);
-        axiw.writeResponse(response);
-        if (verbose) $display("        writeData %h", data);
-    endrule
-endmodule
-
 typedef enum {
-        Start,
         EnqWrites,
         WaitForWriteCompletion,
         WaitForReadCompletion,
@@ -117,22 +34,18 @@ typedef enum {
         Idle
 } TbState deriving (Bits, Eq, Bounded, FShow);
 
-module mkTbAxi();
+interface AxiTester;
+    method Action start(Bit#(32) base, Bit#(32) numWords);
+    method ActionValue#(Bool) completed();
+endinterface
 
-    Bool verbose = False;
+module mkAxiTester#(FifoToAxi#(busWidth, busWidthBytes) fifoToAxi,
+                    FifoFromAxi#(busWidth) fifoFromAxi,
+                    Bit#(32) numWords)
+                   (AxiTester);
 
-    Bit#(32) numWords = 128;
-    Bit#(32) busWidth = 64;
-    Bit#(32) busWidthBytes = busWidth/8;
-    RegFile#(Bit#(32), Bit#(64)) testDataRegFile <- mkRegFile(0, numWords);
-
-    AxiSlave#(64,8) axiSlave <- mkAxiSlaveRegFile;
-    FifoToAxi#(64,8) fifoToAxi <- mkFifoToAxi();
-    FifoFromAxi#(64) fifoFromAxi <- mkFifoFromAxi();
-
-    mkMasterSlaveConnection(fifoToAxi.axi, fifoFromAxi.axi, axiSlave);
-
-    Reg#(TbState) state <- mkReg(Start);
+    let verbose = False;
+    Reg#(TbState) state <- mkReg(Idle);
 
     Reg#(Bit#(32)) writeAddrReg <- mkReg(0);
     Reg#(Bit#(32)) readAddrReg <- mkReg(0);
@@ -140,37 +53,19 @@ module mkTbAxi();
     Reg#(Bit#(32)) writeCountReg <- mkReg(0);
     Reg#(Bit#(32)) readCountReg <- mkReg(0);
     Reg#(Bit#(32)) numWordsReg <- mkReg(0);
-    Reg#(Bit#(64)) valueReg <- mkReg(13);
+    Reg#(Bit#(busWidth)) valueReg <- mkReg(13);
 
-    rule start if (state == Start);
-        $display("Starting");
-        fifoToAxi.enabled <= True;
-        fifoFromAxi.enabled <= False;
-        writeAddrReg <= 0;
-        readAddrReg <= 0;
-        writeCountReg <= 0;
-        readCountReg <= 0;
-        valueReg <= 13;
-        numWordsReg <= numWords;
-
-        Bit#(32) base = 0;
-        fifoToAxi.base <= base;
-        fifoFromAxi.base <= base;
-        fifoToAxi.bounds <= fifoToAxi.base + numWords*busWidthBytes;
-        fifoFromAxi.bounds <= fifoToAxi.base + numWords*busWidthBytes;
-
-        state <= EnqWrites;
-    endrule
+    RegFile#(Bit#(32), Bit#(busWidth)) testDataRegFile <- mkRegFile(0, numWords);
 
     rule enqTestData if (state == EnqWrites && writeCountReg < numWordsReg);
         let v = valueReg * 7;
         valueReg <= v;
-        testDataRegFile.upd(writeAddrReg/busWidthBytes, v);
-        writeAddrReg <= writeAddrReg + busWidthBytes;
+        testDataRegFile.upd(writeAddrReg/fromInteger(valueOf(busWidthBytes)), v);
+        writeAddrReg <= writeAddrReg + fromInteger(valueOf(busWidthBytes));
         if (writeCountReg == numWordsReg-1)
             state <= WaitForWriteCompletion;
         writeCountReg <= writeCountReg + 1;
-        fifoToAxi.enq(extend(v));
+        fifoToAxi.enq(v);
     endrule
 
     rule waitForWriteCompletion if (state == WaitForWriteCompletion && !fifoToAxi.notEmpty);
@@ -182,8 +77,8 @@ module mkTbAxi();
     rule waitForReadCompletion if (state == WaitForReadCompletion && fifoFromAxi.notEmpty);
         let data = fifoFromAxi.first;
         fifoFromAxi.deq;
-        let testData = testDataRegFile.sub(readAddrReg/busWidthBytes);
-        readAddrReg <= readAddrReg + busWidthBytes;
+        let testData = testDataRegFile.sub(readAddrReg/fromInteger(valueOf(busWidthBytes)));
+        readAddrReg <= readAddrReg + fromInteger(valueOf(busWidthBytes));
 
         if (verbose)
             $display("received read data %h %s", data,
@@ -195,9 +90,94 @@ module mkTbAxi();
             state <= TestCompleted;
     endrule
 
-    rule testCompleted if (state == TestCompleted);
+    method Action start(Bit#(32) base, Bit#(32) numWords) if (state == Idle);
+        $display("Starting");
+        fifoToAxi.enabled <= True;
+        fifoFromAxi.enabled <= False;
+        writeAddrReg <= 0;
+        readAddrReg <= 0;
+        writeCountReg <= 0;
+        readCountReg <= 0;
+        valueReg <= 13;
+        numWordsReg <= numWords;
+
+        fifoToAxi.base <= base;
+        fifoFromAxi.base <= base;
+        fifoToAxi.bounds <= fifoToAxi.base + numWords*fromInteger(valueOf(busWidthBytes));
+        fifoFromAxi.bounds <= fifoToAxi.base + numWords*fromInteger(valueOf(busWidthBytes));
+
+        state <= EnqWrites;
+    endmethod
+
+    method ActionValue#(Bool) completed() if (state == TestCompleted);
         $display("Test Completed");
+
+        fifoToAxi.enabled <= False;
+        fifoFromAxi.enabled <= False;
+
         state <= Idle;
+        return True;
+    endmethod
+endmodule
+
+typedef enum {
+        TbAxiStart,
+        TbAxiRunning,
+        TbAxiRunning2,
+        TbAxiRunning3,
+        TbAxiCompleted1,
+        TbAxiCompleted2,
+        TbAxiIdle
+} TbAxiState deriving (Bits, Eq);
+
+module mkTbAxi();
+
+    Bool verbose = True;
+
+    Bit#(32) numWords = 128;
+    Bit#(32) busWidth = 64;
+    Bit#(32) busWidthBytes = busWidth/8;
+
+    AxiSlave#(64,8) axiSlave <- mkAxiSlaveRegFile;
+    FifoToAxi#(64,8) fifoToAxi <- mkFifoToAxi();
+    FifoFromAxi#(64) fifoFromAxi <- mkFifoFromAxi();
+    mkMasterSlaveConnection(fifoToAxi.axi, fifoFromAxi.axi, axiSlave);
+
+    AxiTester axiTester <- mkAxiTester(fifoToAxi, fifoFromAxi, numWords);
+
+    Reg#(TbAxiState) state <- mkReg(TbAxiStart);
+
+    rule testStart if (state == TbAxiStart);
+        state <= TbAxiRunning;
+
+        axiTester.start(0, numWords);
+    endrule
+
+    rule testCompleted1 if (state == TbAxiRunning);
+        let v <- axiTester.completed;
+        $display("Test 1 Completed");
+        state <= TbAxiCompleted1;
+    endrule
+    rule testStart2 if (state == TbAxiCompleted1);
+        axiTester.start(0, numWords);    
+        state <= TbAxiRunning2;
+    endrule
+
+    rule testCompleted2 if (state == TbAxiRunning2);
+        let v <- axiTester.completed;
+        $display("Test 2 Completed");
+        state <= TbAxiCompleted2;
+    endrule
+
+    rule testStart3 if (state == TbAxiCompleted2);
+        axiTester.start(0, numWords);
+        state <= TbAxiRunning3;
+    endrule
+
+    rule testCompleted3 if (state == TbAxiRunning3);
+        let v <- axiTester.completed;
+        $display("Test 3 Completed");
+        state <= TbAxiIdle;
     endrule
 
 endmodule
