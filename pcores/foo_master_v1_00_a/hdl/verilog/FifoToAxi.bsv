@@ -23,50 +23,7 @@
 
 import RegFile::*;
 import FIFOF::*;
-
-interface AxiMasterRead#(type busWidth);
-   method ActionValue#(Bit#(32)) readAddr();
-   method Bit#(8) readBurstLen();
-   method Bit#(3) readBurstWidth();
-   method Bit#(2) readBurstType();  // drive with 2'b01
-   method Bit#(3) readBurstProt(); // drive with 3'b000
-   method Bit#(4) readBurstCache(); // drive with 4'b0011
-
-   method Action readData(Bit#(busWidth) data, Bit#(2) resp, Bit#(1) last);
-endinterface
-
-interface AxiMasterWrite#(type busWidth, type busWidthBytes);
-   method ActionValue#(Bit#(32)) writeAddr();
-   method Bit#(8) writeBurstLen();
-   method Bit#(3) writeBurstWidth();
-   method Bit#(2) writeBurstType();  // drive with 2'b01
-   method Bit#(3) writeBurstProt(); // drive with 3'b000
-   method Bit#(4) writeBurstCache(); // drive with 4'b0011
-
-   method ActionValue#(Bit#(busWidth)) writeData();
-   method Bit#(busWidthBytes) writeDataByteEnable();
-   method Bit#(1) writeLastDataBeat(); // last data beat
-   method Action writeResponse(Bit#(2) responseCode);
-endinterface
-
-interface AxiSlaveRead#(type busWidth, type busWidthBytes);
-   method Action readAddr(Bit#(32) addr, Bit#(8) burstLen, Bit#(3) burstWidth,
-                          Bit#(2) burstType, Bit#(3) burstProt, Bit#(4) burstCache);
-
-   method ActionValue#(Bit#(busWidth)) readData(Bit#(busWidthBytes) byteEnable, Bit#(1) last);
-   // method Action readResponse(Bit#(2) responseCode);
-endinterface
-
-interface AxiSlaveWrite#(type busWidth, type busWidthBytes);
-   method Action writeAddr(Bit#(32) addr, Bit#(8) burstLen, Bit#(3) burstWidth,
-                           Bit#(2) burstType, Bit#(3) burstProt, Bit#(4) burstCache);
-   method ActionValue#(Bit#(2)) writeData(Bit#(busWidth) data, Bit#(busWidthBytes) byteEnable, Bit#(1) last);
-endinterface
-
-interface AxiSlave#(type busWidth, type busWidthBytes);
-   interface AxiSlaveRead#(busWidth, busWidthBytes) read;
-   interface AxiSlaveWrite#(busWidth, busWidthBytes) write;
-endinterface
+import AxiMasterSlave::*;
 
 interface FifoToAxi#(type busWidth, type busWidthBytes);
    interface Reg#(Bit#(32)) base;
