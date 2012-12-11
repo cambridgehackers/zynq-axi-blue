@@ -132,3 +132,182 @@ module mkFromBit32(FromBit32#(a))
    method Bool notEmpty() = fifo.notEmpty;
    method Bool notFull() = fifo.notFull;
 endmodule
+
+interface ToBit64#(type a);
+   method Action enq(a v);          
+   method Bit#(64) first;
+   method Action deq();
+   method Bool notEmpty();
+   method Bool notFull();
+endinterface
+   
+interface FromBit64#(type a);
+   method Action enq(Bit#(64) v);
+   method a first();
+   method Action deq();
+   method Bool notEmpty();
+   method Bool notFull();
+endinterface
+
+module mkToBit64(ToBit64#(a))
+   provisos(Bits#(a,asz),
+	    Add#(64,asz,asz64));
+   
+   Bit#(64) size = fromInteger(valueOf(asz));
+   Bit#(64) max  = (size >> 6) + ((size[5:0] == 0) ? 0 : 1)-1;
+   
+   FIFOF#(Bit#(asz))   fifo <- mkUGSizedFIFOF(64);
+   Reg#(Bit#(64))      count <- mkReg(0);
+
+   method Action enq(a val) if (fifo.notFull);
+      fifo.enq(pack(val));   
+   endmethod
+
+   method Bit#(64) first();
+    if (fifo.notEmpty)
+       begin 
+           let val = fifo.first();
+           Bit#(asz64) vx = zeroExtend(val >> (64 * count));
+           Bit#(64) x = vx[63:0];
+           return x;
+       end
+    else
+       begin
+           return 0;
+       end
+   endmethod
+   method Action deq();
+     if (fifo.notEmpty)
+     begin
+       if (count == max)
+          begin 
+             count <= 0;
+             fifo.deq();
+          end
+       else
+          begin
+             count <= count + 1;
+          end   
+     end
+   endmethod
+               
+   method Bool notEmpty = fifo.notEmpty;
+   method Bool notFull = fifo.notFull;
+endmodule
+
+module mkFromBit64(FromBit64#(a))
+   provisos(Bits#(a,asz),
+	    Add#(64,asz,asz64));
+
+   Bit#(64) size   = fromInteger(valueOf(asz));
+   Bit#(6)  offset = size[5:0];
+   Bit#(64) max    = (size >> 6) + ((offset == 0) ? 0 : 1) -1;
+   
+   FIFOF#(Bit#(asz))   fifo <- mkUGFIFOF();
+   Reg#(Bit#(asz))    buff <- mkReg(0);
+   Reg#(Bit#(64))    count <- mkReg(0);   
+   
+   method Action enq(Bit#(64) x) if (fifo.notFull);
+      Bit#(asz64) concatedvalue = {x,buff};
+      Bit#(asz) newval = rtruncate(concatedvalue);
+      if (count == max)
+         begin 
+            count <= 0;
+            buff  <= ?;
+            Bit#(asz) longval = truncate({x,buff} >> ((offset==0) ? 64'd32 : zeroExtend(offset)));
+            fifo.enq(longval);
+         end
+      else
+         begin
+            count <= count+1;
+            buff  <= newval; 
+         end
+   endmethod
+   
+   method a first if (fifo.notEmpty());
+       return unpack(fifo.first);
+   endmethod
+
+   method Action deq if (fifo.notEmpty());
+       fifo.deq;
+   endmethod
+   
+   method Bool notEmpty() = fifo.notEmpty;
+   method Bool notFull() = fifo.notFull;
+endmodule
+
+typedef enum { Lower, Upper } VState deriving (Bits, Eq);
+interface In64Out32FIFOF#(type v);
+   method Action enq(Bit#(64) v64);
+   method v first;
+   method Action deq();
+   method Bool notEmpty;
+   method Bool notFull;
+endinterface
+
+module mkIn64Out32(In64Out32FIFOF#(vtype)) provisos (Bits#(vtype,32));
+   Reg#(VState) vState <- mkReg(Lower);
+   FIFOF#(Bit#(64)) fifo <- mkFIFOF;
+   method Action enq(Bit#(64) v64) if (fifo.notFull);
+       fifo.enq(v64);
+   endmethod
+   method vtype first() if (fifo.notEmpty);
+       if (vState == Lower)
+	   return unpack(fifo.first[31:0]);
+       else
+	   return unpack(fifo.first[63:32]);
+   endmethod
+   method Action deq() if (fifo.notEmpty);
+       if (vState == Lower)
+	   vState <= Upper;
+       else
+       begin
+	   vState <= Lower;
+	   fifo.deq;
+       end
+   endmethod
+   method notEmpty = fifo.notEmpty;
+   method notFull = fifo.notFull;
+endmodule
+
+interface In32Out64FIFOF#(type vtype);
+   method Action enq(vtype v32);
+   method Bit#(64) first;
+   method Action deq();
+   method Bool notEmpty();
+   method Bool notFull();
+endinterface
+
+module mkIn32Out64(In32Out64FIFOF#(vtype)) provisos (Bits#(vtype,32));
+   Reg#(VState) vState <- mkReg(Lower);
+   FIFOF#(Bit#(64)) fifo <- mkUGFIFOF; 
+   Reg#(Bit#(32)) vLower <- mkReg(0);
+
+   method Action enq(vtype v32) if (vState == Lower || fifo.notFull);
+       if (vState == Lower)
+       begin
+           vLower <= pack(v32);
+	   vState <= Upper;
+       end
+       else
+       begin
+           Bit#(64) v64 = { pack(v32), vLower };
+	   if (v64[63:32] != pack(v32))
+	       $display("wrong bit order");
+           fifo.enq(v64);
+	   vState <= Lower;
+       end
+   endmethod
+   method Bit#(64) first() if (fifo.notEmpty);
+       return fifo.first;
+   endmethod
+   method Action deq() if (fifo.notEmpty);
+       fifo.deq;
+   endmethod
+   method Bool notEmpty = fifo.notEmpty;
+   method Bool notFull;
+       return vState == Lower || fifo.notFull;
+   endmethod
+endmodule
+
+
