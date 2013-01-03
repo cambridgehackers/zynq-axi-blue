@@ -2,9 +2,13 @@
 import GetPut::*;
 import Connectable::*;
 import Adapter::*;
+import AxiMasterSlave::*;
+import AxiStream::*;
 import FifoToAxi::*;
 import TypesAndInterfaces::*;
+import HDMI::*;
 import DUT::*;
+import Clocks::*;
 
 
 interface DUTWrapper;
@@ -13,6 +17,7 @@ interface DUTWrapper;
    interface Reg#(Bit#(32)) junkReqCount;
    interface AxiMasterWrite#(64,8) axiw;
    interface AxiMasterRead#(64) axir;
+   interface HDMI hdmi;
 endinterface
 
 
@@ -62,6 +67,10 @@ typedef union tagged {
         Bit#(32) base;
     } RunTest2$Request;
 
+    struct {
+        Bit#(32) yuv422;
+    } SetPatternReg$Request;
+
   Bit#(0) DutRequestUnused;
 } DutRequest deriving (Bits);
 
@@ -92,9 +101,9 @@ typedef union tagged {
   Bit#(0) DutResponseUnused;
 } DutResponse deriving (Bits);
 
-module mkDUTWrapper#(FromBit32#(DutRequest) requestFifo, ToBit32#(DutResponse) responseFifo)(DUTWrapper) provisos(Bits#(DutRequest,drsize));
+module mkDUTWrapper#(Clock axis_clk, FromBit32#(DutRequest) requestFifo, ToBit32#(DutResponse) responseFifo)(DUTWrapper) provisos(Bits#(DutRequest,drsize));
 
-    DUT dut <- mkDUT();
+    DUT dut <- mkDUT(axis_clk);
     Reg#(Bit#(32)) requestFired <- mkReg(0);
     Reg#(Bit#(32)) responseFired <- mkReg(0);
     Reg#(Bit#(32)) junkReqReg <- mkReg(0);
@@ -103,7 +112,7 @@ module mkDUTWrapper#(FromBit32#(DutRequest) requestFifo, ToBit32#(DutResponse) r
     Reg#(Bit#(16)) responseTimerReg <- mkReg(0);
     Reg#(Bit#(16)) responseTimeLimitReg <- mkReg(maxBound);
 
-    Bit#(4) maxTag = 11;
+    Bit#(4) maxTag = 12;
 
     rule handleJunkRequest if (pack(requestFifo.first)[4+32-1:32] > maxTag);
         requestFifo.deq;
@@ -276,6 +285,13 @@ module mkDUTWrapper#(FromBit32#(DutRequest) requestFifo, ToBit32#(DutResponse) r
         requestTimerReg <= 0;
     endrule
 
+    rule handle$setPatternReg$request if (requestFifo.first matches tagged SetPatternReg$Request .sp);
+        requestFifo.deq;
+        dut.setPatternReg(sp.yuv422);
+        requestFired <= requestFired + 1;
+        requestTimerReg <= 0;
+    endrule
+
     rule test2Completed$response;
         Bit#(32) r <- dut.test2Completed();
         let response = tagged Test2Completed$Response r;
@@ -288,4 +304,5 @@ module mkDUTWrapper#(FromBit32#(DutRequest) requestFifo, ToBit32#(DutResponse) r
     interface Reg junkReqCount = junkReqReg;
     interface AxiMasterWrite axiw = dut.axiw;
     interface AxiMasterRead axir = dut.axir;
+    interface HDMI hdmi = dut.hdmi;
 endmodule

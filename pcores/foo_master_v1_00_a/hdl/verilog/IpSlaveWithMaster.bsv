@@ -24,10 +24,12 @@
 import RegFile::*;
 import Adapter::*;
 import AxiMasterSlave::*;
+import HDMI::*;
 import FifoToAxi::*;
 import DUTWrapper::*;
 import GetPut::*;
 import Connectable::*;
+import Clocks::*;
 
 interface IpSlaveWithMaster;
    method Action put(Bit#(12) addr, Bit#(32) v);
@@ -36,13 +38,14 @@ interface IpSlaveWithMaster;
    method Bit#(1) interrupt();
    interface AxiMasterWrite#(64,8) axiw;
    interface AxiMasterRead#(64) axir;
+   interface HDMI hdmi;
 endinterface
 
-module mkIpSlaveWithMaster(IpSlaveWithMaster);
+module mkIpSlaveWithMaster#(Clock hdmi_ref_clk)(IpSlaveWithMaster);
 
    FromBit32#(DutRequest) requestFifo <- mkFromBit32();
    ToBit32#(DutResponse) responseFifo <- mkToBit32();
-   DUTWrapper dutWrapper <- mkDUTWrapper(requestFifo, responseFifo);
+   DUTWrapper dutWrapper <- mkDUTWrapper(hdmi_ref_clk, requestFifo, responseFifo);
 
    RegFile#(Bit#(12), Bit#(32)) rf <- mkRegFile(0, 12'hfff);
    Reg#(Bool) interrupted <- mkReg(False);
@@ -130,4 +133,5 @@ module mkIpSlaveWithMaster(IpSlaveWithMaster);
 
    interface AxiMasterWrite axiw = dutWrapper.axiw;
    interface AxiMasterWrite axir = dutWrapper.axir;
+   interface HDMI hdmi = dutWrapper.hdmi;
 endmodule

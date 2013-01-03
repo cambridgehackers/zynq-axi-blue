@@ -57,6 +57,9 @@ use ieee.std_logic_unsigned.all;
 library proc_common_v3_00_a;
 use proc_common_v3_00_a.proc_common_pkg.all;
 
+Library UNISIM;
+use UNISIM.vcomponents.all;
+
 -- DO NOT EDIT ABOVE THIS LINE --------------------
 
 --USER libraries added here
@@ -150,6 +153,21 @@ entity user_logic is
     m_axi_bvalid                   : in  std_logic;
     m_axi_bresp                    : in  std_logic_vector(1 downto 0);
 
+    usr_clk_p : in std_logic;
+    usr_clk_n : in std_logic;
+
+    xadc_gpio_0 : out std_logic;
+    xadc_gpio_1 : out std_logic;
+    xadc_gpio_2 : out std_logic;
+    xadc_gpio_3 : out std_logic;
+
+    hdmi_ref_clk : in std_logic;
+    hdmi_clk : out std_logic;
+    hdmi_vsync : out std_logic;
+    hdmi_hsync : out std_logic;
+    hdmi_de : out std_logic;
+    hdmi_data : out std_logic_vector(15 downto 0);
+
     -- ADD USER PORTS ABOVE THIS LINE ------------------
 
     -- DO NOT EDIT BELOW THIS LINE ---------------------
@@ -181,6 +199,8 @@ entity user_logic is
 
   attribute SIGIS of Bus2IP_Clk    : signal is "CLK";
   attribute SIGIS of Bus2IP_Resetn : signal is "RST";
+  attribute SIGIS of hdmi_ref_clk  : signal is "CLK";
+  attribute SIGIS of hdmi_clk      : signal is "CLK";
 
 end entity user_logic;
 
@@ -219,6 +239,11 @@ architecture IMP of user_logic is
   signal WILL_FIRE_axiw_writeResponse : std_logic;
   signal WILL_FIRE_axir_readAddr : std_logic;
   signal WILL_FIRE_axir_readData : std_logic;
+
+  signal hdmi_vsync_unbuf, hdmi_hsync_unbuf, hdmi_de_unbuf : std_logic;
+  signal hdmi_data_unbuf : std_logic_vector(15 downto 0);
+  signal usr_clk : std_logic;
+  attribute SIGIS of usr_clk      : signal is "CLK";
 
 begin
 
@@ -259,6 +284,7 @@ begin
 
   IP_SLAVE : entity mkIpSlaveWithMaster
     port map (
+      CLK_hdmi_ref_clk => usr_clk,
       CLK => Bus2IP_Clk,
       RST_N  => Bus2IP_Resetn,
 
@@ -330,8 +356,293 @@ begin
       axir_readData_resp => m_axi_rresp,
       axir_readData_last => m_axi_rlast,
       EN_axir_readData => WILL_FIRE_axir_readData,
-      RDY_axir_readData => RDY_axir_readData
+      RDY_axir_readData => RDY_axir_readData,
+
+      hdmi_hdmi_vsync => hdmi_vsync_unbuf,
+      hdmi_hdmi_hsync => hdmi_hsync_unbuf,
+      hdmi_hdmi_de => hdmi_de_unbuf,
+      hdmi_hdmi_data => hdmi_data_unbuf
       );
+
+    OBUF_clk : OBUF
+    generic map (
+    DRIVE => 12,
+    IOSTANDARD => "LVCMOS25",
+    SLEW => "SLOW")
+    port map (
+    O => hdmi_clk,
+    -- Buffer output (connect directly to top-level port)
+    I => usr_clk
+    -- Buffer input
+    );
+    OBUF_hsync : OBUF
+    generic map (
+    DRIVE => 12,
+    IOSTANDARD => "LVCMOS25",
+    SLEW => "SLOW")
+    port map (
+    O => hdmi_hsync,
+    -- Buffer output (connect directly to top-level port)
+    I => hdmi_hsync_unbuf
+    -- Buffer input
+    );
+    OBUF_vsync : OBUF
+    generic map (
+    DRIVE => 12,
+    IOSTANDARD => "LVCMOS25",
+    SLEW => "SLOW")
+    port map (
+    O => hdmi_vsync,
+    -- Buffer output (connect directly to top-level port)
+    I => hdmi_vsync_unbuf
+    -- Buffer input
+    );
+    OBUF_de : OBUF
+    generic map (
+    DRIVE => 12,
+    IOSTANDARD => "LVCMOS25",
+    SLEW => "SLOW")
+    port map (
+    O => hdmi_de,
+    -- Buffer output (connect directly to top-level port)
+    I => hdmi_de_unbuf
+    -- Buffer input
+    );
+
+    OBUF_data_0 : OBUF
+    generic map (
+    DRIVE => 12,
+    IOSTANDARD => "LVCMOS25",
+    SLEW => "SLOW")
+    port map (
+    O => hdmi_data(0),
+    -- Buffer output (connect directly to top-level port)
+    I => hdmi_data_unbuf(0)
+    -- Buffer input
+    );
+    OBUF_data_1 : OBUF
+    generic map (
+    DRIVE => 12,
+    IOSTANDARD => "LVCMOS25",
+    SLEW => "SLOW")
+    port map (
+    O => hdmi_data(1),
+    -- Buffer output (connect directly to top-level port)
+    I => hdmi_data_unbuf(1)
+    -- Buffer input
+    );
+    OBUF_data_2 : OBUF
+    generic map (
+    DRIVE => 12,
+    IOSTANDARD => "LVCMOS25",
+    SLEW => "SLOW")
+    port map (
+    O => hdmi_data(2),
+    -- Buffer output (connect directly to top-level port)
+    I => hdmi_data_unbuf(2)
+    -- Buffer input
+    );
+    OBUF_data_3 : OBUF
+    generic map (
+    DRIVE => 12,
+    IOSTANDARD => "LVCMOS25",
+    SLEW => "SLOW")
+    port map (
+    O => hdmi_data(3),
+    -- Buffer output (connect directly to top-level port)
+    I => hdmi_data_unbuf(3)
+    -- Buffer input
+    );
+    OBUF_data_4 : OBUF
+    generic map (
+    DRIVE => 12,
+    IOSTANDARD => "LVCMOS25",
+    SLEW => "SLOW")
+    port map (
+    O => hdmi_data(4),
+    -- Buffer output (connect directly to top-level port)
+    I => hdmi_data_unbuf(4)
+    -- Buffer input
+    );
+    OBUF_data_5 : OBUF
+    generic map (
+    DRIVE => 12,
+    IOSTANDARD => "LVCMOS25",
+    SLEW => "SLOW")
+    port map (
+    O => hdmi_data(5),
+    -- Buffer output (connect directly to top-level port)
+    I => hdmi_data_unbuf(5)
+    -- Buffer input
+    );
+    OBUF_data_6 : OBUF
+    generic map (
+    DRIVE => 12,
+    IOSTANDARD => "LVCMOS25",
+    SLEW => "SLOW")
+    port map (
+    O => hdmi_data(6),
+    -- Buffer output (connect directly to top-level port)
+    I => hdmi_data_unbuf(6)
+    -- Buffer input
+    );
+    OBUF_data_7 : OBUF
+    generic map (
+    DRIVE => 12,
+    IOSTANDARD => "LVCMOS25",
+    SLEW => "SLOW")
+    port map (
+    O => hdmi_data(7),
+    -- Buffer output (connect directly to top-level port)
+    I => hdmi_data_unbuf(7)
+    -- Buffer input
+    );
+    OBUF_data_8 : OBUF
+    generic map (
+    DRIVE => 12,
+    IOSTANDARD => "LVCMOS25",
+    SLEW => "SLOW")
+    port map (
+    O => hdmi_data(8),
+    -- Buffer output (connect directly to top-level port)
+    I => hdmi_data_unbuf(8)
+    -- Buffer input
+    );
+    OBUF_data_9 : OBUF
+    generic map (
+    DRIVE => 12,
+    IOSTANDARD => "LVCMOS25",
+    SLEW => "SLOW")
+    port map (
+    O => hdmi_data(9),
+    -- Buffer output (connect directly to top-level port)
+    I => hdmi_data_unbuf(9)
+    -- Buffer input
+    );
+    OBUF_data_10 : OBUF
+    generic map (
+    DRIVE => 12,
+    IOSTANDARD => "LVCMOS25",
+    SLEW => "SLOW")
+    port map (
+    O => hdmi_data(10),
+    -- Buffer output (connect directly to top-level port)
+    I => hdmi_data_unbuf(10)
+    -- Buffer input
+    );
+    OBUF_data_11 : OBUF
+    generic map (
+    DRIVE => 12,
+    IOSTANDARD => "LVCMOS25",
+    SLEW => "SLOW")
+    port map (
+    O => hdmi_data(11),
+    -- Buffer output (connect directly to top-level port)
+    I => hdmi_data_unbuf(11)
+    -- Buffer input
+    );
+    OBUF_data_12 : OBUF
+    generic map (
+    DRIVE => 12,
+    IOSTANDARD => "LVCMOS25",
+    SLEW => "SLOW")
+    port map (
+    O => hdmi_data(12),
+    -- Buffer output (connect directly to top-level port)
+    I => hdmi_data_unbuf(12)
+    -- Buffer input
+    );
+    OBUF_data_13 : OBUF
+    generic map (
+    DRIVE => 12,
+    IOSTANDARD => "LVCMOS25",
+    SLEW => "SLOW")
+    port map (
+    O => hdmi_data(13),
+    -- Buffer output (connect directly to top-level port)
+    I => hdmi_data_unbuf(13)
+    -- Buffer input
+    );
+    OBUF_data_14 : OBUF
+    generic map (
+    DRIVE => 12,
+    IOSTANDARD => "LVCMOS25",
+    SLEW => "SLOW")
+    port map (
+    O => hdmi_data(14),
+    -- Buffer output (connect directly to top-level port)
+    I => hdmi_data_unbuf(14)
+    -- Buffer input
+    );
+    OBUF_data_15 : OBUF
+    generic map (
+    DRIVE => 12,
+    IOSTANDARD => "LVCMOS25",
+    SLEW => "SLOW")
+    port map (
+    O => hdmi_data(15),
+    -- Buffer output (connect directly to top-level port)
+    I => hdmi_data_unbuf(15)
+    -- Buffer input
+    );
+
+    IBUFGDS_ref_clk : IBUFGDS
+    generic map (
+    DIFF_TERM => FALSE, -- Differential Termination
+    IBUF_LOW_PWR => TRUE, -- Low power (TRUE) vs. performance (FALSE) setting for referenced I/O standards
+    IOSTANDARD => "DEFAULT")
+    port map (
+    O => usr_clk, -- Clock buffer output
+    I => usr_clk_p, -- Diff_p clock buffer input (connect directly to top-level port)
+    IB => usr_clk_n -- Diff_n clock buffer input (connect directly to top-level port)
+    );
+
+  -- mirror signals for logic analyzer
+    OBUF_clk_mirror : OBUF
+    generic map (
+    DRIVE => 12,
+    IOSTANDARD => "LVCMOS25",
+    SLEW => "SLOW")
+    port map (
+    O => xadc_gpio_0,
+    -- Buffer output (connect directly to top-level port)
+    I => usr_clk
+    -- Buffer input
+    );
+    OBUF_vsync_mirror : OBUF
+    generic map (
+    DRIVE => 12,
+    IOSTANDARD => "LVCMOS25",
+    SLEW => "SLOW")
+    port map (
+    O => xadc_gpio_1,
+    -- Buffer output (connect directly to top-level port)
+    I => hdmi_vsync_unbuf
+    -- Buffer input
+    );
+    OBUF_hsync_mirror : OBUF
+    generic map (
+    DRIVE => 12,
+    IOSTANDARD => "LVCMOS25",
+    SLEW => "SLOW")
+    port map (
+    O => xadc_gpio_2,
+    -- Buffer output (connect directly to top-level port)
+    I => hdmi_hsync_unbuf
+    -- Buffer input
+    );
+    OBUF_de_mirror : OBUF
+    generic map (
+    DRIVE => 12,
+    IOSTANDARD => "LVCMOS25",
+    SLEW => "SLOW")
+    port map (
+    O => xadc_gpio_3,
+    -- Buffer output (connect directly to top-level port)
+    I => hdmi_de_unbuf
+    -- Buffer input
+    );
+  
 
   -- scheduler
   WILL_FIRE_axir_readAddr <= (m_axi_arready and RDY_axir_readAddr);

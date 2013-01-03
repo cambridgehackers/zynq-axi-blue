@@ -192,6 +192,20 @@ entity foo_master is
   (
     -- ADD USER PORTS BELOW THIS LINE ------------------
     interrupt : out std_logic;
+    usr_clk_p : in std_logic;
+    usr_clk_n : in std_logic;
+    hdmi_ref_clk : in std_logic;
+    hdmi_clk : out std_logic;
+    hdmi_vsync : out std_logic;
+    hdmi_hsync : out std_logic;
+    hdmi_de : out std_logic;
+    hdmi_data : out std_logic_vector(15 downto 0);
+
+    xadc_gpio_0 : out std_logic;
+    xadc_gpio_1 : out std_logic;
+    xadc_gpio_2 : out std_logic;
+    xadc_gpio_3 : out std_logic;
+
     -- ADD USER PORTS ABOVE THIS LINE ------------------
 
     -- DO NOT EDIT BELOW THIS LINE ---------------------
@@ -284,6 +298,8 @@ entity foo_master is
   attribute MAX_FANOUT of m_axi_aresetn       : signal is "10000";
   attribute SIGIS of m_axi_aclk       : signal is "Clk";
   attribute SIGIS of m_axi_aresetn       : signal is "Rst";
+  attribute SIGIS of hdmi_ref_clk : signal is "Clk";
+  attribute SIGIS of hdmi_clk : signal is "Clk";
 end entity foo_master;
 
 ------------------------------------------------------------------------------
@@ -493,6 +509,21 @@ begin
       m_axi_bvalid			=> m_axi_bvalid,
       m_axi_bresp			=> m_axi_bresp,
 
+      usr_clk_p => usr_clk_p,
+      usr_clk_n => usr_clk_n,
+
+      xadc_gpio_0 => xadc_gpio_0,
+      xadc_gpio_1 => xadc_gpio_1,
+      xadc_gpio_2 => xadc_gpio_2,
+      xadc_gpio_3 => xadc_gpio_3,
+
+      hdmi_ref_clk => hdmi_ref_clk,
+      hdmi_clk => hdmi_clk,
+      hdmi_vsync => hdmi_vsync,
+      hdmi_hsync => hdmi_hsync,
+      hdmi_de => hdmi_de,
+      hdmi_data => hdmi_data,
+
       -- MAP USER PORTS ABOVE THIS LINE ------------------
 
       Bus2IP_Clk                     => ipif_Bus2IP_Clk,
@@ -519,6 +550,7 @@ begin
   ------------------------------------------
   -- connect internal signals
   ------------------------------------------
+
   ipif_IP2Bus_Data <= user_IP2Bus_Data;
   ipif_IP2Bus_AddrAck <= user_IP2Bus_AddrAck;
   ipif_IP2Bus_WrAck <= user_IP2Bus_WrAck;

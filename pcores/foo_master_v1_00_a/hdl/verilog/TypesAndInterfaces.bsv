@@ -22,6 +22,7 @@
 // SOFTWARE.
 
 import AxiMasterSlave::*;
+import HDMI::*;
 import FifoToAxi::*;
 
 interface DUT;
@@ -53,6 +54,9 @@ interface DUT;
     method Action runTest2(Bit#(32) base);
     method ActionValue#(Bit#(32)) test2Completed();
 
+    method Action setPatternReg(Bit#(32) yuv422);
+
     interface AxiMasterWrite#(64,8) axiw;
     interface AxiMasterRead#(64) axir;
+    interface HDMI hdmi;
 endinterface

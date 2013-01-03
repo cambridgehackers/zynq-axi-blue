@@ -22,8 +22,11 @@
 // SOFTWARE.
 
 import FIFOF::*;
+import Clocks::*;
 import TypesAndInterfaces::*;
+import AxiStream::*;
 import FifoToAxi::*;
+import HDMI::*;
 import TbAxi::*;
 
 interface Timer#(type width);
@@ -55,7 +58,7 @@ module mkTimer(Timer#(width));
    endmethod
 endmodule
 
-module mkDUT(DUT);
+module mkDUT#(Clock hdmi_clk)(DUT);
 
     let busWidthBytes=8;
     FifoToAxi#(64,8) fifoToAxi <-mkFifoToAxi();
@@ -78,6 +81,14 @@ module mkDUT(DUT);
     Reg#(Bool) writeQueuedSent <- mkReg(False);
     Reg#(Bool) readCompletedSent <- mkReg(False);
     Reg#(Bool) firstReadSent <- mkReg(False);
+
+    Reset reset <- exposeCurrentReset;
+
+    Reset hdmi_reset <- mkAsyncReset(2, reset, hdmi_clk);
+
+    SyncFIFOIfc#(Bit#(32)) patternFifo <- mkSyncFIFOFromCC(1, hdmi_clk);
+    HdmiTestPatternGenerator hdmiTpg <- mkHdmiTestPatternGenerator(clocked_by hdmi_clk, reset_by hdmi_reset, patternFifo);
+
 
     AxiTester axiTester <- mkAxiTester(fifoToAxi, fifoFromAxi, 1204);
 
@@ -243,6 +254,11 @@ module mkDUT(DUT);
         return t;
     endmethod
 
+    method Action setPatternReg(Bit#(32) yuv422);
+        patternFifo.enq(yuv422);
+    endmethod
+
     interface AxiMasterWrite axiw = fifoToAxi.axi;
     interface AxiMasterWrite axir = fifoFromAxi.axi;
+    interface HDMI hdmi = hdmiTpg.hdmi;
 endmodule
