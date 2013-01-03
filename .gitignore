@@ -2,3 +2,4 @@
 *.log
 platgen.opt
 *.bo
+*.ba
