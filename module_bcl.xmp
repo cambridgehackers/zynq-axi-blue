@@ -3,6 +3,7 @@ XmpVersion: 14.3
 VerMgmt: 14.3
 IntStyle: default
 Flow: ise
+ModuleSearchPath: /home/jamey/bluespec/cf_lib
 MHS File: module_bcl.mhs
 Architecture: zynq
 Device: xc7z020
@@ -18,7 +19,7 @@ SdkExportDir: SDK/SDK_Export
 InsertNoPads: 1
 WarnForEAArch: 1
 HdlLang: verilog
-SimModel: BEHAVIORAL
+SimModel: STRUCTURAL
 ExternalMemSim: 0
 UcfFile: data/module_bcl.ucf
 EnableParTimingError: 0

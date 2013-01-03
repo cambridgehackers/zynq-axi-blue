@@ -97,7 +97,7 @@ bitsclean:
 	rm -f __xps/$(SYSTEM)_bits
 
 simclean: 
-	rm -rf simulation/behavioral
+	rm -rf simulation/structural
 	rm -f simgen.log
 	rm -f __xps/ise/_xmsgs/simgen.xmsgs
 

@@ -23,7 +23,7 @@ INTSTYLE = default
 
 XPS_HDL_LANG = verilog
 GLOBAL_SEARCHPATHOPT = 
-PROJECT_SEARCHPATHOPT = 
+PROJECT_SEARCHPATHOPT =  -lp /home/jamey/bluespec/cf_lib/
 
 SEARCHPATHOPT = $(PROJECT_SEARCHPATHOPT) $(GLOBAL_SEARCHPATHOPT)
 
@@ -53,7 +53,7 @@ STRUCTURAL_SIM_SCRIPT = simulation/structural/$(SYSTEM)_setup.do
 
 TIMING_SIM_SCRIPT = simulation/timing/$(SYSTEM)_setup.do
 
-DEFAULT_SIM_SCRIPT = $(BEHAVIORAL_SIM_SCRIPT)
+DEFAULT_SIM_SCRIPT = $(STRUCTURAL_SIM_SCRIPT)
 
 SIMGEN_OPTIONS = -p $(DEVICE) -lang $(XPS_HDL_LANG) -intstyle $(INTSTYLE) $(SEARCHPATHOPT) $(BRAMINIT_ELF_SIM_FILE_ARGS) -msg __xps/ise/xmsgprops.lst -s mgm
 
@@ -158,19 +158,18 @@ pcores/foo_master_v1_00_a/hdl/vhdl/user_logic.vhd \
 pcores/foo_master_v1_00_a/hdl/verilog/mkIpSlaveWithMaster.v \
 pcores/foo_master_v1_00_a/hdl/verilog/mkFifoToAxi.v \
 pcores/foo_master_v1_00_a/hdl/verilog/RegFile.v \
+pcores/foo_master_v1_00_a/hdl/verilog/SyncFIFO1.v \
 pcores/foo_master_v1_00_a/hdl/verilog/FIFO2.v \
-pcores/foo_master_v1_00_a/hdl/verilog/SizedFIFO.v
+pcores/foo_master_v1_00_a/hdl/verilog/SizedFIFO.v \
+pcores/foo_master_v1_00_a/hdl/verilog/SyncResetA.v
 
 WRAPPER_NGC_FILES = implementation/module_bcl_processing_system7_0_wrapper.ngc \
 implementation/module_bcl_axi4lite_0_wrapper.ngc \
 implementation/module_bcl_foo_lite_slave_0_wrapper.ngc \
 implementation/module_bcl_foo_slave_0_wrapper.ngc \
-implementation/module_bcl_axi_interconnect_0_wrapper.ngc \
 implementation/module_bcl_axi_interconnect_1_wrapper.ngc \
 implementation/module_bcl_foo_master_0_wrapper.ngc \
-implementation/module_bcl_foo_master_1_wrapper.ngc \
-implementation/module_bcl_axi_interconnect_2_wrapper.ngc \
-implementation/module_bcl_mutex_0_wrapper.ngc
+implementation/module_bcl_clock_generator_0_wrapper.ngc
 
 POSTSYN_NETLIST = implementation/$(SYSTEM).ngc
 

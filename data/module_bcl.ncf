@@ -6,6 +6,31 @@ NET LEDs_4Bits_TRI_IO[0] LOC = "P17"  |  IOSTANDARD = "LVCMOS25";
 NET LEDs_4Bits_TRI_IO[1] LOC = "P18"  |  IOSTANDARD = "LVCMOS25";
 NET LEDs_4Bits_TRI_IO[2] LOC = "W10"  |  IOSTANDARD = "LVCMOS25";
 NET LEDs_4Bits_TRI_IO[3] LOC = "V7"  |  IOSTANDARD = "LVCMOS25";
+
+
+NET hdmi_clk_pin            LOC = L16  | IOSTANDARD = "LVCMOS25";
+NET hdmi_vsync_pin          LOC = H15  | IOSTANDARD = "LVCMOS25";
+NET hdmi_hsync_pin          LOC = R18  | IOSTANDARD = "LVCMOS25";
+NET hdmi_de_pin             LOC = T18  | IOSTANDARD = "LVCMOS25";
+NET hdmi_data_pin[0]        LOC = AB21 | IOSTANDARD = "LVCMOS25";
+NET hdmi_data_pin[1]        LOC = AA21 | IOSTANDARD = "LVCMOS25";
+NET hdmi_data_pin[2]        LOC = AB22 | IOSTANDARD = "LVCMOS25";
+NET hdmi_data_pin[3]        LOC = AA22 | IOSTANDARD = "LVCMOS25";
+NET hdmi_data_pin[4]        LOC = V19  | IOSTANDARD = "LVCMOS25";
+NET hdmi_data_pin[5]        LOC = V18  | IOSTANDARD = "LVCMOS25";
+NET hdmi_data_pin[6]        LOC = V20  | IOSTANDARD = "LVCMOS25";
+NET hdmi_data_pin[7]        LOC = U20  | IOSTANDARD = "LVCMOS25";
+NET hdmi_data_pin[8]        LOC = W21  | IOSTANDARD = "LVCMOS25";
+NET hdmi_data_pin[9]        LOC = W20  | IOSTANDARD = "LVCMOS25";
+NET hdmi_data_pin[10]       LOC = W18  | IOSTANDARD = "LVCMOS25";
+NET hdmi_data_pin[11]       LOC = T19  | IOSTANDARD = "LVCMOS25";
+NET hdmi_data_pin[12]       LOC = U19  | IOSTANDARD = "LVCMOS25";
+NET hdmi_data_pin[13]       LOC = R19  | IOSTANDARD = "LVCMOS25";
+NET hdmi_data_pin[14]       LOC = T17  | IOSTANDARD = "LVCMOS25";
+NET hdmi_data_pin[15]       LOC = T16  | IOSTANDARD = "LVCMOS25";
+# NET hdmi_spdif_pin          LOC = R15  | IOSTANDARD = "LVCMOS25";
+# NET hdmi_int_pin            LOC = U14  | IOSTANDARD = "LVCMOS25";
+
 #
 # additional constraints
 #
