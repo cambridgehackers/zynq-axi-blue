@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-struct ResultIorMsg : public UshwMessage
+struct ResultIorMsg : public PortalMessage
 {
 struct Response {
 //fix Adapter.bsv to unreverse these
@@ -52,15 +52,18 @@ int main(int argc, char **argv)
     dut = DUT::createDUT(devname);
     fprintf(stderr, "%s:%d dut=%p\n", __FUNCTION__, __LINE__, dut);
 
-    unsigned long base = ushw.alloc(4096);
+    int fd;
+    unsigned long base;
+    portal.alloc(4096, &fd, &base);
     unsigned long bound = base + 4096;
+    fprintf(stderr, "%s:%d dut=%p base=%lx bound=%lx\n", __FUNCTION__, __LINE__, dut, base, bound);
     dut->setBase(base);
     dut->setBounds(bound);
     dut->setEnabled(1);
     if (config)
         dut->configure(config);
     if (doTest) {
-        dut->runTest(doTest);
+        dut->runTest2(base);
         if (verbose)
             for (int i = 0; i < 13; i++) {
                 dut->readFifoStatus(i*4);
@@ -85,7 +88,7 @@ int main(int argc, char **argv)
                 dut->readFromFifoStatus(i*4);
             }
     }
-    ushw.exec();
+    //portal.exec();
     fprintf(stderr, "%s:%d\n", __FUNCTION__, __LINE__);
     return 0;
 }

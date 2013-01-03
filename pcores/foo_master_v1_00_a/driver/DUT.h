@@ -2,9 +2,9 @@
 class DUT {
 public:
     enum DUTResponseChannel {
-        FifoStatusResponseChannel, AxiResponseResponseChannel, FromFifoStatusResponseChannel, AxirResponseResponseChannel, ReadValueResponseChannel, TestCompletedResponseChannel, WriteQueuedResponseChannel, WriteCompletedResponseChannel, FirstReadResponseChannel, ReadCompletedResponseChannel, DUTNumChannels
+        FifoStatusResponseChannel, AxiResponseResponseChannel, FromFifoStatusResponseChannel, AxirResponseResponseChannel, ReadValueResponseChannel, TestCompletedResponseChannel, WriteQueuedResponseChannel, WriteCompletedResponseChannel, FirstReadResponseChannel, ReadCompletedResponseChannel, Test2CompletedResponseChannel, DUTNumChannels
     };
-    int connectHandler(DUTResponseChannel c, UshwInstance::MessageHandler h) {
+    int connectHandler(DUTResponseChannel c, PortalInstance::MessageHandler h) {
         p->messageHandlers[c] = h;
         return 0;
     }
@@ -20,9 +20,11 @@ public:
     void readRange ( unsigned int );
     void readFromFifoStatus ( unsigned int );
     void runTest ( unsigned int );
+    void runTest2 ( unsigned int );
+    void setPatternReg ( unsigned int );
 private:
-    DUT(UshwInstance *, int baseChannelNumber=0);
+    DUT(PortalInstance *, int baseChannelNumber=0);
     ~DUT();
-    UshwInstance *p;
+    PortalInstance *p;
     int baseChannelNumber;
 };

@@ -30,21 +30,22 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
+#include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
 
 #include "ushw.h"
 
-#define USHW_ALLOC _IOWR('B', 10, UshwAlloc)
-#define USHW_PUTGET _IOWR('B', 17, UshwMessage)
-#define USHW_PUT _IOWR('B', 18, UshwMessage)
-#define USHW_GET _IOWR('B', 19, UshwMessage)
-#define USHW_REGS _IOWR('B', 20, UshwMessage)
+#define PORTAL_ALLOC _IOWR('B', 10, PortalAlloc)
+#define PORTAL_PUTGET _IOWR('B', 17, PortalMessage)
+#define PORTAL_PUT _IOWR('B', 18, PortalMessage)
+#define PORTAL_GET _IOWR('B', 19, PortalMessage)
+#define PORTAL_REGS _IOWR('B', 20, PortalMessage)
 
-UshwInterface ushw;
+PortalInterface portal;
 
-void UshwInstance::close()
+void PortalInstance::close()
 {
     if (fd > 0) {
         ::close(fd);
@@ -52,16 +53,16 @@ void UshwInstance::close()
     }    
 }
 
-UshwInstance::UshwInstance(const char *instanceName)
+PortalInstance::PortalInstance(const char *instanceName)
 {
     this->instanceName = strdup(instanceName);
     char path[128];
     snprintf(path, sizeof(path), "/dev/%s", instanceName);
     this->fd = open(path, O_RDWR);
-    ushw.registerInstance(this);
+    portal.registerInstance(this);
 }
 
-UshwInstance::~UshwInstance()
+PortalInstance::~PortalInstance()
 {
     close();
     if (instanceName)
@@ -69,23 +70,23 @@ UshwInstance::~UshwInstance()
 }
 
 
-UshwInstance *ushwOpen(const char *instanceName)
+PortalInstance *portalOpen(const char *instanceName)
 {
-    return new UshwInstance(instanceName);
+    return new PortalInstance(instanceName);
 }
 
-int UshwInstance::sendMessage(UshwMessage *msg)
+int PortalInstance::sendMessage(PortalMessage *msg)
 {
-    int rc = ioctl(fd, USHW_PUT, msg);
+    int rc = ioctl(fd, PORTAL_PUT, msg);
     if (rc)
         fprintf(stderr, "sendMessage fd=%d rc=%d errno=%d:%s PUTGET=%x PUT=%x GET=%x\n", fd, rc, errno, strerror(errno),
-                USHW_PUTGET, USHW_PUT, USHW_GET);
+                PORTAL_PUTGET, PORTAL_PUT, PORTAL_GET);
     return rc;
 }
 
-int UshwInstance::receiveMessage(UshwMessage *msg)
+int PortalInstance::receiveMessage(PortalMessage *msg)
 {
-    int status  = ioctl(fd, USHW_GET, msg);
+    int status  = ioctl(fd, PORTAL_GET, msg);
     if (status) {
         fprintf(stderr, "receiveMessage rc=%d errno=%d:%s\n", status, errno, strerror(errno));
         return -status;
@@ -93,12 +94,12 @@ int UshwInstance::receiveMessage(UshwMessage *msg)
     return 1;
 }
 
-UshwInterface::UshwInterface()
+PortalInterface::PortalInterface()
     : fds(0), numFds(0)
 {
 }
 
-UshwInterface::~UshwInterface()
+PortalInterface::~PortalInterface()
 {
     if (fds) {
         free(fds);
@@ -106,10 +107,10 @@ UshwInterface::~UshwInterface()
     }
 }
 
-int UshwInterface::registerInstance(UshwInstance *instance)
+int PortalInterface::registerInstance(PortalInstance *instance)
 {
     numFds++;
-    instances = (UshwInstance **)realloc(instances, numFds*sizeof(UshwInstance *));
+    instances = (PortalInstance **)realloc(instances, numFds*sizeof(PortalInstance *));
     instances[numFds-1] = instance;
     fds = (struct pollfd *)realloc(fds, numFds*sizeof(struct pollfd));
     struct pollfd *pollfd = &fds[numFds-1];
@@ -119,35 +120,43 @@ int UshwInterface::registerInstance(UshwInstance *instance)
     return 0;
 }
 
-unsigned long UshwInterface::alloc(size_t size)
+int PortalInterface::alloc(size_t size, int *fd, unsigned long *dma_address)
 {
-    UshwAlloc alloc;
+    PortalAlloc alloc;
+    void *ptr = 0;
     alloc.size = size;
-    int rc = ioctl(ushw.fds[0].fd, USHW_ALLOC, &alloc);
-    fprintf(stderr, "alloc size=%d rc=%d alloc.kptr=%p\n", size, rc, alloc.kptr);
-    return (unsigned long)alloc.kptr-0xc0000000;
+    int rc = ioctl(portal.fds[0].fd, PORTAL_ALLOC, &alloc);
+    if (rc)
+      return rc;
+    ptr = mmap(0, alloc.size, PROT_READ|PROT_WRITE, MAP_SHARED, alloc.fd, 0);
+    fprintf(stderr, "alloc size=%d rc=%d alloc.fd=%d ptr=%p\n", size, rc, alloc.fd, ptr);
+    if (fd)
+      *fd = alloc.fd;
+    if (dma_address)
+      *dma_address = alloc.dma_address;
+    return 0;
 }
 
-int UshwInterface::dumpRegs()
+int PortalInterface::dumpRegs()
 {
     int foo = 0;
-    int rc = ioctl(ushw.fds[0].fd, USHW_REGS, &foo);
+    int rc = ioctl(portal.fds[0].fd, PORTAL_REGS, &foo);
     return rc;
 }
 
-int UshwInterface::exec()
+int PortalInterface::exec()
 {
     unsigned int *buf = new unsigned int[1024];
-    UshwMessage *msg = (UshwMessage *)(buf);
+    PortalMessage *msg = (PortalMessage *)(buf);
     fprintf(stderr, "exec()\n");
     int messageReceived = 0;
 
     int rc;
-    while ((rc = poll(ushw.fds, ushw.numFds, 1000)) >= 0) {
-        for (int i = 0; i < ushw.numFds; i++) {
-            if (ushw.fds[i].revents == 0)
+    while ((rc = poll(portal.fds, portal.numFds, 1000)) >= 0) {
+        for (int i = 0; i < portal.numFds; i++) {
+            if (portal.fds[i].revents == 0)
                 continue;
-            UshwInstance *instance = ushw.instances[i];
+            PortalInstance *instance = portal.instances[i];
             int messageReceived = instance->receiveMessage(msg);
             if (!messageReceived)
                 continue;

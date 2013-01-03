@@ -1,49 +1,50 @@
 
 #include <sys/types.h>
 
-class UshwInterface;
+class PortalInterface;
 
-typedef struct UshwAlloc {
+typedef struct PortalAlloc {
     size_t size;
-    unsigned char *kptr;
-} UshwAlloc;
+    int fd;
+    unsigned long dma_address;
+} PortalAlloc;
 
-typedef struct UshwMessage {
+typedef struct PortalMessage {
     size_t size;
-} UshwMessage;
+} PortalMessage;
 
-class UshwInstance {
+class PortalInstance {
 public:
-    typedef void (*MessageHandler)(UshwMessage *msg);
+    typedef void (*MessageHandler)(PortalMessage *msg);
     MessageHandler *messageHandlers;
 
-    int sendMessage(UshwMessage *msg);
-    int receiveMessage(UshwMessage *msg);
+    int sendMessage(PortalMessage *msg);
+    int receiveMessage(PortalMessage *msg);
     void close();
 private:
-    UshwInstance(const char *instanceName);
-    ~UshwInstance();
-    friend UshwInstance *ushwOpen(const char *instanceName);
+    PortalInstance(const char *instanceName);
+    ~PortalInstance();
+    friend PortalInstance *portalOpen(const char *instanceName);
 private:
     int fd;
     char *instanceName;
-    friend class UshwInterface;
+    friend class PortalInterface;
 };
-UshwInstance *ushwOpen(const char *instanceName);
+PortalInstance *portalOpen(const char *instanceName);
 
-class UshwInterface {
+class PortalInterface {
 public:
-    UshwInterface();
-    ~UshwInterface();
+    PortalInterface();
+    ~PortalInterface();
     static int exec();
-    static unsigned long alloc(size_t size);
-    int registerInstance(UshwInstance *instance);
+    static int alloc(size_t size, int *fd, unsigned long *dma_address);
+    int registerInstance(PortalInstance *instance);
     int dumpRegs();
 private:
-    UshwInstance **instances;
+    PortalInstance **instances;
     struct pollfd *fds;
     int numFds;
 };
 
-extern UshwInterface ushw;
+extern PortalInterface portal;
 
