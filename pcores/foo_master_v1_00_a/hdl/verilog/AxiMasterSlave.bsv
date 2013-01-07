@@ -22,6 +22,7 @@
 // SOFTWARE.
 
 import RegFile::*;
+import BRAMFIFO::*;
 import FIFOF::*;
 import SpecialFIFOs::*;
 
@@ -32,8 +33,9 @@ interface AxiMasterRead#(type busWidth);
    method Bit#(2) readBurstType();  // drive with 2'b01
    method Bit#(3) readBurstProt(); // drive with 3'b000
    method Bit#(4) readBurstCache(); // drive with 4'b0011
+   method Bit#(1) readId();
 
-   method Action readData(Bit#(busWidth) data, Bit#(2) resp, Bit#(1) last);
+   method Action readData(Bit#(busWidth) data, Bit#(2) resp, Bit#(1) last, Bit#(1) id);
 endinterface
 
 interface AxiMasterWrite#(type busWidth, type busWidthBytes);
@@ -43,11 +45,12 @@ interface AxiMasterWrite#(type busWidth, type busWidthBytes);
    method Bit#(2) writeBurstType();  // drive with 2'b01
    method Bit#(3) writeBurstProt(); // drive with 3'b000
    method Bit#(4) writeBurstCache(); // drive with 4'b0011
+   method Bit#(1) writeId();
 
    method ActionValue#(Bit#(busWidth)) writeData();
    method Bit#(busWidthBytes) writeDataByteEnable();
    method Bit#(1) writeLastDataBeat(); // last data beat
-   method Action writeResponse(Bit#(2) responseCode);
+   method Action writeResponse(Bit#(2) responseCode, Bit#(1) id);
 endinterface
 
 interface AxiMaster#(type busWidth, type busWidthBytes);
@@ -85,23 +88,27 @@ interface AxiMasterServer#(type busWidth, type busWidthBytes);
    interface AxiMaster#(busWidth,busWidthBytes) axi;
 endinterface
 
-module mkAxiMasterServer(AxiMasterServer#(busWidth,busWidthBytes)) provisos(Div#(busWidth,8,busWidthBytes));
-   Reg#(Bit#(32)) rAddrReg <- mkReg(0);
-   Reg#(Bit#(32)) wAddrReg <- mkReg(0);
-   FIFOF#(Bit#(busWidth)) rfifo <- mkSizedFIFOF(8);
-   FIFOF#(Bit#(busWidth)) wfifo <- mkSizedBypassFIFOF(8);
-   FIFOF#(Bit#(2)) bfifo <- mkSizedFIFOF(8);
-   Reg#(Bit#(8)) rBurstCountReg <- mkReg(0);
-   Reg#(Bit#(8)) wBurstCountReg <- mkReg(0);
-   Reg#(Bool) rAddressPresented <- mkReg(False);
-   Reg#(Bool) wAddressPresented <- mkReg(False);
-   FIFOF#(Bit#(2)) axiBrespFifo <- mkSizedFIFOF(32);
+typedef struct {
+    Bit#(32) addr;
+    Bit#(8) numWords;
+} AddrBurst deriving (Bits);
 
-   method Action readAddr(Bit#(32) addr, Bit#(8) numWords) if (rBurstCountReg == 0);
+module mkAxiMasterServer(AxiMasterServer#(busWidth,busWidthBytes)) provisos(Div#(busWidth,8,busWidthBytes),Add#(1,a,busWidth));
+   Reg#(Bit#(32)) wAddrReg <- mkReg(0);
+   Reg#(Bit#(1)) writeIdReg <- mkReg(0);
+   Reg#(Bit#(1)) readIdReg <- mkReg(0);
+   //FIFOF#(AddrBurst) raddrFifo <- mkSizedBypassFIFOF(4);
+   FIFOF#(AddrBurst) raddrFifo <- mkSizedBRAMFIFOF(8);
+   FIFOF#(Bit#(busWidth)) rfifo <- mkSizedBRAMFIFOF(32);
+   FIFOF#(Bit#(busWidth)) wfifo <- mkSizedBRAMFIFOF(32);
+   FIFOF#(Bit#(2)) bfifo <- mkSizedBRAMFIFOF(8);
+   Reg#(Bit#(8)) wBurstCountReg <- mkReg(0);
+   Reg#(Bool) wAddressPresented <- mkReg(False);
+   FIFOF#(Bit#(2)) axiBrespFifo <- mkSizedBRAMFIFOF(32);
+
+   method Action readAddr(Bit#(32) addr, Bit#(8) numWords);
        //$display("readAddr addr %h burstCountReg %d", addr, numWords);
-       rAddrReg <= addr;
-       rBurstCountReg <= numWords;
-       rAddressPresented <= False;
+       raddrFifo.enq(AddrBurst { addr: addr, numWords: numWords});
    endmethod
 
    method ActionValue#(Bit#(busWidth)) readData() if (rfifo.notEmpty);
@@ -128,6 +135,7 @@ module mkAxiMasterServer(AxiMasterServer#(busWidth,busWidthBytes)) provisos(Div#
        interface AxiMasterWrite write;
            method ActionValue#(Bit#(32)) writeAddr() if (wBurstCountReg != 0 && !wAddressPresented);
                wAddressPresented <= True;
+               writeIdReg <= writeIdReg + 1;
                return wAddrReg;
            endmethod
            method Bit#(8) writeBurstLen();
@@ -148,6 +156,9 @@ module mkAxiMasterServer(AxiMasterServer#(busWidth,busWidthBytes)) provisos(Div#
            method Bit#(4) writeBurstCache(); // drive with 4'b0011
                return 4'b0011;
            endmethod
+           method Bit#(1) writeId();
+               return writeIdReg;
+           endmethod
 
            method ActionValue#(Bit#(busWidth)) writeData() if (wBurstCountReg != 0 && wfifo.notEmpty);
                wBurstCountReg <= wBurstCountReg - 1;
@@ -163,18 +174,19 @@ module mkAxiMasterServer(AxiMasterServer#(busWidth,busWidthBytes)) provisos(Div#
                return (wBurstCountReg == 8'd1) ? 1'b1 : 1'b0;
            endmethod
 
-           method Action writeResponse(Bit#(2) responseCode) if (bfifo.notFull);
+           method Action writeResponse(Bit#(2) responseCode, Bit#(1) id) if (bfifo.notFull);
                bfifo.enq(responseCode);
            endmethod
        endinterface
 
        interface AxiMasterRead read;
-           method ActionValue#(Bit#(32)) readAddr() if (rBurstCountReg != 0 && !rAddressPresented);
-               rAddressPresented <= True;
-               return rAddrReg;
+           method ActionValue#(Bit#(32)) readAddr();
+               raddrFifo.deq();
+               readIdReg <= readIdReg + 1;
+               return raddrFifo.first().addr;
            endmethod
            method Bit#(8) readBurstLen();
-               return rBurstCountReg-1;
+               return raddrFifo.first().numWords-1;
            endmethod
            method Bit#(3) readBurstWidth();
                if (valueOf(busWidth) == 32)
@@ -191,9 +203,11 @@ module mkAxiMasterServer(AxiMasterServer#(busWidth,busWidthBytes)) provisos(Div#
            method Bit#(4) readBurstCache(); // drive with 4'b0011
                return 4'b0011;
            endmethod
-           method Action readData(Bit#(busWidth) data, Bit#(2) resp, Bit#(1) last) if (rfifo.notFull && rBurstCountReg != 0);
+           method Bit#(1) readId();
+               return readIdReg;
+           endmethod
+           method Action readData(Bit#(busWidth) data, Bit#(2) resp, Bit#(1) last, Bit#(1) id) if (rfifo.notFull);
 	       //$display("axi.read.readData %h bc %d", data, rBurstCountReg);
-               rBurstCountReg <= rBurstCountReg - 1;
                rfifo.enq(data);
            endmethod
        endinterface
@@ -275,7 +289,7 @@ module mkMasterSlaveConnection#(AxiMasterWrite#(busWidth, busWidthBytes) axiw,
     endrule
     rule readData;
         let data <- axiSlave.read.readData(maxBound, 0);
-        axir.readData(data, 2'b00, 0);
+        axir.readData(data, 2'b00, 0, 0);
         if (verbose) $display("        MasterSlaveConnection.readData %h", data);
     endrule
     rule writeAddr;
@@ -293,7 +307,7 @@ module mkMasterSlaveConnection#(AxiMasterWrite#(busWidth, busWidthBytes) axiw,
         let byteEnable = axiw.writeDataByteEnable;
         let last = axiw.writeLastDataBeat;
         let response <- axiSlave.write.writeData(data, byteEnable, last);
-        axiw.writeResponse(response);
+        axiw.writeResponse(response, 0);
         if (verbose) $display("        MasterSlaveConnection.writeData %h", data);
     endrule
 endmodule

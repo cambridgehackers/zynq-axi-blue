@@ -36,8 +36,10 @@ interface IpSlaveWithMaster;
    method ActionValue#(Bit#(32)) get(Bit#(12) addr);
    method Bit#(1) error();
    method Bit#(1) interrupt();
-   interface AxiMasterWrite#(64,8) axiw;
-   interface AxiMasterRead#(64) axir;
+   interface AxiMasterWrite#(64,8) axiw0;
+   interface AxiMasterRead#(64) axir0;
+   interface AxiMasterWrite#(64,8) axiw1;
+   interface AxiMasterRead#(64) axir1;
    interface HDMI hdmi;
 endinterface
 
@@ -47,7 +49,7 @@ module mkIpSlaveWithMaster#(Clock hdmi_ref_clk)(IpSlaveWithMaster);
    ToBit32#(DutResponse) responseFifo <- mkToBit32();
    DUTWrapper dutWrapper <- mkDUTWrapper(hdmi_ref_clk, requestFifo, responseFifo);
 
-   RegFile#(Bit#(12), Bit#(32)) rf <- mkRegFile(0, 12'hfff);
+   RegFile#(Bit#(12), Bit#(32)) rf <- mkRegFile(0, 12'h00f);
    Reg#(Bool) interrupted <- mkReg(False);
    Reg#(Bool) interruptCleared <- mkReg(False);
    Reg#(Bit#(32)) getWordCount <- mkReg(0);
@@ -95,9 +97,9 @@ module mkIpSlaveWithMaster#(Clock hdmi_ref_clk)(IpSlaveWithMaster);
            if (addr == 12'h018)
                v = underflowCount;
            if (addr == 12'h020)
-               v = putWordCount;
+               v = dutWrapper.vsyncPulseCount;
            if (addr == 12'h024)
-               v = getWordCount;
+               v = dutWrapper.frameCount;
            return v;
          end
        else
@@ -131,7 +133,9 @@ module mkIpSlaveWithMaster#(Clock hdmi_ref_clk)(IpSlaveWithMaster);
            return 1'd0;
    endmethod
 
-   interface AxiMasterWrite axiw = dutWrapper.axiw;
-   interface AxiMasterWrite axir = dutWrapper.axir;
+   interface AxiMasterWrite axiw0 = dutWrapper.axiw0;
+   interface AxiMasterWrite axir0 = dutWrapper.axir0;
+   interface AxiMasterWrite axiw1 = dutWrapper.axiw1;
+   interface AxiMasterWrite axir1 = dutWrapper.axir1;
    interface HDMI hdmi = dutWrapper.hdmi;
 endmodule

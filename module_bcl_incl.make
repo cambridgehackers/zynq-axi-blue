@@ -117,22 +117,11 @@ CORE_STATE_DEVELOPMENT_FILES = /home/xilinx/14.3/ISE_DS/EDK/hw/XilinxProcessorIP
 /home/xilinx/14.3/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/or_muxcy_f.vhd \
 /home/xilinx/14.3/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/or_gate_f.vhd \
 /home/xilinx/14.3/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/soft_reset.vhd \
-/home/xilinx/14.3/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_lite_ipif_v1_01_a/hdl/vhdl/address_decoder.vhd \
-/home/xilinx/14.3/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_lite_ipif_v1_01_a/hdl/vhdl/slave_attachment.vhd \
-/home/xilinx/14.3/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_lite_ipif_v1_01_a/hdl/vhdl/axi_lite_ipif.vhd \
-pcores/foo_lite_slave_v1_00_a/hdl/vhdl/user_logic.vhd \
-pcores/foo_lite_slave_v1_00_a/hdl/vhdl/foo_lite_slave.vhd \
-pcores/foo_lite_slave_v1_00_a/hdl/verilog/mkIP.v \
 /home/xilinx/14.3/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_slave_burst_v1_00_a/hdl/vhdl/control_state_machine.vhd \
 /home/xilinx/14.3/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_slave_burst_v1_00_a/hdl/vhdl/read_data_path.vhd \
 /home/xilinx/14.3/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_slave_burst_v1_00_a/hdl/vhdl/address_decode.vhd \
 /home/xilinx/14.3/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_slave_burst_v1_00_a/hdl/vhdl/addr_gen.vhd \
 /home/xilinx/14.3/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_slave_burst_v1_00_a/hdl/vhdl/axi_slave_burst.vhd \
-pcores/foo_slave_v1_00_a/hdl/vhdl/user_logic.vhd \
-pcores/foo_slave_v1_00_a/hdl/vhdl/foo_slave.vhd \
-pcores/foo_slave_v1_00_a/hdl/verilog/mkIpSlave.v \
-pcores/foo_slave_v1_00_a/hdl/verilog/RegFile.v \
-pcores/foo_slave_v1_00_a/hdl/verilog/FIFO2.v \
 /home/xilinx/14.3/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_master_burst_v1_00_a/hdl/vhdl/axi_master_burst_rdmux.vhd \
 /home/xilinx/14.3/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_master_burst_v1_00_a/hdl/vhdl/axi_master_burst_wr_demux.vhd \
 /home/xilinx/14.3/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_master_burst_v1_00_a/hdl/vhdl/axi_master_burst_skid2mm_buf.vhd \
@@ -165,11 +154,10 @@ pcores/foo_master_v1_00_a/hdl/verilog/SyncResetA.v
 
 WRAPPER_NGC_FILES = implementation/module_bcl_processing_system7_0_wrapper.ngc \
 implementation/module_bcl_axi4lite_0_wrapper.ngc \
-implementation/module_bcl_foo_lite_slave_0_wrapper.ngc \
-implementation/module_bcl_foo_slave_0_wrapper.ngc \
-implementation/module_bcl_axi_interconnect_1_wrapper.ngc \
 implementation/module_bcl_foo_master_0_wrapper.ngc \
-implementation/module_bcl_clock_generator_0_wrapper.ngc
+implementation/module_bcl_clock_generator_0_wrapper.ngc \
+implementation/module_bcl_axi_interconnect_0_wrapper.ngc \
+implementation/module_bcl_axi_interconnect_1_wrapper.ngc
 
 POSTSYN_NETLIST = implementation/$(SYSTEM).ngc
 

@@ -18,7 +18,8 @@ OPTION ARCH_SUPPORT_MAP = (others=DEVELOPMENT)
 
 
 ## Bus Interfaces
-BUS_INTERFACE BUS = M_AXI, BUS_STD = AXI, BUS_TYPE = MASTER
+BUS_INTERFACE BUS = M_AXI0, BUS_STD = AXI, BUS_TYPE = MASTER
+BUS_INTERFACE BUS = M_AXI1, BUS_STD = AXI, BUS_TYPE = MASTER
 BUS_INTERFACE BUS = S_AXI, BUS_STD = AXI, BUS_TYPE = SLAVE
 
 ## Generics for VHDL or Parameters for Verilog
@@ -35,10 +36,16 @@ PARAMETER C_FAMILY = virtex6, DT = STRING
 PARAMETER C_S_AXI_MEM0_BASEADDR = 0xffffffff, DT = std_logic_vector, CACHEABLE = TRUE, PAIR = C_S_AXI_MEM0_HIGHADDR, ADDRESS = BASE, BUS = S_AXI
 PARAMETER C_S_AXI_MEM0_HIGHADDR = 0x00000000, DT = std_logic_vector, PAIR = C_S_AXI_MEM0_BASEADDR, ADDRESS = HIGH, BUS = S_AXI
 PARAMETER C_S_AXI_PROTOCOL = AXI4, TYPE = NON_HDL, ASSIGNMENT = CONSTANT, DT = STRING, BUS = S_AXI
-PARAMETER C_M_AXI_ADDR_WIDTH = 32, DT = INTEGER, BUS = M_AXI, ASSIGNMENT = CONSTANT
-PARAMETER C_M_AXI_DATA_WIDTH = 32, DT = INTEGER, BUS = M_AXI, RANGE = (32, 64)
-PARAMETER C_M_AXI_ID_WIDTH = 1, DT = integer, BUS = M_AXI
-PARAMETER C_M_AXI_PROTOCOL = AXI4, TYPE = NON_HDL, ASSIGNMENT = CONSTANT, DT = STRING, BUS = M_AXI
+
+PARAMETER C_M_AXI0_ADDR_WIDTH = 32, DT = INTEGER, BUS = M_AXI0, ASSIGNMENT = CONSTANT
+PARAMETER C_M_AXI0_DATA_WIDTH = 32, DT = INTEGER, BUS = M_AXI0, RANGE = (32, 64)
+PARAMETER C_M_AXI0_ID_WIDTH = 1, DT = integer, BUS = M_AXI0
+PARAMETER C_M_AXI0_PROTOCOL = AXI4, TYPE = NON_HDL, ASSIGNMENT = CONSTANT, DT = STRING, BUS = M_AXI0
+
+PARAMETER C_M_AXI1_ADDR_WIDTH = 32, DT = INTEGER, BUS = M_AXI1, ASSIGNMENT = CONSTANT
+PARAMETER C_M_AXI1_DATA_WIDTH = 32, DT = INTEGER, BUS = M_AXI1, RANGE = (32, 64)
+PARAMETER C_M_AXI1_ID_WIDTH = 1, DT = integer, BUS = M_AXI1
+PARAMETER C_M_AXI1_PROTOCOL = AXI4, TYPE = NON_HDL, ASSIGNMENT = CONSTANT, DT = STRING, BUS = M_AXI1
 
 ## Ports
 PORT interrupt = "", DIR = O, SIGIS = INTERRUPT
@@ -80,42 +87,79 @@ PORT S_AXI_ARPROT = ARPROT, DIR = I, VEC = [2:0], BUS = S_AXI
 PORT S_AXI_RID = RID, DIR = O, VEC = [(C_S_AXI_ID_WIDTH-1):0], ENDIAN = LITTLE, BUS = S_AXI
 PORT S_AXI_RLAST = RLAST, DIR = O, BUS = S_AXI
 
-PORT m_axi_aclk = "", DIR = I, SIGIS = CLK, BUS = M_AXI, ASSIGNMENT = REQUIRE
-PORT m_axi_aresetn = ARESETN, DIR = I, SIGIS = RST, BUS = M_AXI
+PORT m_axi0_aclk = "", DIR = I, SIGIS = CLK, BUS = M_AXI0, ASSIGNMENT = REQUIRE
+PORT m_axi0_aresetn = ARESETN, DIR = I, SIGIS = RST, BUS = M_AXI0
 PORT md_error = "", DIR = O
-PORT m_axi_arready = ARREADY, DIR = I, BUS = M_AXI
-PORT m_axi_arvalid = ARVALID, DIR = O, BUS = M_AXI
-PORT m_axi_arid = ARID, DIR = O, VEC = [((C_M_AXI_ID_WIDTH)-1):0], BUS = M_AXI
-PORT m_axi_araddr = ARADDR, DIR = O, VEC = [(C_M_AXI_ADDR_WIDTH-1):0], ENDIAN = LITTLE, BUS = M_AXI
-PORT m_axi_arlen = ARLEN, DIR = O, VEC = [7:0], BUS = M_AXI
-PORT m_axi_arsize = ARSIZE, DIR = O, VEC = [2:0], BUS = M_AXI
-PORT m_axi_arburst = ARBURST, DIR = O, VEC = [1:0], BUS = M_AXI
-PORT m_axi_arprot = ARPROT, DIR = O, VEC = [2:0], BUS = M_AXI
-PORT m_axi_arcache = ARCACHE, DIR = O, VEC = [3:0], BUS = M_AXI
-PORT m_axi_rready = RREADY, DIR = O, BUS = M_AXI
-PORT m_axi_rvalid = RVALID, DIR = I, BUS = M_AXI
-PORT m_axi_rid = RID, DIR = I, VEC = [((C_M_AXI_ID_WIDTH)-1):0], BUS = M_AXI
-PORT m_axi_rdata = RDATA, DIR = I, VEC = [(C_M_AXI_DATA_WIDTH-1):0], ENDIAN = LITTLE, BUS = M_AXI
-PORT m_axi_rresp = RRESP, DIR = I, VEC = [1:0], BUS = M_AXI
-PORT m_axi_rlast = RLAST, DIR = I, BUS = M_AXI
-PORT m_axi_awready = AWREADY, DIR = I, BUS = M_AXI
-PORT m_axi_awvalid = AWVALID, DIR = O, BUS = M_AXI
-PORT m_axi_awid = AWID, DIR = O, VEC = [((C_M_AXI_ID_WIDTH)-1):0], BUS = M_AXI
-PORT m_axi_awaddr = AWADDR, DIR = O, VEC = [(C_M_AXI_ADDR_WIDTH-1):0], ENDIAN = LITTLE, BUS = M_AXI
-PORT m_axi_awlen = AWLEN, DIR = O, VEC = [7:0], BUS = M_AXI
-PORT m_axi_awsize = AWSIZE, DIR = O, VEC = [2:0], BUS = M_AXI
-PORT m_axi_awburst = AWBURST, DIR = O, VEC = [1:0], BUS = M_AXI
-PORT m_axi_awprot = AWPROT, DIR = O, VEC = [2:0], BUS = M_AXI
-PORT m_axi_awcache = AWCACHE, DIR = O, VEC = [3:0], BUS = M_AXI
-PORT m_axi_wready = WREADY, DIR = I, BUS = M_AXI
-PORT m_axi_wvalid = WVALID, DIR = O, BUS = M_AXI
-PORT m_axi_wdata = WDATA, DIR = O, VEC = [(C_M_AXI_DATA_WIDTH-1):0], ENDIAN = LITTLE, BUS = M_AXI
-PORT m_axi_wstrb = WSTRB, DIR = O, VEC = [((C_M_AXI_DATA_WIDTH/8)-1):0], ENDIAN = LITTLE, BUS = M_AXI
-PORT m_axi_wlast = WLAST, DIR = O, BUS = M_AXI
-PORT m_axi_bready = BREADY, DIR = O, BUS = M_AXI
-PORT m_axi_bid = BID, DIR = I, VEC = [((C_M_AXI_ID_WIDTH)-1):0], BUS = M_AXI
-PORT m_axi_bvalid = BVALID, DIR = I, BUS = M_AXI
-PORT m_axi_bresp = BRESP, DIR = I, VEC = [1:0], BUS = M_AXI
+PORT m_axi0_arready = ARREADY, DIR = I, BUS = M_AXI0
+PORT m_axi0_arvalid = ARVALID, DIR = O, BUS = M_AXI0
+PORT m_axi0_arid = ARID, DIR = O, VEC = [((C_M_AXI0_ID_WIDTH)-1):0], BUS = M_AXI0
+PORT m_axi0_araddr = ARADDR, DIR = O, VEC = [(C_M_AXI0_ADDR_WIDTH-1):0], ENDIAN = LITTLE, BUS = M_AXI0
+PORT m_axi0_arlen = ARLEN, DIR = O, VEC = [7:0], BUS = M_AXI0
+PORT m_axi0_arsize = ARSIZE, DIR = O, VEC = [2:0], BUS = M_AXI0
+PORT m_axi0_arburst = ARBURST, DIR = O, VEC = [1:0], BUS = M_AXI0
+PORT m_axi0_arprot = ARPROT, DIR = O, VEC = [2:0], BUS = M_AXI0
+PORT m_axi0_arcache = ARCACHE, DIR = O, VEC = [3:0], BUS = M_AXI0
+PORT m_axi0_rready = RREADY, DIR = O, BUS = M_AXI0
+PORT m_axi0_rvalid = RVALID, DIR = I, BUS = M_AXI0
+PORT m_axi0_rid = RID, DIR = I, VEC = [((C_M_AXI0_ID_WIDTH)-1):0], BUS = M_AXI0
+PORT m_axi0_rdata = RDATA, DIR = I, VEC = [(C_M_AXI0_DATA_WIDTH-1):0], ENDIAN = LITTLE, BUS = M_AXI0
+PORT m_axi0_rresp = RRESP, DIR = I, VEC = [1:0], BUS = M_AXI0
+PORT m_axi0_rlast = RLAST, DIR = I, BUS = M_AXI0
+PORT m_axi0_awready = AWREADY, DIR = I, BUS = M_AXI0
+PORT m_axi0_awvalid = AWVALID, DIR = O, BUS = M_AXI0
+PORT m_axi0_awid = AWID, DIR = O, VEC = [((C_M_AXI0_ID_WIDTH)-1):0], BUS = M_AXI0
+PORT m_axi0_awaddr = AWADDR, DIR = O, VEC = [(C_M_AXI0_ADDR_WIDTH-1):0], ENDIAN = LITTLE, BUS = M_AXI0
+PORT m_axi0_awlen = AWLEN, DIR = O, VEC = [7:0], BUS = M_AXI0
+PORT m_axi0_awsize = AWSIZE, DIR = O, VEC = [2:0], BUS = M_AXI0
+PORT m_axi0_awburst = AWBURST, DIR = O, VEC = [1:0], BUS = M_AXI0
+PORT m_axi0_awprot = AWPROT, DIR = O, VEC = [2:0], BUS = M_AXI0
+PORT m_axi0_awcache = AWCACHE, DIR = O, VEC = [3:0], BUS = M_AXI0
+PORT m_axi0_wready = WREADY, DIR = I, BUS = M_AXI0
+PORT m_axi0_wvalid = WVALID, DIR = O, BUS = M_AXI0
+PORT m_axi0_wdata = WDATA, DIR = O, VEC = [(C_M_AXI0_DATA_WIDTH-1):0], ENDIAN = LITTLE, BUS = M_AXI0
+PORT m_axi0_wstrb = WSTRB, DIR = O, VEC = [((C_M_AXI0_DATA_WIDTH/8)-1):0], ENDIAN = LITTLE, BUS = M_AXI0
+PORT m_axi0_wlast = WLAST, DIR = O, BUS = M_AXI0
+PORT m_axi0_bready = BREADY, DIR = O, BUS = M_AXI0
+PORT m_axi0_bid = BID, DIR = I, VEC = [((C_M_AXI0_ID_WIDTH)-1):0], BUS = M_AXI0
+PORT m_axi0_bvalid = BVALID, DIR = I, BUS = M_AXI0
+PORT m_axi0_bresp = BRESP, DIR = I, VEC = [1:0], BUS = M_AXI0
+
+PORT m_axi1_aclk = "", DIR = I, SIGIS = CLK, BUS = M_AXI1, ASSIGNMENT = REQUIRE
+PORT m_axi1_aresetn = ARESETN, DIR = I, SIGIS = RST, BUS = M_AXI1
+PORT md_error = "", DIR = O
+PORT m_axi1_arready = ARREADY, DIR = I, BUS = M_AXI1
+PORT m_axi1_arvalid = ARVALID, DIR = O, BUS = M_AXI1
+PORT m_axi1_arid = ARID, DIR = O, VEC = [((C_M_AXI1_ID_WIDTH)-1):0], BUS = M_AXI1
+PORT m_axi1_araddr = ARADDR, DIR = O, VEC = [(C_M_AXI1_ADDR_WIDTH-1):0], ENDIAN = LITTLE, BUS = M_AXI1
+PORT m_axi1_arlen = ARLEN, DIR = O, VEC = [7:0], BUS = M_AXI1
+PORT m_axi1_arsize = ARSIZE, DIR = O, VEC = [2:0], BUS = M_AXI1
+PORT m_axi1_arburst = ARBURST, DIR = O, VEC = [1:0], BUS = M_AXI1
+PORT m_axi1_arprot = ARPROT, DIR = O, VEC = [2:0], BUS = M_AXI1
+PORT m_axi1_arcache = ARCACHE, DIR = O, VEC = [3:0], BUS = M_AXI1
+PORT m_axi1_rready = RREADY, DIR = O, BUS = M_AXI1
+PORT m_axi1_rvalid = RVALID, DIR = I, BUS = M_AXI1
+PORT m_axi1_rid = RID, DIR = I, VEC = [((C_M_AXI1_ID_WIDTH)-1):0], BUS = M_AXI1
+PORT m_axi1_rdata = RDATA, DIR = I, VEC = [(C_M_AXI1_DATA_WIDTH-1):0], ENDIAN = LITTLE, BUS = M_AXI1
+PORT m_axi1_rresp = RRESP, DIR = I, VEC = [1:0], BUS = M_AXI1
+PORT m_axi1_rlast = RLAST, DIR = I, BUS = M_AXI1
+PORT m_axi1_awready = AWREADY, DIR = I, BUS = M_AXI1
+PORT m_axi1_awvalid = AWVALID, DIR = O, BUS = M_AXI1
+PORT m_axi1_awid = AWID, DIR = O, VEC = [((C_M_AXI1_ID_WIDTH)-1):0], BUS = M_AXI1
+PORT m_axi1_awaddr = AWADDR, DIR = O, VEC = [(C_M_AXI1_ADDR_WIDTH-1):0], ENDIAN = LITTLE, BUS = M_AXI1
+PORT m_axi1_awlen = AWLEN, DIR = O, VEC = [7:0], BUS = M_AXI1
+PORT m_axi1_awsize = AWSIZE, DIR = O, VEC = [2:0], BUS = M_AXI1
+PORT m_axi1_awburst = AWBURST, DIR = O, VEC = [1:0], BUS = M_AXI1
+PORT m_axi1_awprot = AWPROT, DIR = O, VEC = [2:0], BUS = M_AXI1
+PORT m_axi1_awcache = AWCACHE, DIR = O, VEC = [3:0], BUS = M_AXI1
+PORT m_axi1_wready = WREADY, DIR = I, BUS = M_AXI1
+PORT m_axi1_wvalid = WVALID, DIR = O, BUS = M_AXI1
+PORT m_axi1_wdata = WDATA, DIR = O, VEC = [(C_M_AXI1_DATA_WIDTH-1):0], ENDIAN = LITTLE, BUS = M_AXI1
+PORT m_axi1_wstrb = WSTRB, DIR = O, VEC = [((C_M_AXI1_DATA_WIDTH/8)-1):0], ENDIAN = LITTLE, BUS = M_AXI1
+PORT m_axi1_wlast = WLAST, DIR = O, BUS = M_AXI1
+PORT m_axi1_bready = BREADY, DIR = O, BUS = M_AXI1
+PORT m_axi1_bid = BID, DIR = I, VEC = [((C_M_AXI1_ID_WIDTH)-1):0], BUS = M_AXI1
+PORT m_axi1_bvalid = BVALID, DIR = I, BUS = M_AXI1
+PORT m_axi1_bresp = BRESP, DIR = I, VEC = [1:0], BUS = M_AXI1
 
 PORT usr_clk_p = "", DIR = I
 PORT usr_clk_n = "", DIR = I

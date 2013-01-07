@@ -22,41 +22,27 @@
 // SOFTWARE.
 
 import FIFOF::*;
+import BRAMFIFO::*;
 import Clocks::*;
 import TypesAndInterfaces::*;
 import AxiStream::*;
 import FifoToAxi::*;
 import HDMI::*;
 import TbAxi::*;
+import Timer::*;
+import FrameBuffer::*;
+import GetPut::*;
+import Connectable::*;
 
-interface Timer#(type width);
-    method Action start();
-    method Action stop();
-    method Bool running();
-    method Bit#(width) elapsed();
-endinterface
-
-module mkTimer(Timer#(width));
-   Reg#(Bit#(width)) timerReg <- mkReg(0);
-   Reg#(Bool) runningReg <- mkReg(False);
-
-   rule incr if (runningReg);
-       timerReg <= timerReg + 1;
-   endrule
-   method Action start();
-       runningReg <= True;
-       timerReg <= 0;
-   endmethod
-   method Action stop();
-       runningReg <= False;
-   endmethod
-   method Bool running();
-       return runningReg;
-   endmethod
-   method Bit#(width) elapsed();
-       return timerReg;
-   endmethod
-endmodule
+function Put#(item_t) syncFifoToPut( SyncFIFOIfc#(item_t) f);
+    return (
+        interface Put
+            method Action put (item_t item);
+                f.enq(item);
+            endmethod
+        endinterface
+    );
+endfunction
 
 module mkDUT#(Clock hdmi_clk)(DUT);
 
@@ -65,8 +51,11 @@ module mkDUT#(Clock hdmi_clk)(DUT);
     FifoFromAxi#(64) fifoFromAxi <-mkFifoFromAxi();
     Reg#(Maybe#(Bit#(32))) resultReg <- mkReg(tagged Invalid);
     Reg#(Maybe#(Bit#(32))) result2Reg <- mkReg(tagged Invalid);
-    FIFOF#(Bit#(32)) fifoStatusFifo <- mkSizedFIFOF(16);
-    FIFOF#(Bit#(32)) fromFifoStatusFifo <- mkSizedFIFOF(16);
+    FIFOF#(Bit#(32)) fifoStatusFifo <- mkSizedBRAMFIFOF(16);
+    FIFOF#(Bit#(32)) fromFifoStatusFifo <- mkSizedBRAMFIFOF(16);
+
+    Reg#(Bit#(32)) vsyncPulseCountReg <- mkReg(0);
+    Reg#(Bit#(32)) frameCountReg <- mkReg(0);
 
     Reg#(Bool) testReg <- mkReg(False);
     Reg#(Bool) testCompletedReg <- mkReg(False);
@@ -82,18 +71,46 @@ module mkDUT#(Clock hdmi_clk)(DUT);
     Reg#(Bool) readCompletedSent <- mkReg(False);
     Reg#(Bool) firstReadSent <- mkReg(False);
 
+    Clock clock <- exposeCurrentClock;
     Reset reset <- exposeCurrentReset;
 
     Reset hdmi_reset <- mkAsyncReset(2, reset, hdmi_clk);
 
-    SyncFIFOIfc#(Bit#(32)) patternFifo <- mkSyncFIFOFromCC(1, hdmi_clk);
-    HdmiTestPatternGenerator hdmiTpg <- mkHdmiTestPatternGenerator(clocked_by hdmi_clk, reset_by hdmi_reset, patternFifo);
+    SyncPulseIfc vsyncPulse <- mkSyncHandshake(hdmi_clk, hdmi_reset, clock);
+    SyncFIFOIfc#(Bit#(64)) pixelFifo <- mkSyncFIFOFromCC(2, hdmi_clk);
+    SyncFIFOIfc#(HdmiCommand) commandFifo <- mkSyncFIFOFromCC(2, hdmi_clk);
 
+    Reg#(Bit#(32)) shadowFrameBufferBase <- mkReg(0);
+    FrameBuffer frameBuffer <- mkFrameBuffer();
+
+    HdmiTestPatternGenerator hdmiTpg <- mkHdmiTestPatternGenerator(clocked_by hdmi_clk, reset_by hdmi_reset,
+                                                                   commandFifo, pixelFifo, vsyncPulse);
+    mkConnection(frameBuffer.pixels, syncFifoToPut(pixelFifo));
+
+    rule vsync;
+        if (vsyncPulse.pulse())
+        begin
+            $display("vsync pulse received %h", shadowFrameBufferBase);
+            vsyncPulseCountReg <= vsyncPulseCountReg + 1;
+            if (shadowFrameBufferBase != 0)
+            begin
+                $display("frame started");
+                frameCountReg <= frameCountReg + 1;
+                FrameBufferConfig fbc;
+                fbc.base = shadowFrameBufferBase;
+                fbc.pixels = 1920;
+                fbc.lines = 1080;
+                fbc.stridebytes = 1920*fromInteger(bytesperpixel);
+                frameBuffer.start(fbc);
+                commandFifo.enq(tagged TestPattern {enabled: False});
+            end
+        end
+    endrule
 
     AxiTester axiTester <- mkAxiTester(fifoToAxi, fifoFromAxi, 1204);
 
     rule enqTestData if (testReg && writeCountReg < numWordsReg);
-        let v = valueReg * 7;
+        let v = valueReg << 3 + 17;
         valueReg <= v;
         writeCountReg <= writeCountReg + 1;
         fifoToAxi.enq(extend(v));
@@ -255,10 +272,19 @@ module mkDUT#(Clock hdmi_clk)(DUT);
     endmethod
 
     method Action setPatternReg(Bit#(32) yuv422);
-        patternFifo.enq(yuv422);
+        commandFifo.enq(tagged PatternColor {yuv422: yuv422});
     endmethod
 
-    interface AxiMasterWrite axiw = fifoToAxi.axi;
-    interface AxiMasterWrite axir = fifoFromAxi.axi;
+    method Action startFrameBuffer(Bit#(32) base);
+        $display("startFrameBuffer %h", base);
+        shadowFrameBufferBase <= base;
+    endmethod
+
+    interface Reg vsyncPulseCount = vsyncPulseCountReg;
+    interface Reg frameCount = frameCountReg;
+
+    interface AxiMasterWrite axiw0 = fifoToAxi.axi;
+    interface AxiMasterWrite axir0 = fifoFromAxi.axi;
+    interface AxiMasterWrite axir1 = frameBuffer.axir;
     interface HDMI hdmi = hdmiTpg.hdmi;
 endmodule

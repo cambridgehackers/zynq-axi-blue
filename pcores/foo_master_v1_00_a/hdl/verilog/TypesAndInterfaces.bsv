@@ -55,8 +55,14 @@ interface DUT;
     method ActionValue#(Bit#(32)) test2Completed();
 
     method Action setPatternReg(Bit#(32) yuv422);
+    method Action startFrameBuffer(Bit#(32) base);
 
-    interface AxiMasterWrite#(64,8) axiw;
-    interface AxiMasterRead#(64) axir;
+    interface Reg#(Bit#(32)) vsyncPulseCount;
+    interface Reg#(Bit#(32)) frameCount;
+
+    interface AxiMasterWrite#(64,8) axiw0;
+    interface AxiMasterRead#(64) axir0;
+    interface AxiMasterWrite#(64,8) axiw1;
+    interface AxiMasterRead#(64) axir1;
     interface HDMI hdmi;
 endinterface

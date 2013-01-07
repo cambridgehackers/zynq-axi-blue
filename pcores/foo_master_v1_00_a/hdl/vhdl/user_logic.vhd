@@ -60,48 +60,18 @@ use proc_common_v3_00_a.proc_common_pkg.all;
 Library UNISIM;
 use UNISIM.vcomponents.all;
 
--- DO NOT EDIT ABOVE THIS LINE --------------------
-
---USER libraries added here
-
-------------------------------------------------------------------------------
--- Entity section
-------------------------------------------------------------------------------
--- Definition of Generics:
---   C_SLV_AWIDTH                 -- Slave interface address bus width
---   C_SLV_DWIDTH                 -- Slave interface data bus width
---   C_NUM_MEM                    -- Number of memory spaces
---
--- Definition of Ports:
---   Bus2IP_Clk                   -- Bus to IP clock
---   Bus2IP_Resetn                -- Bus to IP reset
---   Bus2IP_Addr                  -- Bus to IP address bus
---   Bus2IP_CS                    -- Bus to IP chip select for user logic memory selection
---   Bus2IP_RNW                   -- Bus to IP read/not write
---   Bus2IP_Data                  -- Bus to IP data bus
---   Bus2IP_BE                    -- Bus to IP byte enables
---   Bus2IP_RdCE                  -- Bus to IP read chip enable
---   Bus2IP_WrCE                  -- Bus to IP write chip enable
---   Bus2IP_Burst                 -- Bus to IP burst-mode qualifier
---   Bus2IP_BurstLength           -- Bus to IP burst length
---   Bus2IP_RdReq                 -- Bus to IP read request
---   Bus2IP_WrReq                 -- Bus to IP write request
---   IP2Bus_AddrAck               -- IP to Bus address acknowledgement
---   IP2Bus_Data                  -- IP to Bus data bus
---   IP2Bus_RdAck                 -- IP to Bus read transfer acknowledgement
---   IP2Bus_WrAck                 -- IP to Bus write transfer acknowledgement
---   IP2Bus_Error                 -- IP to Bus error response
---   Type_of_xfer                 -- Transfer Type
-------------------------------------------------------------------------------
-
 entity user_logic is
   generic
   (
     -- ADD USER GENERICS BELOW THIS LINE ---------------
     --USER generics added here
-    C_M_AXI_ADDR_WIDTH : integer := 32;
-    C_M_AXI_DATA_WIDTH : integer := 64;
-    C_M_AXI_ID_WIDTH : integer := 1;
+    C_M_AXI0_ADDR_WIDTH : integer := 32;
+    C_M_AXI0_DATA_WIDTH : integer := 64;
+    C_M_AXI0_ID_WIDTH : integer := 1;
+
+    C_M_AXI1_ADDR_WIDTH : integer := 32;
+    C_M_AXI1_DATA_WIDTH : integer := 64;
+    C_M_AXI1_ID_WIDTH : integer := 1;
     -- ADD USER GENERICS ABOVE THIS LINE ---------------
 
     -- DO NOT EDIT BELOW THIS LINE ---------------------
@@ -116,42 +86,79 @@ entity user_logic is
     -- ADD USER PORTS BELOW THIS LINE ------------------
     interrupt                      : out std_logic;
 
-    m_axi_aclk                     : in  std_logic;
-    m_axi_aresetn                  : in  std_logic;
     md_error                       : out std_logic;
-    m_axi_arready                  : in  std_logic;
-    m_axi_arvalid                  : out std_logic;
-    m_axi_arid                     : out std_logic_vector(C_M_AXI_ID_WIDTH-1 downto 0);
-    m_axi_araddr                   : out std_logic_vector(C_M_AXI_ADDR_WIDTH-1 downto 0);
-    m_axi_arlen                    : out std_logic_vector(7 downto 0);
-    m_axi_arsize                   : out std_logic_vector(2 downto 0);
-    m_axi_arburst                  : out std_logic_vector(1 downto 0);
-    m_axi_arprot                   : out std_logic_vector(2 downto 0);
-    m_axi_arcache                  : out std_logic_vector(3 downto 0);
-    m_axi_rready                   : out std_logic;
-    m_axi_rvalid                   : in  std_logic;
-    m_axi_rid                      : in  std_logic_vector(C_M_AXI_ID_WIDTH-1 downto 0);
-    m_axi_rdata                    : in  std_logic_vector(C_M_AXI_DATA_WIDTH-1 downto 0);
-    m_axi_rresp                    : in  std_logic_vector(1 downto 0);
-    m_axi_rlast                    : in  std_logic;
-    m_axi_awready                  : in  std_logic;
-    m_axi_awvalid                  : out std_logic;
-    m_axi_awid                     : out std_logic_vector(C_M_AXI_ID_WIDTH-1 downto 0);
-    m_axi_awaddr                   : out std_logic_vector(C_M_AXI_ADDR_WIDTH-1 downto 0);
-    m_axi_awlen                    : out std_logic_vector(7 downto 0);
-    m_axi_awsize                   : out std_logic_vector(2 downto 0);
-    m_axi_awburst                  : out std_logic_vector(1 downto 0);
-    m_axi_awprot                   : out std_logic_vector(2 downto 0);
-    m_axi_awcache                  : out std_logic_vector(3 downto 0);
-    m_axi_wready                   : in  std_logic;
-    m_axi_wvalid                   : out std_logic;
-    m_axi_wdata                    : out std_logic_vector(C_M_AXI_DATA_WIDTH-1 downto 0);
-    m_axi_wstrb                    : out std_logic_vector((C_M_AXI_DATA_WIDTH)/8 - 1 downto 0);
-    m_axi_wlast                    : out std_logic;
-    m_axi_bready                   : out std_logic;
-    m_axi_bid                      : in std_logic_vector(C_M_AXI_ID_WIDTH-1 downto 0);
-    m_axi_bvalid                   : in  std_logic;
-    m_axi_bresp                    : in  std_logic_vector(1 downto 0);
+
+    m_axi0_aclk                     : in  std_logic;
+    m_axi0_aresetn                  : in  std_logic;
+    m_axi0_arready                  : in  std_logic;
+    m_axi0_arvalid                  : out std_logic;
+    m_axi0_arid                     : out std_logic_vector(C_M_AXI0_ID_WIDTH-1 downto 0);
+    m_axi0_araddr                   : out std_logic_vector(C_M_AXI0_ADDR_WIDTH-1 downto 0);
+    m_axi0_arlen                    : out std_logic_vector(7 downto 0);
+    m_axi0_arsize                   : out std_logic_vector(2 downto 0);
+    m_axi0_arburst                  : out std_logic_vector(1 downto 0);
+    m_axi0_arprot                   : out std_logic_vector(2 downto 0);
+    m_axi0_arcache                  : out std_logic_vector(3 downto 0);
+    m_axi0_rready                   : out std_logic;
+    m_axi0_rvalid                   : in  std_logic;
+    m_axi0_rid                      : in  std_logic_vector(C_M_AXI0_ID_WIDTH-1 downto 0);
+    m_axi0_rdata                    : in  std_logic_vector(C_M_AXI0_DATA_WIDTH-1 downto 0);
+    m_axi0_rresp                    : in  std_logic_vector(1 downto 0);
+    m_axi0_rlast                    : in  std_logic;
+    m_axi0_awready                  : in  std_logic;
+    m_axi0_awvalid                  : out std_logic;
+    m_axi0_awid                     : out std_logic_vector(C_M_AXI0_ID_WIDTH-1 downto 0);
+    m_axi0_awaddr                   : out std_logic_vector(C_M_AXI0_ADDR_WIDTH-1 downto 0);
+    m_axi0_awlen                    : out std_logic_vector(7 downto 0);
+    m_axi0_awsize                   : out std_logic_vector(2 downto 0);
+    m_axi0_awburst                  : out std_logic_vector(1 downto 0);
+    m_axi0_awprot                   : out std_logic_vector(2 downto 0);
+    m_axi0_awcache                  : out std_logic_vector(3 downto 0);
+    m_axi0_wready                   : in  std_logic;
+    m_axi0_wvalid                   : out std_logic;
+    m_axi0_wdata                    : out std_logic_vector(C_M_AXI0_DATA_WIDTH-1 downto 0);
+    m_axi0_wstrb                    : out std_logic_vector((C_M_AXI0_DATA_WIDTH)/8 - 1 downto 0);
+    m_axi0_wlast                    : out std_logic;
+    m_axi0_bready                   : out std_logic;
+    m_axi0_bid                      : in std_logic_vector(C_M_AXI0_ID_WIDTH-1 downto 0);
+    m_axi0_bvalid                   : in  std_logic;
+    m_axi0_bresp                    : in  std_logic_vector(1 downto 0);
+
+    m_axi1_aclk                     : in  std_logic;
+    m_axi1_aresetn                  : in  std_logic;
+    m_axi1_arready                  : in  std_logic;
+    m_axi1_arvalid                  : out std_logic;
+    m_axi1_arid                     : out std_logic_vector(C_M_AXI1_ID_WIDTH-1 downto 0);
+    m_axi1_araddr                   : out std_logic_vector(C_M_AXI1_ADDR_WIDTH-1 downto 0);
+    m_axi1_arlen                    : out std_logic_vector(7 downto 0);
+    m_axi1_arsize                   : out std_logic_vector(2 downto 0);
+    m_axi1_arburst                  : out std_logic_vector(1 downto 0);
+    m_axi1_arprot                   : out std_logic_vector(2 downto 0);
+    m_axi1_arcache                  : out std_logic_vector(3 downto 0);
+    m_axi1_rready                   : out std_logic;
+    m_axi1_rvalid                   : in  std_logic;
+    m_axi1_rid                      : in  std_logic_vector(C_M_AXI1_ID_WIDTH-1 downto 0);
+    m_axi1_rdata                    : in  std_logic_vector(C_M_AXI1_DATA_WIDTH-1 downto 0);
+    m_axi1_rresp                    : in  std_logic_vector(1 downto 0);
+    m_axi1_rlast                    : in  std_logic;
+    m_axi1_awready                  : in  std_logic;
+    m_axi1_awvalid                  : out std_logic;
+    m_axi1_awid                     : out std_logic_vector(C_M_AXI1_ID_WIDTH-1 downto 0);
+    m_axi1_awaddr                   : out std_logic_vector(C_M_AXI1_ADDR_WIDTH-1 downto 0);
+    m_axi1_awlen                    : out std_logic_vector(7 downto 0);
+    m_axi1_awsize                   : out std_logic_vector(2 downto 0);
+    m_axi1_awburst                  : out std_logic_vector(1 downto 0);
+    m_axi1_awprot                   : out std_logic_vector(2 downto 0);
+    m_axi1_awcache                  : out std_logic_vector(3 downto 0);
+    m_axi1_wready                   : in  std_logic;
+    m_axi1_wvalid                   : out std_logic;
+    m_axi1_wdata                    : out std_logic_vector(C_M_AXI1_DATA_WIDTH-1 downto 0);
+    m_axi1_wstrb                    : out std_logic_vector((C_M_AXI1_DATA_WIDTH)/8 - 1 downto 0);
+    m_axi1_wlast                    : out std_logic;
+    m_axi1_bready                   : out std_logic;
+    m_axi1_bid                      : in std_logic_vector(C_M_AXI1_ID_WIDTH-1 downto 0);
+    m_axi1_bvalid                   : in  std_logic;
+    m_axi1_bresp                    : in  std_logic_vector(1 downto 0);
 
     usr_clk_p : in std_logic;
     usr_clk_n : in std_logic;
@@ -229,16 +236,27 @@ architecture IMP of user_logic is
   signal ip_slave_en_put : std_logic;
   signal ip_slave_en_get : std_logic;
 
-  signal RDY_axiw_writeAddr : std_logic;
-  signal RDY_axiw_writeData : std_logic;
-  signal RDY_axiw_writeResponse : std_logic;
-  signal RDY_axir_readAddr : std_logic;
-  signal RDY_axir_readData : std_logic;
-  signal WILL_FIRE_axiw_writeAddr : std_logic;
-  signal WILL_FIRE_axiw_writeData : std_logic;
-  signal WILL_FIRE_axiw_writeResponse : std_logic;
-  signal WILL_FIRE_axir_readAddr : std_logic;
-  signal WILL_FIRE_axir_readData : std_logic;
+  signal RDY_axiw0_writeAddr : std_logic;
+  signal RDY_axiw0_writeData : std_logic;
+  signal RDY_axiw0_writeResponse : std_logic;
+  signal RDY_axir0_readAddr : std_logic;
+  signal RDY_axir0_readData : std_logic;
+  signal WILL_FIRE_axiw0_writeAddr : std_logic;
+  signal WILL_FIRE_axiw0_writeData : std_logic;
+  signal WILL_FIRE_axiw0_writeResponse : std_logic;
+  signal WILL_FIRE_axir0_readAddr : std_logic;
+  signal WILL_FIRE_axir0_readData : std_logic;
+
+  signal RDY_axiw1_writeAddr : std_logic;
+  signal RDY_axiw1_writeData : std_logic;
+  signal RDY_axiw1_writeResponse : std_logic;
+  signal RDY_axir1_readAddr : std_logic;
+  signal RDY_axir1_readData : std_logic;
+  signal WILL_FIRE_axiw1_writeAddr : std_logic;
+  signal WILL_FIRE_axiw1_writeData : std_logic;
+  signal WILL_FIRE_axiw1_writeResponse : std_logic;
+  signal WILL_FIRE_axir1_readAddr : std_logic;
+  signal WILL_FIRE_axir1_readData : std_logic;
 
   signal hdmi_vsync_unbuf, hdmi_hsync_unbuf, hdmi_de_unbuf : std_logic;
   signal hdmi_data_unbuf : std_logic_vector(15 downto 0);
@@ -300,63 +318,129 @@ begin
 
       interrupt => interrupt,
 
-      EN_axiw_writeAddr => WILL_FIRE_axiw_writeAddr,
-      axiw_writeAddr => m_axi_awaddr,
-      RDY_axiw_writeAddr => RDY_axiw_writeAddr,
+      EN_axiw0_writeAddr => WILL_FIRE_axiw0_writeAddr,
+      axiw0_writeAddr => m_axi0_awaddr,
+      axiw0_writeId => m_axi0_awid(0),
+      RDY_axiw0_writeAddr => RDY_axiw0_writeAddr,
 
-      axiw_writeBurstLen => m_axi_awlen,
-      -- RDY_axiw_writeBurstLen,
+      axiw0_writeBurstLen => m_axi0_awlen,
+      -- RDY_axiw0_writeBurstLen,
 
-      axiw_writeBurstWidth => m_axi_awsize,
-      -- RDY_axiw_writeBurstWidth,
+      axiw0_writeBurstWidth => m_axi0_awsize,
+      -- RDY_axiw0_writeBurstWidth,
 
-      axiw_writeBurstType => m_axi_awburst,
-      -- RDY_axiw_writeBurstType,
+      axiw0_writeBurstType => m_axi0_awburst,
+      -- RDY_axiw0_writeBurstType,
 
-      axiw_writeBurstProt => m_axi_awprot,
-      -- RDY_axiw_writeBurstProt,
+      axiw0_writeBurstProt => m_axi0_awprot,
+      -- RDY_axiw0_writeBurstProt,
 
-      axiw_writeBurstCache => m_axi_awcache,
-      -- RDY_axiw_writeBurstCache,
+      axiw0_writeBurstCache => m_axi0_awcache,
+      -- RDY_axiw0_writeBurstCache,
 
-      EN_axiw_writeData => WILL_FIRE_axiw_writeData,
-      axiw_writeData => m_axi_wdata,
-      RDY_axiw_writeData => RDY_axiw_writeData,
+      EN_axiw0_writeData => WILL_FIRE_axiw0_writeData,
+      axiw0_writeData => m_axi0_wdata,
+      RDY_axiw0_writeData => RDY_axiw0_writeData,
 
-      axiw_writeDataByteEnable => m_axi_wstrb,
-      -- RDY_axiw_writeDataByteEnable,
+      axiw0_writeDataByteEnable => m_axi0_wstrb,
+      -- RDY_axiw0_writeDataByteEnable,
 
-      axiw_writeLastDataBeat => m_axi_wlast,
-      -- RDY_axiw_writeLastDataBeat,
+      axiw0_writeLastDataBeat => m_axi0_wlast,
+      -- RDY_axiw0_writeLastDataBeat,
 
-      EN_axiw_writeResponse => WILL_FIRE_axiw_writeResponse,
-      axiw_writeResponse_responseCode => m_axi_bresp,
-      RDY_axiw_writeResponse => RDY_axiw_writeResponse,
+      EN_axiw0_writeResponse => WILL_FIRE_axiw0_writeResponse,
+      axiw0_writeResponse_responseCode => m_axi0_bresp,
+      axiw0_writeResponse_id => m_axi0_bid(0),
+      RDY_axiw0_writeResponse => RDY_axiw0_writeResponse,
 
-      EN_axir_readAddr => WILL_FIRE_axir_readAddr,
-      axir_readAddr => m_axi_araddr,
-      RDY_axir_readAddr => RDY_axir_readAddr,
+      EN_axir0_readAddr => WILL_FIRE_axir0_readAddr,
+      axir0_readId => m_axi0_arid(0),
+      axir0_readAddr => m_axi0_araddr,
+      RDY_axir0_readAddr => RDY_axir0_readAddr,
 
-      axir_readBurstLen => m_axi_arlen,
-      -- RDY_axir_readBurstLen,
+      axir0_readBurstLen => m_axi0_arlen,
+      -- RDY_axir0_readBurstLen,
 
-      axir_readBurstWidth => m_axi_arsize,
-      -- RDY_axir_readBurstWidth,
+      axir0_readBurstWidth => m_axi0_arsize,
+      -- RDY_axir0_readBurstWidth,
 
-      axir_readBurstType => m_axi_arburst,
-      -- RDY_axir_readBurstType,
+      axir0_readBurstType => m_axi0_arburst,
+      -- RDY_axir0_readBurstType,
 
-      axir_readBurstProt => m_axi_arprot,
-      -- RDY_axir_readBurstProt,
+      axir0_readBurstProt => m_axi0_arprot,
+      -- RDY_axir0_readBurstProt,
 
-      axir_readBurstCache => m_axi_arcache,
-      -- RDY_axir_readBurstCache,
+      axir0_readBurstCache => m_axi0_arcache,
+      -- RDY_axir0_readBurstCache,
 
-      axir_readData_data => m_axi_rdata,
-      axir_readData_resp => m_axi_rresp,
-      axir_readData_last => m_axi_rlast,
-      EN_axir_readData => WILL_FIRE_axir_readData,
-      RDY_axir_readData => RDY_axir_readData,
+      axir0_readData_data => m_axi0_rdata,
+      axir0_readData_resp => m_axi0_rresp,
+      axir0_readData_last => m_axi0_rlast,
+      axir0_readData_id => m_axi0_rid(0),
+      EN_axir0_readData => WILL_FIRE_axir0_readData,
+      RDY_axir0_readData => RDY_axir0_readData,
+
+      EN_axiw1_writeAddr => WILL_FIRE_axiw1_writeAddr,
+      axiw1_writeAddr => m_axi1_awaddr,
+      axiw1_writeId => m_axi1_awid(0),
+      RDY_axiw1_writeAddr => RDY_axiw1_writeAddr,
+
+      axiw1_writeBurstLen => m_axi1_awlen,
+      -- RDY_axiw1_writeBurstLen,
+
+      axiw1_writeBurstWidth => m_axi1_awsize,
+      -- RDY_axiw1_writeBurstWidth,
+
+      axiw1_writeBurstType => m_axi1_awburst,
+      -- RDY_axiw1_writeBurstType,
+
+      axiw1_writeBurstProt => m_axi1_awprot,
+      -- RDY_axiw1_writeBurstProt,
+
+      axiw1_writeBurstCache => m_axi1_awcache,
+      -- RDY_axiw1_writeBurstCache,
+
+      EN_axiw1_writeData => WILL_FIRE_axiw1_writeData,
+      axiw1_writeData => m_axi1_wdata,
+      RDY_axiw1_writeData => RDY_axiw1_writeData,
+
+      axiw1_writeDataByteEnable => m_axi1_wstrb,
+      -- RDY_axiw1_writeDataByteEnable,
+
+      axiw1_writeLastDataBeat => m_axi1_wlast,
+      -- RDY_axiw1_writeLastDataBeat,
+
+      EN_axiw1_writeResponse => WILL_FIRE_axiw1_writeResponse,
+      axiw1_writeResponse_responseCode => m_axi1_bresp,
+      axiw1_writeResponse_id => m_axi1_bid(0),
+      RDY_axiw1_writeResponse => RDY_axiw1_writeResponse,
+
+      EN_axir1_readAddr => WILL_FIRE_axir1_readAddr,
+      axir1_readId => m_axi1_arid(0),
+      axir1_readAddr => m_axi1_araddr,
+      RDY_axir1_readAddr => RDY_axir1_readAddr,
+
+      axir1_readBurstLen => m_axi1_arlen,
+      -- RDY_axir1_readBurstLen,
+
+      axir1_readBurstWidth => m_axi1_arsize,
+      -- RDY_axir1_readBurstWidth,
+
+      axir1_readBurstType => m_axi1_arburst,
+      -- RDY_axir1_readBurstType,
+
+      axir1_readBurstProt => m_axi1_arprot,
+      -- RDY_axir1_readBurstProt,
+
+      axir1_readBurstCache => m_axi1_arcache,
+      -- RDY_axir1_readBurstCache,
+
+      axir1_readData_data => m_axi1_rdata,
+      axir1_readData_resp => m_axi1_rresp,
+      axir1_readData_last => m_axi1_rlast,
+      axir1_readData_id => m_axi1_rid(0),
+      EN_axir1_readData => WILL_FIRE_axir1_readData,
+      RDY_axir1_readData => RDY_axir1_readData,
 
       hdmi_hdmi_vsync => hdmi_vsync_unbuf,
       hdmi_hdmi_hsync => hdmi_hsync_unbuf,
@@ -645,19 +729,28 @@ begin
   
 
   -- scheduler
-  WILL_FIRE_axir_readAddr <= (m_axi_arready and RDY_axir_readAddr);
-  WILL_FIRE_axir_readData <= (m_axi_rvalid and RDY_axir_readData);
-  m_axi_arvalid <= RDY_axir_readAddr;
-  m_axi_rready <= RDY_axir_readData;
+  WILL_FIRE_axir0_readAddr <= (m_axi0_arready and RDY_axir0_readAddr);
+  WILL_FIRE_axir0_readData <= (m_axi0_rvalid and RDY_axir0_readData);
+  m_axi0_arvalid <= RDY_axir0_readAddr;
+  m_axi0_rready <= RDY_axir0_readData;
 
-  WILL_FIRE_axiw_writeAddr <= (m_axi_awready and RDY_axiw_writeAddr);
-  WILL_FIRE_axiw_writeData <= (m_axi_wready and RDY_axiw_writeData);
-  WILL_FIRE_axiw_writeResponse <= (m_axi_bvalid and RDY_axiw_writeResponse);
-  m_axi_awvalid <= RDY_axiw_writeAddr;
-  m_axi_wvalid <= RDY_axiw_writeData;
-  m_axi_bready <= RDY_axiw_writeResponse;
+  WILL_FIRE_axiw0_writeAddr <= (m_axi0_awready and RDY_axiw0_writeAddr);
+  WILL_FIRE_axiw0_writeData <= (m_axi0_wready and RDY_axiw0_writeData);
+  WILL_FIRE_axiw0_writeResponse <= (m_axi0_bvalid and RDY_axiw0_writeResponse);
+  m_axi0_awvalid <= RDY_axiw0_writeAddr;
+  m_axi0_wvalid <= RDY_axiw0_writeData;
+  m_axi0_bready <= RDY_axiw0_writeResponse;
 
-  -- currently constant
-  m_axi_arid <= "0";
-  m_axi_awid <= "0";
+  WILL_FIRE_axir1_readAddr <= (m_axi1_arready and RDY_axir1_readAddr);
+  WILL_FIRE_axir1_readData <= (m_axi1_rvalid and RDY_axir1_readData);
+  m_axi1_arvalid <= RDY_axir1_readAddr;
+  m_axi1_rready <= RDY_axir1_readData;
+
+  WILL_FIRE_axiw1_writeAddr <= (m_axi1_awready and RDY_axiw1_writeAddr);
+  WILL_FIRE_axiw1_writeData <= (m_axi1_wready and RDY_axiw1_writeData);
+  WILL_FIRE_axiw1_writeResponse <= (m_axi1_bvalid and RDY_axiw1_writeResponse);
+  m_axi1_awvalid <= RDY_axiw1_writeAddr;
+  m_axi1_wvalid <= RDY_axiw1_writeData;
+  m_axi1_bready <= RDY_axiw1_writeResponse;
+
 end IMP;

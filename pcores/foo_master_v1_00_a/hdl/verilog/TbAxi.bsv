@@ -58,7 +58,7 @@ module mkAxiTester#(FifoToAxi#(busWidth, busWidthBytes) fifoToAxi,
     RegFile#(Bit#(32), Bit#(busWidth)) testDataRegFile <- mkRegFile(0, numWords);
 
     rule enqTestData if (state == EnqWrites && writeCountReg < numWordsReg);
-        let v = valueReg * 7;
+        let v = valueReg << 3 + 17;
         valueReg <= v;
         testDataRegFile.upd(writeAddrReg/fromInteger(valueOf(busWidthBytes)), v);
         writeAddrReg <= writeAddrReg + fromInteger(valueOf(busWidthBytes));

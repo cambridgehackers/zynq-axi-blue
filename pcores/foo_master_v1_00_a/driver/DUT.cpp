@@ -258,3 +258,23 @@ void DUT::setPatternReg ( unsigned int base )
 
   p->sendMessage(&msg);
 };
+
+struct DUTstartFrameBufferMSG : public PortalMessage
+{
+  struct Request {
+    //fix Adapter.bsv to unreverse these
+    unsigned int base;
+
+  } request;
+  int channelNumber;
+};
+
+void DUT::startFrameBuffer ( unsigned int base )
+{
+  DUTstartFrameBufferMSG msg;
+  msg.size = sizeof(msg.request) + sizeof(msg.channelNumber);
+  msg.channelNumber = baseChannelNumber + 12;
+  msg.request.base = base;
+
+  p->sendMessage(&msg);
+};

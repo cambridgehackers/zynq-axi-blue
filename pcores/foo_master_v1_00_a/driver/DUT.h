@@ -22,6 +22,7 @@ public:
     void runTest ( unsigned int );
     void runTest2 ( unsigned int );
     void setPatternReg ( unsigned int );
+    void startFrameBuffer ( unsigned int );
 private:
     DUT(PortalInstance *, int baseChannelNumber=0);
     ~DUT();

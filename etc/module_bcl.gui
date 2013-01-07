@@ -13,7 +13,7 @@
       <VARIABLE COL_INDEX="5" IS_VISIBLE="FALSE" VIEWDISP="IP Classification" VIEWTYPE="HEADER"/>
       <VARIABLE COL_INDEX="6" IS_VISIBLE="FALSE" VIEWDISP="Type" VIEWTYPE="HEADER"/>
     </HEADERS>
-    <SPLITTERS COLLAPSIBLE="1" HANDLEWIDTH="-1" MARKER="255" ORIENTATION="1" RESIZE="1" SIZES="75,962,200" VERSION="0"/>
+    <SPLITTERS COLLAPSIBLE="1" HANDLEWIDTH="-1" MARKER="255" ORIENTATION="1" RESIZE="1" SIZES="-1,-1,-1" VERSION="0"/>
     <SET ID="processing_system7_0" IS_EXPANDED="TRUE"/>
     <SET ID="foo_lite_slave_0" IS_EXPANDED="TRUE"/>
     <SET ID="foo_slave_0" IS_EXPANDED="TRUE"/>
@@ -24,11 +24,12 @@
     <SEQUENCES IS_DEF_SEQUENCES="FALSE">
       <VARIABLE ID="processing_system7_0" IS_EXPANDED="TRUE" ROW_INDEX="1"/>
       <VARIABLE ID="axi4lite_0" ROW_INDEX="0"/>
-      <VARIABLE ID="foo_lite_slave_0" IS_EXPANDED="TRUE" ROW_INDEX="3"/>
-      <VARIABLE ID="foo_slave_0" IS_EXPANDED="TRUE" ROW_INDEX="4"/>
-      <VARIABLE ID="axi_interconnect_1" ROW_INDEX="2"/>
-      <VARIABLE ID="foo_master_0" IS_EXPANDED="TRUE" ROW_INDEX="5"/>
-      <VARIABLE ID="clock_generator_0" ROW_INDEX="6"/>
+      <VARIABLE ID="foo_lite_slave_0" IS_EXPANDED="TRUE" ROW_INDEX="2"/>
+      <VARIABLE ID="foo_slave_0" IS_EXPANDED="TRUE" ROW_INDEX="3"/>
+      <VARIABLE ID="foo_master_0" IS_EXPANDED="TRUE" ROW_INDEX="4"/>
+      <VARIABLE ID="clock_generator_0" ROW_INDEX="5"/>
+      <VARIABLE ID="axi_interconnect_0" ROW_INDEX="6"/>
+      <VARIABLE ID="axi_interconnect_1" ROW_INDEX="7"/>
     </SEQUENCES>
   </SET>
 
@@ -74,7 +75,7 @@
   </SET>
 
   <SET CLASS="PROJECT" DISPLAYMODE="TREE" VIEW_ID="PORT">
-    <HEADERS HSCROLL="0" VSCROLL="1269">
+    <HEADERS HSCROLL="0" VSCROLL="0">
       <VARIABLE COL_INDEX="0" COL_WIDTH="286" IS_VISIBLE="TRUE" VIEWDISP="Name" VIEWTYPE="HEADER"/>
       <VARIABLE COL_INDEX="1" COL_WIDTH="390" IS_VISIBLE="TRUE" VIEWDISP="Connected Port" VIEWTYPE="HEADER"/>
       <VARIABLE COL_INDEX="2" IS_VISIBLE="FALSE" VIEWDISP="Net" VIEWTYPE="HEADER"/>
@@ -90,22 +91,26 @@
       <VARIABLE COL_INDEX="11" COL_WIDTH="361" IS_VISIBLE="TRUE" VIEWDISP="Differential Polarity" VIEWTYPE="HEADER"/>
     </HEADERS>
     <SPLITTERS COLLAPSIBLE="1" HANDLEWIDTH="-1" MARKER="255" ORIENTATION="1" RESIZE="1" SIZES="75,962,200" VERSION="0"/>
-    <SET ID="ExternalPorts" IS_EXPANDED="TRUE"/>
-    <SET ID="processing_system7_0" IS_EXPANDED="TRUE"/>
-    <SET ID="foo_master_0" IS_EXPANDED="TRUE"/>
+    <SET ID="axi_interconnect_0" IS_EXPANDED="TRUE"/>
+    <SET ID="foo_master_0" IS_EXPANDED="TRUE">
+      <SET ID="M_AXI0" IS_EXPANDED="TRUE"/>
+      <SET ID="M_AXI1" IS_EXPANDED="TRUE"/>
+    </SET>
     <SET ID="clock_generator_0" IS_EXPANDED="TRUE"/>
+    <SET ID="axi_interconnect_1" IS_EXPANDED="TRUE"/>
     <STATUS>
       <SELECTIONS/>
     </STATUS>
     <SEQUENCES IS_DEF_SEQUENCES="FALSE">
-      <VARIABLE ID="ExternalPorts" IS_EXPANDED="TRUE" ROW_INDEX="0"/>
-      <VARIABLE ID="processing_system7_0" IS_EXPANDED="TRUE" ROW_INDEX="2"/>
+      <VARIABLE ID="ExternalPorts" ROW_INDEX="0"/>
+      <VARIABLE ID="processing_system7_0" ROW_INDEX="2"/>
       <VARIABLE ID="axi4lite_0" ROW_INDEX="1"/>
       <VARIABLE ID="foo_lite_slave_0" ROW_INDEX="3"/>
       <VARIABLE ID="foo_slave_0" ROW_INDEX="4"/>
-      <VARIABLE ID="axi_interconnect_1" ROW_INDEX="5"/>
+      <VARIABLE ID="axi_interconnect_0" IS_EXPANDED="TRUE" ROW_INDEX="8"/>
       <VARIABLE ID="foo_master_0" IS_EXPANDED="TRUE" ROW_INDEX="6"/>
       <VARIABLE ID="clock_generator_0" IS_EXPANDED="TRUE" ROW_INDEX="7"/>
+      <VARIABLE ID="axi_interconnect_1" IS_EXPANDED="TRUE" ROW_INDEX="5"/>
     </SEQUENCES>
   </SET>
 

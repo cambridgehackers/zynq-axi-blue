@@ -72,104 +72,18 @@ use axi_slave_burst_v1_00_a.axi_slave_burst;
 library foo_master_v1_00_a;
 use foo_master_v1_00_a.user_logic;
 
-------------------------------------------------------------------------------
--- Entity section
-------------------------------------------------------------------------------
--- Definition of Generics:
---   C_S_AXI_DATA_WIDTH           -- AXI4 slave: Data Width
---   C_S_AXI_ADDR_WIDTH           -- AXI4 slave: Address Width
---   C_S_AXI_ID_WIDTH             -- AXI4 slave: ID Width
---   C_RDATA_FIFO_DEPTH           -- AXI4 slave: FIFO Depth
---   C_INCLUDE_TIMEOUT_CNT        -- AXI4 slave: Data Timeout Count
---   C_TIMEOUT_CNTR_VAL           -- AXI4 slave: Timeout Counter Value
---   C_ALIGN_BE_RDADDR            -- AXI4 slave: Align Byte Enable read Data Address
---   C_S_AXI_SUPPORTS_WRITE       -- AXI4 slave: Support Write
---   C_S_AXI_SUPPORTS_READ        -- AXI4 slave: Support Read
---   C_FAMILY                     -- FPGA Family
---   C_S_AXI_MEM0_BASEADDR        -- User memory space 0 base address
---   C_S_AXI_MEM0_HIGHADDR        -- User memory space 0 high address
---
--- Definition of Ports:
---   S_AXI_ACLK                   -- AXI4 slave: Clock
---   S_AXI_ARESETN                -- AXI4 slave: Reset
---   S_AXI_AWADDR                 -- AXI4 slave: Write address
---   S_AXI_AWVALID                -- AXI4 slave: Write address valid
---   S_AXI_WDATA                  -- AXI4 slave: Write data
---   S_AXI_WSTRB                  -- AXI4 slave: Write strobe
---   S_AXI_WVALID                 -- AXI4 slave: Write data valid
---   S_AXI_BREADY                 -- AXI4 slave: read response ready
---   S_AXI_ARADDR                 -- AXI4 slave: read address
---   S_AXI_ARVALID                -- AXI4 slave: read address valid
---   S_AXI_RREADY                 -- AXI4 slave: read data ready
---   S_AXI_ARREADY                -- AXI4 slave: read address ready
---   S_AXI_RDATA                  -- AXI4 slave: read data
---   S_AXI_RRESP                  -- AXI4 slave: read data response
---   S_AXI_RVALID                 -- AXI4 slave: read data valid
---   S_AXI_WREADY                 -- AXI4 slave: write data ready
---   S_AXI_BRESP                  -- AXI4 slave: read response
---   S_AXI_BVALID                 -- AXI4 slave: read response valid
---   S_AXI_AWREADY                -- AXI4 slave: write address ready
---   S_AXI_AWID                   -- AXI4 slave: write address ID
---   S_AXI_AWLEN                  -- AXI4 slave: write address Length
---   S_AXI_AWSIZE                 -- AXI4 slave: write address size
---   S_AXI_AWBURST                -- AXI4 slave: write address burst
---   S_AXI_AWLOCK                 -- AXI4 slave: write address lock
---   S_AXI_AWCACHE                -- AXI4 slave: write address cache
---   S_AXI_AWPROT                 -- AXI4 slave: write address protection
---   S_AXI_WLAST                  -- AXI4 slave: write data last
---   S_AXI_BID                    -- AXI4 slave: read response ID
---   S_AXI_ARID                   -- AXI4 slave: read address ID
---   S_AXI_ARLEN                  -- AXI4 slave: read address Length
---   S_AXI_ARSIZE                 -- AXI4 slave: read address size
---   S_AXI_ARBURST                -- AXI4 slave: read address burst
---   S_AXI_ARLOCK                 -- AXI4 slave: read address lock
---   S_AXI_ARCACHE                -- AXI4 slave: read address cache
---   S_AXI_ARPROT                 -- AXI4 slave: read address protection
---   S_AXI_RID                    -- AXI4 slave: read data ID
---   S_AXI_RLAST                  -- AXI4 slave: read data last
-
---   m_axi_aclk                   -- AXI4 master: Clock
---   m_axi_aresetn                -- AXI4 master: Reset
---   md_error                     -- AXI4 master: Error
---   m_axi_arready                -- AXI4 master: read address ready
---   m_axi_arvalid                -- AXI4 master: read address valid
---   m_axi_araddr                 -- AXI4 master: read address
---   m_axi_arlen                  -- AXI4 master: read adress length
---   m_axi_arsize                 -- AXI4 master: read address size
---   m_axi_arburst                -- AXI4 master: read address burst
---   m_axi_arprot                 -- AXI4 master: read address protection
---   m_axi_arcache                -- AXI4 master: read adddress cache
---   m_axi_rready                 -- AXI4 master: read data ready
---   m_axi_rvalid                 -- AXI4 master: read data valid
---   m_axi_rdata                  -- AXI4 master: read data
---   m_axi_rresp                  -- AXI4 master: read data response
---   m_axi_rlast                  -- AXI4 master: read data last
---   m_axi_awready                -- AXI4 master: write address ready
---   m_axi_awvalid                -- AXI4 master: write address valid
---   m_axi_awaddr                 -- AXI4 master: write address
---   m_axi_awlen                  -- AXI4 master: write address length
---   m_axi_awsize                 -- AXI4 master: write address size
---   m_axi_awburst                -- AXI4 master: write address burst
---   m_axi_awprot                 -- AXI4 master: write address protection
---   m_axi_awcache                -- AXI4 master: write address cache
---   m_axi_wready                 -- AXI4 master: write data ready
---   m_axi_wvalid                 -- AXI4 master: write data valid
---   m_axi_wdata                  -- AXI4 master: write data 
---   m_axi_wstrb                  -- AXI4 master: write data strobe
---   m_axi_wlast                  -- AXI4 master: write data last
---   m_axi_bready                 -- AXI4 master: read response ready
---   m_axi_bvalid                 -- AXI4 master: read response valid
---   m_axi_bresp                  -- AXI4 master: read response 
------------------------------------------------------------------------------
-
 entity foo_master is
   generic
   (
     -- ADD USER GENERICS BELOW THIS LINE ---------------
     --USER generics added here
-    C_M_AXI_DATA_WIDTH             : integer              := 32;
-    C_M_AXI_ADDR_WIDTH             : integer              := 32;
-    C_M_AXI_ID_WIDTH               : integer              := 1;
+    C_M_AXI0_DATA_WIDTH             : integer              := 32;
+    C_M_AXI0_ADDR_WIDTH             : integer              := 32;
+    C_M_AXI0_ID_WIDTH               : integer              := 1;
+
+    C_M_AXI1_DATA_WIDTH             : integer              := 32;
+    C_M_AXI1_ADDR_WIDTH             : integer              := 32;
+    C_M_AXI1_ID_WIDTH               : integer              := 1;
     -- ADD USER GENERICS ABOVE THIS LINE ---------------
 
     -- DO NOT EDIT BELOW THIS LINE ---------------------
@@ -248,42 +162,79 @@ entity foo_master is
     S_AXI_RID                      : out std_logic_vector(C_S_AXI_ID_WIDTH-1 downto 0);
     S_AXI_RLAST                    : out std_logic;
 
-    m_axi_aclk                     : in  std_logic;
-    m_axi_aresetn                  : in  std_logic;
     md_error                       : out std_logic;
-    m_axi_arready                  : in  std_logic;
-    m_axi_arvalid                  : out std_logic;
-    m_axi_arid                     : out std_logic_vector(C_M_AXI_ID_WIDTH-1 downto 0);
-    m_axi_araddr                   : out std_logic_vector(C_M_AXI_ADDR_WIDTH-1 downto 0);
-    m_axi_arlen                    : out std_logic_vector(7 downto 0);
-    m_axi_arsize                   : out std_logic_vector(2 downto 0);
-    m_axi_arburst                  : out std_logic_vector(1 downto 0);
-    m_axi_arprot                   : out std_logic_vector(2 downto 0);
-    m_axi_arcache                  : out std_logic_vector(3 downto 0);
-    m_axi_rready                   : out std_logic;
-    m_axi_rvalid                   : in  std_logic;
-    m_axi_rid                      : in  std_logic_vector(C_M_AXI_ID_WIDTH-1 downto 0);
-    m_axi_rdata                    : in  std_logic_vector(C_M_AXI_DATA_WIDTH-1 downto 0);
-    m_axi_rresp                    : in  std_logic_vector(1 downto 0);
-    m_axi_rlast                    : in  std_logic;
-    m_axi_awready                  : in  std_logic;
-    m_axi_awvalid                  : out std_logic;
-    m_axi_awid                     : out std_logic_vector(C_M_AXI_ID_WIDTH-1 downto 0);
-    m_axi_awaddr                   : out std_logic_vector(C_M_AXI_ADDR_WIDTH-1 downto 0);
-    m_axi_awlen                    : out std_logic_vector(7 downto 0);
-    m_axi_awsize                   : out std_logic_vector(2 downto 0);
-    m_axi_awburst                  : out std_logic_vector(1 downto 0);
-    m_axi_awprot                   : out std_logic_vector(2 downto 0);
-    m_axi_awcache                  : out std_logic_vector(3 downto 0);
-    m_axi_wready                   : in  std_logic;
-    m_axi_wvalid                   : out std_logic;
-    m_axi_wdata                    : out std_logic_vector(C_M_AXI_DATA_WIDTH-1 downto 0);
-    m_axi_wstrb                    : out std_logic_vector((C_M_AXI_DATA_WIDTH)/8 - 1 downto 0);
-    m_axi_wlast                    : out std_logic;
-    m_axi_bready                   : out std_logic;
-    m_axi_bid                      : in std_logic_vector(C_M_AXI_ID_WIDTH-1 downto 0);
-    m_axi_bvalid                   : in  std_logic;
-    m_axi_bresp                    : in  std_logic_vector(1 downto 0)
+
+    m_axi0_aclk                     : in  std_logic;
+    m_axi0_aresetn                  : in  std_logic;
+    m_axi0_arready                  : in  std_logic;
+    m_axi0_arvalid                  : out std_logic;
+    m_axi0_arid                     : out std_logic_vector(C_M_AXI0_ID_WIDTH-1 downto 0);
+    m_axi0_araddr                   : out std_logic_vector(C_M_AXI0_ADDR_WIDTH-1 downto 0);
+    m_axi0_arlen                    : out std_logic_vector(7 downto 0);
+    m_axi0_arsize                   : out std_logic_vector(2 downto 0);
+    m_axi0_arburst                  : out std_logic_vector(1 downto 0);
+    m_axi0_arprot                   : out std_logic_vector(2 downto 0);
+    m_axi0_arcache                  : out std_logic_vector(3 downto 0);
+    m_axi0_rready                   : out std_logic;
+    m_axi0_rvalid                   : in  std_logic;
+    m_axi0_rid                      : in  std_logic_vector(C_M_AXI0_ID_WIDTH-1 downto 0);
+    m_axi0_rdata                    : in  std_logic_vector(C_M_AXI0_DATA_WIDTH-1 downto 0);
+    m_axi0_rresp                    : in  std_logic_vector(1 downto 0);
+    m_axi0_rlast                    : in  std_logic;
+    m_axi0_awready                  : in  std_logic;
+    m_axi0_awvalid                  : out std_logic;
+    m_axi0_awid                     : out std_logic_vector(C_M_AXI0_ID_WIDTH-1 downto 0);
+    m_axi0_awaddr                   : out std_logic_vector(C_M_AXI0_ADDR_WIDTH-1 downto 0);
+    m_axi0_awlen                    : out std_logic_vector(7 downto 0);
+    m_axi0_awsize                   : out std_logic_vector(2 downto 0);
+    m_axi0_awburst                  : out std_logic_vector(1 downto 0);
+    m_axi0_awprot                   : out std_logic_vector(2 downto 0);
+    m_axi0_awcache                  : out std_logic_vector(3 downto 0);
+    m_axi0_wready                   : in  std_logic;
+    m_axi0_wvalid                   : out std_logic;
+    m_axi0_wdata                    : out std_logic_vector(C_M_AXI0_DATA_WIDTH-1 downto 0);
+    m_axi0_wstrb                    : out std_logic_vector((C_M_AXI0_DATA_WIDTH)/8 - 1 downto 0);
+    m_axi0_wlast                    : out std_logic;
+    m_axi0_bready                   : out std_logic;
+    m_axi0_bid                      : in std_logic_vector(C_M_AXI0_ID_WIDTH-1 downto 0);
+    m_axi0_bvalid                   : in  std_logic;
+    m_axi0_bresp                    : in  std_logic_vector(1 downto 0);
+
+    m_axi1_aclk                     : in  std_logic;
+    m_axi1_aresetn                  : in  std_logic;
+    m_axi1_arready                  : in  std_logic;
+    m_axi1_arvalid                  : out std_logic;
+    m_axi1_arid                     : out std_logic_vector(C_M_AXI1_ID_WIDTH-1 downto 0);
+    m_axi1_araddr                   : out std_logic_vector(C_M_AXI1_ADDR_WIDTH-1 downto 0);
+    m_axi1_arlen                    : out std_logic_vector(7 downto 0);
+    m_axi1_arsize                   : out std_logic_vector(2 downto 0);
+    m_axi1_arburst                  : out std_logic_vector(1 downto 0);
+    m_axi1_arprot                   : out std_logic_vector(2 downto 0);
+    m_axi1_arcache                  : out std_logic_vector(3 downto 0);
+    m_axi1_rready                   : out std_logic;
+    m_axi1_rvalid                   : in  std_logic;
+    m_axi1_rid                      : in  std_logic_vector(C_M_AXI1_ID_WIDTH-1 downto 0);
+    m_axi1_rdata                    : in  std_logic_vector(C_M_AXI1_DATA_WIDTH-1 downto 0);
+    m_axi1_rresp                    : in  std_logic_vector(1 downto 0);
+    m_axi1_rlast                    : in  std_logic;
+    m_axi1_awready                  : in  std_logic;
+    m_axi1_awvalid                  : out std_logic;
+    m_axi1_awid                     : out std_logic_vector(C_M_AXI1_ID_WIDTH-1 downto 0);
+    m_axi1_awaddr                   : out std_logic_vector(C_M_AXI1_ADDR_WIDTH-1 downto 0);
+    m_axi1_awlen                    : out std_logic_vector(7 downto 0);
+    m_axi1_awsize                   : out std_logic_vector(2 downto 0);
+    m_axi1_awburst                  : out std_logic_vector(1 downto 0);
+    m_axi1_awprot                   : out std_logic_vector(2 downto 0);
+    m_axi1_awcache                  : out std_logic_vector(3 downto 0);
+    m_axi1_wready                   : in  std_logic;
+    m_axi1_wvalid                   : out std_logic;
+    m_axi1_wdata                    : out std_logic_vector(C_M_AXI1_DATA_WIDTH-1 downto 0);
+    m_axi1_wstrb                    : out std_logic_vector((C_M_AXI1_DATA_WIDTH)/8 - 1 downto 0);
+    m_axi1_wlast                    : out std_logic;
+    m_axi1_bready                   : out std_logic;
+    m_axi1_bid                      : in std_logic_vector(C_M_AXI1_ID_WIDTH-1 downto 0);
+    m_axi1_bvalid                   : in  std_logic;
+    m_axi1_bresp                    : in  std_logic_vector(1 downto 0)
    -- DO NOT EDIT ABOVE THIS LINE ---------------------
   );
 
@@ -294,10 +245,16 @@ entity foo_master is
   attribute SIGIS of S_AXI_ACLK       : signal is "Clk";
   attribute SIGIS of S_AXI_ARESETN       : signal is "Rst";
 
-  attribute MAX_FANOUT of m_axi_aclk       : signal is "10000";
-  attribute MAX_FANOUT of m_axi_aresetn       : signal is "10000";
-  attribute SIGIS of m_axi_aclk       : signal is "Clk";
-  attribute SIGIS of m_axi_aresetn       : signal is "Rst";
+  attribute MAX_FANOUT of m_axi0_aclk       : signal is "10000";
+  attribute MAX_FANOUT of m_axi0_aresetn       : signal is "10000";
+  attribute SIGIS of m_axi0_aclk       : signal is "Clk";
+  attribute SIGIS of m_axi0_aresetn       : signal is "Rst";
+
+  attribute MAX_FANOUT of m_axi1_aclk       : signal is "10000";
+  attribute MAX_FANOUT of m_axi1_aresetn       : signal is "10000";
+  attribute SIGIS of m_axi1_aclk       : signal is "Clk";
+  attribute SIGIS of m_axi1_aresetn       : signal is "Rst";
+
   attribute SIGIS of hdmi_ref_clk : signal is "Clk";
   attribute SIGIS of hdmi_clk : signal is "Clk";
 end entity foo_master;
@@ -458,9 +415,13 @@ begin
     (
       -- MAP USER GENERICS BELOW THIS LINE ---------------
       --USER generics mapped here
-      C_M_AXI_ADDR_WIDTH => C_M_AXI_ADDR_WIDTH,
-      C_M_AXI_DATA_WIDTH => C_M_AXI_DATA_WIDTH,
-      C_M_AXI_ID_WIDTH => C_M_AXI_ID_WIDTH,
+      C_M_AXI0_ADDR_WIDTH => C_M_AXI0_ADDR_WIDTH,
+      C_M_AXI0_DATA_WIDTH => C_M_AXI0_DATA_WIDTH,
+      C_M_AXI0_ID_WIDTH => C_M_AXI0_ID_WIDTH,
+
+      C_M_AXI1_ADDR_WIDTH => C_M_AXI1_ADDR_WIDTH,
+      C_M_AXI1_DATA_WIDTH => C_M_AXI1_DATA_WIDTH,
+      C_M_AXI1_ID_WIDTH => C_M_AXI1_ID_WIDTH,
       -- MAP USER GENERICS ABOVE THIS LINE ---------------
 
       C_SLV_AWIDTH                   => USER_SLV_AWIDTH,
@@ -472,42 +433,79 @@ begin
       -- MAP USER PORTS BELOW THIS LINE ------------------
       interrupt                     => interrupt,
 
-      m_axi_aclk			=> m_axi_aclk,
-      m_axi_aresetn 			=> m_axi_aresetn,
       md_error				=> md_error,
-      m_axi_arready			=> m_axi_arready,
-      m_axi_arvalid			=> m_axi_arvalid,
-      m_axi_arid			=> m_axi_arid,
-      m_axi_araddr			=> m_axi_araddr,
-      m_axi_arlen			=> m_axi_arlen,
-      m_axi_arsize			=> m_axi_arsize,
-      m_axi_arburst			=> m_axi_arburst,
-      m_axi_arprot			=> m_axi_arprot,
-      m_axi_arcache			=> m_axi_arcache,
-      m_axi_rready			=> m_axi_rready,
-      m_axi_rvalid			=> m_axi_rvalid,
-      m_axi_rid				=> m_axi_rid,
-      m_axi_rdata			=> m_axi_rdata,
-      m_axi_rresp			=> m_axi_rresp,
-      m_axi_rlast			=> m_axi_rlast,
-      m_axi_awready			=> m_axi_awready,
-      m_axi_awvalid			=> m_axi_awvalid,
-      m_axi_awid			=> m_axi_awid,
-      m_axi_awaddr			=> m_axi_awaddr,
-      m_axi_awlen			=> m_axi_awlen,
-      m_axi_awsize			=> m_axi_awsize,
-      m_axi_awburst			=> m_axi_awburst,
-      m_axi_awprot			=> m_axi_awprot,
-      m_axi_awcache			=> m_axi_awcache,
-      m_axi_wready			=> m_axi_wready,
-      m_axi_wvalid			=> m_axi_wvalid,
-      m_axi_wdata			=> m_axi_wdata,
-      m_axi_wstrb			=> m_axi_wstrb,
-      m_axi_wlast			=> m_axi_wlast,
-      m_axi_bready			=> m_axi_bready,
-      m_axi_bid				=> m_axi_bid,
-      m_axi_bvalid			=> m_axi_bvalid,
-      m_axi_bresp			=> m_axi_bresp,
+
+      m_axi0_aclk			=> m_axi0_aclk,
+      m_axi0_aresetn 			=> m_axi0_aresetn,
+      m_axi0_arready			=> m_axi0_arready,
+      m_axi0_arvalid			=> m_axi0_arvalid,
+      m_axi0_arid			=> m_axi0_arid,
+      m_axi0_araddr			=> m_axi0_araddr,
+      m_axi0_arlen			=> m_axi0_arlen,
+      m_axi0_arsize			=> m_axi0_arsize,
+      m_axi0_arburst			=> m_axi0_arburst,
+      m_axi0_arprot			=> m_axi0_arprot,
+      m_axi0_arcache			=> m_axi0_arcache,
+      m_axi0_rready			=> m_axi0_rready,
+      m_axi0_rvalid			=> m_axi0_rvalid,
+      m_axi0_rid			=> m_axi0_rid,
+      m_axi0_rdata			=> m_axi0_rdata,
+      m_axi0_rresp			=> m_axi0_rresp,
+      m_axi0_rlast			=> m_axi0_rlast,
+      m_axi0_awready			=> m_axi0_awready,
+      m_axi0_awvalid			=> m_axi0_awvalid,
+      m_axi0_awid			=> m_axi0_awid,
+      m_axi0_awaddr			=> m_axi0_awaddr,
+      m_axi0_awlen			=> m_axi0_awlen,
+      m_axi0_awsize			=> m_axi0_awsize,
+      m_axi0_awburst			=> m_axi0_awburst,
+      m_axi0_awprot			=> m_axi0_awprot,
+      m_axi0_awcache			=> m_axi0_awcache,
+      m_axi0_wready			=> m_axi0_wready,
+      m_axi0_wvalid			=> m_axi0_wvalid,
+      m_axi0_wdata			=> m_axi0_wdata,
+      m_axi0_wstrb			=> m_axi0_wstrb,
+      m_axi0_wlast			=> m_axi0_wlast,
+      m_axi0_bready			=> m_axi0_bready,
+      m_axi0_bid			=> m_axi0_bid,
+      m_axi0_bvalid			=> m_axi0_bvalid,
+      m_axi0_bresp			=> m_axi0_bresp,
+
+      m_axi1_aclk			=> m_axi1_aclk,
+      m_axi1_aresetn 			=> m_axi1_aresetn,
+      m_axi1_arready			=> m_axi1_arready,
+      m_axi1_arvalid			=> m_axi1_arvalid,
+      m_axi1_arid			=> m_axi1_arid,
+      m_axi1_araddr			=> m_axi1_araddr,
+      m_axi1_arlen			=> m_axi1_arlen,
+      m_axi1_arsize			=> m_axi1_arsize,
+      m_axi1_arburst			=> m_axi1_arburst,
+      m_axi1_arprot			=> m_axi1_arprot,
+      m_axi1_arcache			=> m_axi1_arcache,
+      m_axi1_rready			=> m_axi1_rready,
+      m_axi1_rvalid			=> m_axi1_rvalid,
+      m_axi1_rid			=> m_axi1_rid,
+      m_axi1_rdata			=> m_axi1_rdata,
+      m_axi1_rresp			=> m_axi1_rresp,
+      m_axi1_rlast			=> m_axi1_rlast,
+      m_axi1_awready			=> m_axi1_awready,
+      m_axi1_awvalid			=> m_axi1_awvalid,
+      m_axi1_awid			=> m_axi1_awid,
+      m_axi1_awaddr			=> m_axi1_awaddr,
+      m_axi1_awlen			=> m_axi1_awlen,
+      m_axi1_awsize			=> m_axi1_awsize,
+      m_axi1_awburst			=> m_axi1_awburst,
+      m_axi1_awprot			=> m_axi1_awprot,
+      m_axi1_awcache			=> m_axi1_awcache,
+      m_axi1_wready			=> m_axi1_wready,
+      m_axi1_wvalid			=> m_axi1_wvalid,
+      m_axi1_wdata			=> m_axi1_wdata,
+      m_axi1_wstrb			=> m_axi1_wstrb,
+      m_axi1_wlast			=> m_axi1_wlast,
+      m_axi1_bready			=> m_axi1_bready,
+      m_axi1_bid			=> m_axi1_bid,
+      m_axi1_bvalid			=> m_axi1_bvalid,
+      m_axi1_bresp			=> m_axi1_bresp,
 
       usr_clk_p => usr_clk_p,
       usr_clk_n => usr_clk_n,

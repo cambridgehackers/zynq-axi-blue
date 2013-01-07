@@ -15,8 +15,13 @@ interface DUTWrapper;
    interface Reg#(Bit#(32)) reqCount;
    interface Reg#(Bit#(32)) respCount;
    interface Reg#(Bit#(32)) junkReqCount;
-   interface AxiMasterWrite#(64,8) axiw;
-   interface AxiMasterRead#(64) axir;
+   interface Reg#(Bit#(32)) vsyncPulseCount;
+   interface Reg#(Bit#(32)) frameCount;
+
+   interface AxiMasterWrite#(64,8) axiw0;
+   interface AxiMasterRead#(64) axir0;
+   interface AxiMasterWrite#(64,8) axiw1;
+   interface AxiMasterRead#(64) axir1;
    interface HDMI hdmi;
 endinterface
 
@@ -71,6 +76,10 @@ typedef union tagged {
         Bit#(32) yuv422;
     } SetPatternReg$Request;
 
+    struct {
+        Bit#(32) base;
+    } StartFrameBuffer$Request;
+
   Bit#(0) DutRequestUnused;
 } DutRequest deriving (Bits);
 
@@ -112,7 +121,7 @@ module mkDUTWrapper#(Clock axis_clk, FromBit32#(DutRequest) requestFifo, ToBit32
     Reg#(Bit#(16)) responseTimerReg <- mkReg(0);
     Reg#(Bit#(16)) responseTimeLimitReg <- mkReg(maxBound);
 
-    Bit#(4) maxTag = 12;
+    Bit#(4) maxTag = 13;
 
     rule handleJunkRequest if (pack(requestFifo.first)[4+32-1:32] > maxTag);
         requestFifo.deq;
@@ -180,12 +189,12 @@ module mkDUTWrapper#(Clock axis_clk, FromBit32#(DutRequest) requestFifo, ToBit32
         requestTimerReg <= 0;
     endrule
 
-    rule fifoStatus$response;
-        Bit#(32) r <- dut.fifoStatus();
-        let response = tagged FifoStatus$Response r;
-        responseFifo.enq(response);
-        responseFired <= responseFired + 1;
-    endrule
+    // rule fifoStatus$response;
+    //     Bit#(32) r <- dut.fifoStatus();
+    //     let response = tagged FifoStatus$Response r;
+    //     responseFifo.enq(response);
+    //     responseFired <= responseFired + 1;
+    // endrule
 
     rule axiResponse$response;
         Bit#(32) r <- dut.axiResponse();
@@ -292,6 +301,13 @@ module mkDUTWrapper#(Clock axis_clk, FromBit32#(DutRequest) requestFifo, ToBit32
         requestTimerReg <= 0;
     endrule
 
+    rule handle$startFrameBuffer$request if (requestFifo.first matches tagged StartFrameBuffer$Request .sp);
+        requestFifo.deq;
+        dut.startFrameBuffer(sp.base);
+        requestFired <= requestFired + 1;
+        requestTimerReg <= 0;
+    endrule
+
     rule test2Completed$response;
         Bit#(32) r <- dut.test2Completed();
         let response = tagged Test2Completed$Response r;
@@ -302,7 +318,12 @@ module mkDUTWrapper#(Clock axis_clk, FromBit32#(DutRequest) requestFifo, ToBit32
     interface Reg reqCount = requestFired;
     interface Reg respCount = responseFired;
     interface Reg junkReqCount = junkReqReg;
-    interface AxiMasterWrite axiw = dut.axiw;
-    interface AxiMasterRead axir = dut.axir;
+    interface Reg vsyncPulseCount = dut.vsyncPulseCount;
+    interface Reg frameCount = dut.frameCount;
+
+    interface AxiMasterWrite axiw0 = dut.axiw0;
+    interface AxiMasterRead axir0 = dut.axir0;
+    interface AxiMasterWrite axiw1 = dut.axiw1;
+    interface AxiMasterRead axir1 = dut.axir1;
     interface HDMI hdmi = dut.hdmi;
 endmodule
