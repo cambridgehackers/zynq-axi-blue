@@ -25,6 +25,7 @@ import FIFOF::*;
 import BRAMFIFO::*;
 import Clocks::*;
 import TypesAndInterfaces::*;
+import AxiMasterSlave::*;
 import AxiStream::*;
 import FifoToAxi::*;
 import HDMI::*;
@@ -47,12 +48,14 @@ endfunction
 module mkDUT#(Clock hdmi_clk)(DUT);
 
     let busWidthBytes=8;
-    FifoToAxi#(64,8) fifoToAxi <-mkFifoToAxi();
-    FifoFromAxi#(64) fifoFromAxi <-mkFifoFromAxi();
+    AxiMasterServer#(64, 8) axiMaster <- mkAxiMasterServer;
+
     Reg#(Maybe#(Bit#(32))) resultReg <- mkReg(tagged Invalid);
     Reg#(Maybe#(Bit#(32))) result2Reg <- mkReg(tagged Invalid);
     FIFOF#(Bit#(32)) fifoStatusFifo <- mkSizedBRAMFIFOF(16);
     FIFOF#(Bit#(32)) fromFifoStatusFifo <- mkSizedBRAMFIFOF(16);
+    FIFOF#(Bit#(32)) readFifo <- mkSizedBRAMFIFOF(32);
+    FIFOF#(Bit#(2)) rRespFifo <- mkSizedBRAMFIFOF(32);
 
     Reg#(Bit#(32)) vsyncPulseCountReg <- mkReg(0);
     Reg#(Bit#(32)) frameCountReg <- mkReg(0);
@@ -87,6 +90,11 @@ module mkDUT#(Clock hdmi_clk)(DUT);
                                                                    commandFifo, pixelFifo, vsyncPulse);
     mkConnection(frameBuffer.pixels, syncFifoToPut(pixelFifo));
 
+    rule axiReadData;
+         let v <- axiMaster.readData();
+         readFifo.enq(truncate(v));
+    endrule
+
     rule vsync;
         if (vsyncPulse.pulse())
         begin
@@ -107,78 +115,40 @@ module mkDUT#(Clock hdmi_clk)(DUT);
         end
     endrule
 
-    AxiTester axiTester <- mkAxiTester(fifoToAxi, fifoFromAxi, 1204);
-
-    rule enqTestData if (testReg && writeCountReg < numWordsReg);
-        let v = valueReg << 3 + 17;
-        valueReg <= v;
-        writeCountReg <= writeCountReg + 1;
-        fifoToAxi.enq(extend(v));
-    endrule
-
-    rule enableRead if (testReg && writeCountReg == numWordsReg && !fifoFromAxi.enabled);
-        fifoFromAxi.enabled <= True;
-    endrule
-
-    rule receiveTestData if (testReg && writeCountReg == numWordsReg
-                             && readCountReg < numWordsReg
-                             && fifoFromAxi.notEmpty);
-        let v = fifoFromAxi.first;
-        testResultReg <= truncate(v);
-        fifoFromAxi.deq;
-        if (readCountReg >= numWordsReg-1)
-        begin
-            testReg <= False;
-            testCompletedReg <= True;
-        end
-        readCountReg <= readCountReg + 1;
-    endrule
-
     method Action setBase(Bit#(32) base);
-        fifoToAxi.base <= base;
+        axiMaster.writeAddr(base, 8);
     endmethod
     method Action setBounds(Bit#(32) bounds);
-        fifoToAxi.bounds <= bounds;
     endmethod
     method Action setThreshold(Bit#(32) threshold);
-        fifoToAxi.threshold <= threshold;
-        fifoFromAxi.threshold <= threshold;
     endmethod
     method Action setEnabled(Bit#(32) enabled);
-        fifoToAxi.enabled <= (enabled != 32'd0) ? True : False;
     endmethod
     method Action enq(Bit#(32) v);
-        fifoToAxi.enq(extend(v));
+        axiMaster.writeData(extend(v));
     endmethod
 
-    method Action readFifoStatus(Bit#(12) addr);
-        fifoStatusFifo.enq(fifoToAxi.readStatus(addr));
+    method Action readFifoStatus(Bit#(12) addr) if (False);
     endmethod
+
     method ActionValue#(Bit#(32)) fifoStatus() if (fifoStatusFifo.notEmpty);
         fifoStatusFifo.deq;
         return fifoStatusFifo.first;
     endmethod
 
     method ActionValue#(Bit#(32)) axiResponse();
-        let r <- fifoToAxi.getResponse();
-        return r;
+        let r <- axiMaster.writeResponse();
+        return extend(r);
     endmethod
 
     method Action configure(Bit#(32) v);
-        fifoToAxi.oneBeatAddress <= (v[0] == 1) ? True : False;
-        fifoFromAxi.oneBeatAddress <= (v[1] == 1) ? True : False;
-        fifoToAxi.thirtyTwoBitTransfer <= (v[2] == 1) ? True : False;
-        fifoFromAxi.thirtyTwoBitTransfer <= (v[3] == 1) ? True : False;
     endmethod
 
     method Action readRange(Bit#(32) addr);
-        fifoFromAxi.base <= addr;
-        fifoFromAxi.bounds <= addr + 8*busWidthBytes;
-        fifoFromAxi.enabled <= True;
+        axiMaster.readAddr(addr, 8);
     endmethod
     
     method Action readFromFifoStatus(Bit#(12) addr);
-        fromFifoStatusFifo.enq(fifoFromAxi.readStatus(addr));
     endmethod
 
     method ActionValue#(Bit#(32)) fromFifoStatus() if (fromFifoStatusFifo.notEmpty);
@@ -187,34 +157,18 @@ module mkDUT#(Clock hdmi_clk)(DUT);
     endmethod
 
     method ActionValue#(Bit#(32)) axirResponse();
-        let r <- fifoFromAxi.getResponse();
-        return r;
+        let r = rRespFifo.first;
+        rRespFifo.deq;
+        return extend(r);
     endmethod
 
-    method ActionValue#(Bit#(32)) readValue() if (!testReg);
-         let v = fifoFromAxi.first;
-         fifoFromAxi.deq;
-         return truncate(v);
+    method ActionValue#(Bit#(32)) readValue();
+        let v = readFifo.first;
+        readFifo.deq;
+        return v;
     endmethod
 
     method Action runTest(Bit#(32) numWords) if (!testReg);
-        fifoToAxi.enabled <= True;
-        fifoFromAxi.enabled <= False;
-        fifoFromAxi.base <= fifoToAxi.base;
-        fifoToAxi.bounds <= fifoToAxi.base + numWords*busWidthBytes;
-        fifoFromAxi.bounds <= fifoToAxi.base + numWords*busWidthBytes;
-
-        testReg <= True;
-        testCompletedReg <= False;
-        writeCountReg <= 0;
-        readCountReg <= 0;
-        numWordsReg <= numWords;
-        writeQueuedSent <= False;
-        firstReadSent <= False;
-        readCompletedSent <= False;
-
-        writeTimer.start();
-        readTimer.start();
     endmethod
 
     method ActionValue#(Bit#(32)) writeQueued() if (testReg
@@ -225,23 +179,17 @@ module mkDUT#(Clock hdmi_clk)(DUT);
     endmethod
     method ActionValue#(Bit#(32)) firstRead() if (testReg
                                                   && writeCountReg == numWordsReg
-                                                  && fifoFromAxi.notEmpty
                                                   && !firstReadSent);
         firstReadSent <= True;
         let v = readTimer.elapsed;
-        v[31:24] = truncate(readCountReg);
-        v[23] = readTimer.running ? 1 : 0;
-        v[22] = fifoFromAxi.enabled ? 1 : 0;
         return v;
     endmethod
 
     method ActionValue#(Bit#(32)) writeCompleted() if (testReg
                                                        && writeCountReg == numWordsReg
-                                                       && writeTimer.running()
-                                                       && !fifoToAxi.notEmpty);
+                                                       && writeTimer.running());
         writeTimer.stop();
         let v = writeTimer.elapsed; 
-        v[31] = !fifoToAxi.notEmpty ? 1 : 0;
         return v;
     endmethod
 
@@ -260,15 +208,10 @@ module mkDUT#(Clock hdmi_clk)(DUT);
     endmethod
 
     method Action runTest2(Bit#(32) numWords);
-        axiTester.start(fifoToAxi.base, numWords);
-        writeTimer.start();
     endmethod
 
-    method ActionValue#(Bit#(32)) test2Completed();
-        let v <- axiTester.completed;
-        let t = writeTimer.elapsed();
-        writeTimer.stop();
-        return t;
+    method ActionValue#(Bit#(32)) test2Completed() if (False);
+        return 0;
     endmethod
 
     method Action setPatternReg(Bit#(32) yuv422);
@@ -283,8 +226,9 @@ module mkDUT#(Clock hdmi_clk)(DUT);
     interface Reg vsyncPulseCount = vsyncPulseCountReg;
     interface Reg frameCount = frameCountReg;
 
-    interface AxiMasterWrite axiw0 = fifoToAxi.axi;
-    interface AxiMasterWrite axir0 = fifoFromAxi.axi;
+    interface AxiMasterWrite axiw0 = axiMaster.axi.write;
+    interface AxiMasterWrite axir0 = axiMaster.axi.read;
+    interface AxiMasterWrite axiw1 = frameBuffer.axiw;
     interface AxiMasterWrite axir1 = frameBuffer.axir;
     interface HDMI hdmi = hdmiTpg.hdmi;
 endmodule

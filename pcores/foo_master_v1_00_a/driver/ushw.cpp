@@ -144,7 +144,7 @@ int PortalInterface::dumpRegs()
     return rc;
 }
 
-int PortalInterface::exec()
+int PortalInterface::exec(idleFunc func)
 {
     unsigned int *buf = new unsigned int[1024];
     PortalMessage *msg = (PortalMessage *)(buf);
@@ -167,6 +167,11 @@ int PortalInterface::exec()
             if (0) fprintf(stderr, "channel %x messageHandlers=%p\n", channel, instance->messageHandlers);
             if (instance->messageHandlers && instance->messageHandlers[channel])
                 instance->messageHandlers[channel](msg);
+        }
+        if (rc == 0) {
+          fprintf(stderr, "poll returned rc=%d errno=%d:%s\n", rc, errno, strerror(errno));
+          if (func)
+            func();
         }
     }
     if (rc < 0) {

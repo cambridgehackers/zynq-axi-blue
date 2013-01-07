@@ -37,6 +37,7 @@ typedef struct {
 interface FrameBuffer;
     method Action start(FrameBufferConfig fbc);
     interface Get#(Bit#(64)) pixels;
+    interface AxiMasterWrite#(64,8) axiw;
     interface AxiMasterRead#(64) axir;
 endinterface
 
@@ -99,5 +100,6 @@ module mkFrameBuffer(FrameBuffer);
         endmethod
     endinterface
 
+    interface AxiMasterWrite axiw = axiMaster.axi.write;
     interface AxiMasterRead axir = axiMaster.axi.read;
 endmodule

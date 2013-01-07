@@ -55,7 +55,7 @@ module mkToBit32(ToBit32#(a))
    Bit#(32) size = fromInteger(valueOf(asz));
    Bit#(32) max  = (size >> 5) + ((size[4:0] == 0) ? 0 : 1)-1;
    
-   FIFOF#(Bit#(asz))   fifo <- mkSizedBRAMFIFOF(8);
+   FIFOF#(Bit#(asz))   fifo <- mkUGSizedFIFOF(8);
    Reg#(Bit#(32))      count <- mkReg(0);
 
    method Action enq(a val) if (fifo.notFull);

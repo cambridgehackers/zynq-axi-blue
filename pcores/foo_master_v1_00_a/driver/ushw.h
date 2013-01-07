@@ -36,7 +36,8 @@ class PortalInterface {
 public:
     PortalInterface();
     ~PortalInterface();
-    static int exec();
+    typedef void (*idleFunc)(void);
+    static int exec(idleFunc func = 0);
     static int alloc(size_t size, int *fd, unsigned long *dma_address);
     int registerInstance(PortalInstance *instance);
     int dumpRegs();

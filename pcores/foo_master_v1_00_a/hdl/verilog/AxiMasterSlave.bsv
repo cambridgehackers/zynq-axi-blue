@@ -175,7 +175,8 @@ module mkAxiMasterServer(AxiMasterServer#(busWidth,busWidthBytes)) provisos(Div#
            endmethod
 
            method Action writeResponse(Bit#(2) responseCode, Bit#(1) id) if (bfifo.notFull);
-               bfifo.enq(responseCode);
+               if (responseCode != 0)
+                   bfifo.enq(responseCode);
            endmethod
        endinterface
 
