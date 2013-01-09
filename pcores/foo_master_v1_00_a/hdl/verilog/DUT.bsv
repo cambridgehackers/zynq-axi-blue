@@ -24,6 +24,9 @@
 import FIFOF::*;
 import BRAMFIFO::*;
 import Clocks::*;
+import GetPut::*;
+import Connectable::*;
+
 import TypesAndInterfaces::*;
 import AxiMasterSlave::*;
 import AxiStream::*;
@@ -32,8 +35,8 @@ import HDMI::*;
 import TbAxi::*;
 import Timer::*;
 import FrameBuffer::*;
-import GetPut::*;
-import Connectable::*;
+import FrameBufferBram::*;
+import YUV::*;
 
 function Put#(item_t) syncFifoToPut( SyncFIFOIfc#(item_t) f);
     return (
@@ -80,15 +83,17 @@ module mkDUT#(Clock hdmi_clk)(DUT);
     Reset hdmi_reset <- mkAsyncReset(2, reset, hdmi_clk);
 
     SyncPulseIfc vsyncPulse <- mkSyncHandshake(hdmi_clk, hdmi_reset, clock);
-    SyncFIFOIfc#(Bit#(64)) pixelFifo <- mkSyncFIFOFromCC(2, hdmi_clk);
+    SyncPulseIfc hsyncPulse <- mkSyncHandshake(hdmi_clk, hdmi_reset, clock);
+    //SyncFIFOIfc#(Yuv422) yuv422Fifo <- mkSyncFIFOFromCC(2, hdmi_clk);
+    SyncFIFOIfc#(Bit#(64)) rgbrgbFifo <- mkSyncFIFOFromCC(4, hdmi_clk);
     SyncFIFOIfc#(HdmiCommand) commandFifo <- mkSyncFIFOFromCC(2, hdmi_clk);
 
     Reg#(Bit#(32)) shadowFrameBufferBase <- mkReg(0);
-    FrameBuffer frameBuffer <- mkFrameBuffer();
+    FrameBuffer frameBuffer <- mkFrameBufferBram(hdmi_clk, hdmi_reset);
 
     HdmiTestPatternGenerator hdmiTpg <- mkHdmiTestPatternGenerator(clocked_by hdmi_clk, reset_by hdmi_reset,
-                                                                   commandFifo, pixelFifo, vsyncPulse);
-    mkConnection(frameBuffer.pixels, syncFifoToPut(pixelFifo));
+                                                                   commandFifo, frameBuffer.buffer,
+                                                                   vsyncPulse, hsyncPulse);
 
     rule axiReadData;
          let v <- axiMaster.readData();
@@ -113,6 +118,10 @@ module mkDUT#(Clock hdmi_clk)(DUT);
                 commandFifo.enq(tagged TestPattern {enabled: False});
             end
         end
+    endrule
+    rule hsync if (hsyncPulse.pulse());
+        if (frameBuffer.running)
+            frameBuffer.startLine();
     endrule
 
     method Action setBase(Bit#(32) base);

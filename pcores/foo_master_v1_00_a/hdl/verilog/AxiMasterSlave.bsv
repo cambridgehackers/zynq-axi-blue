@@ -24,6 +24,7 @@
 import RegFile::*;
 import BRAMFIFO::*;
 import FIFOF::*;
+import FIFOLevel::*;
 import SpecialFIFOs::*;
 
 interface AxiMasterRead#(type busWidth);
@@ -97,14 +98,28 @@ module mkAxiMasterServer(AxiMasterServer#(busWidth,busWidthBytes)) provisos(Div#
    Reg#(Bit#(32)) wAddrReg <- mkReg(0);
    Reg#(Bit#(1)) writeIdReg <- mkReg(0);
    Reg#(Bit#(1)) readIdReg <- mkReg(0);
-   //FIFOF#(AddrBurst) raddrFifo <- mkSizedBypassFIFOF(4);
-   FIFOF#(AddrBurst) raddrFifo <- mkSizedBRAMFIFOF(8);
-   FIFOF#(Bit#(busWidth)) rfifo <- mkSizedBRAMFIFOF(32);
    FIFOF#(Bit#(busWidth)) wfifo <- mkSizedBRAMFIFOF(32);
-   FIFOF#(Bit#(2)) bfifo <- mkSizedBRAMFIFOF(8);
+   FIFOF#(Bit#(2)) bfifo <- mkSizedBRAMFIFOF(32);
    Reg#(Bit#(8)) wBurstCountReg <- mkReg(0);
    Reg#(Bool) wAddressPresented <- mkReg(False);
-   FIFOF#(Bit#(2)) axiBrespFifo <- mkSizedBRAMFIFOF(32);
+
+   FIFOF#(AddrBurst) raddrFifo <- mkSizedBypassFIFOF(4);
+   //FIFOF#(AddrBurst) raddrFifo <- mkSizedBRAMFIFOF(8);
+   let rfifoDepth = 1024;
+   FIFOF#(Bit#(busWidth)) rfifo <- mkSizedBRAMFIFOF(rfifoDepth);
+   Reg#(Bit#(11)) rfifoWordsAvail <- mkReg(rfifoDepth);
+   PulseWire enqPulse <- mkPulseWire();
+   PulseWire deqPulse <- mkPulseWire();
+   Wire#(Bit#(8)) readCount <- mkDWire(0);
+
+   rule updateWordsAvailCount;
+      let avail = rfifoWordsAvail;
+      if (enqPulse)
+          avail = avail - extend(readCount);
+      if (deqPulse)
+          avail = avail + 1;
+      rfifoWordsAvail <= avail;
+   endrule
 
    method Action readAddr(Bit#(32) addr, Bit#(8) numWords);
        //$display("readAddr addr %h burstCountReg %d", addr, numWords);
@@ -113,6 +128,7 @@ module mkAxiMasterServer(AxiMasterServer#(busWidth,busWidthBytes)) provisos(Div#
 
    method ActionValue#(Bit#(busWidth)) readData() if (rfifo.notEmpty);
        //$display("axiMaster.readData %h", rfifo.first);
+       deqPulse.send;
        rfifo.deq;
        return rfifo.first;
    endmethod
@@ -144,8 +160,10 @@ module mkAxiMasterServer(AxiMasterServer#(busWidth,busWidthBytes)) provisos(Div#
            method Bit#(3) writeBurstWidth();
                if (valueOf(busWidth) == 32)
                    return 3'b010; // 3'b010: 32bit, 3'b011: 64bit, 3'b100: 128bit
-               else
+               else if (valueOf(busWidth) == 64)
                    return 3'b011;
+               else
+                   return 3'b100;
            endmethod
            method Bit#(2) writeBurstType();  // drive with 2'b01 increment address
                return 2'b01; // increment address
@@ -181,7 +199,9 @@ module mkAxiMasterServer(AxiMasterServer#(busWidth,busWidthBytes)) provisos(Div#
        endinterface
 
        interface AxiMasterRead read;
-           method ActionValue#(Bit#(32)) readAddr();
+           method ActionValue#(Bit#(32)) readAddr() if (extend(unpack(raddrFifo.first.numWords)) <= rfifoWordsAvail);
+               enqPulse.send;
+               readCount <= raddrFifo.first.numWords;
                raddrFifo.deq();
                readIdReg <= readIdReg + 1;
                return raddrFifo.first().addr;
@@ -192,8 +212,10 @@ module mkAxiMasterServer(AxiMasterServer#(busWidth,busWidthBytes)) provisos(Div#
            method Bit#(3) readBurstWidth();
                if (valueOf(busWidth) == 32)
                    return 3'b010; // 3'b010: 32bit, 3'b011: 64bit, 3'b100: 128bit
-               else
+               else if (valueOf(busWidth) == 64)
                    return 3'b011;
+               else
+                   return 3'b100;
            endmethod
            method Bit#(2) readBurstType();  // drive with 2'b01
                return 2'b01;
@@ -212,6 +234,81 @@ module mkAxiMasterServer(AxiMasterServer#(busWidth,busWidthBytes)) provisos(Div#
                rfifo.enq(data);
            endmethod
        endinterface
+   endinterface
+endmodule
+
+module mkNullAxiMaster(AxiMaster#(busWidth,busWidthBytes)) provisos(Div#(busWidth,8,busWidthBytes),Add#(1,a,busWidth));
+   interface AxiMasterWrite write;
+       method ActionValue#(Bit#(32)) writeAddr() if (False);
+           return 0;
+       endmethod
+       method Bit#(8) writeBurstLen();
+           return 0;
+       endmethod
+       method Bit#(3) writeBurstWidth();
+           if (valueOf(busWidth) == 32)
+               return 3'b010; // 3'b010: 32bit, 3'b011: 64bit, 3'b100: 128bit
+           else if (valueOf(busWidth) == 64)
+               return 3'b011;
+           else
+               return 3'b100;
+       endmethod
+       method Bit#(2) writeBurstType();  // drive with 2'b01 increment address
+           return 2'b01; // increment address
+       endmethod
+       method Bit#(3) writeBurstProt(); // drive with 3'b000
+           return 3'b000;
+       endmethod
+       method Bit#(4) writeBurstCache(); // drive with 4'b0011
+           return 4'b0011;
+       endmethod
+       method Bit#(1) writeId();
+           return 0;
+       endmethod
+
+       method ActionValue#(Bit#(busWidth)) writeData();
+           return 0;
+       endmethod
+       method Bit#(busWidthBytes) writeDataByteEnable();
+           return maxBound;
+       endmethod
+       method Bit#(1) writeLastDataBeat(); // last data beat
+           return 0;
+       endmethod
+
+       method Action writeResponse(Bit#(2) responseCode, Bit#(1) id);
+       endmethod
+   endinterface
+
+   interface AxiMasterRead read;
+       method ActionValue#(Bit#(32)) readAddr() if (False);
+           return 0;
+       endmethod
+       method Bit#(8) readBurstLen();
+           return 0;
+       endmethod
+       method Bit#(3) readBurstWidth();
+           if (valueOf(busWidth) == 32)
+               return 3'b010; // 3'b010: 32bit, 3'b011: 64bit, 3'b100: 128bit
+           else if (valueOf(busWidth) == 64)
+               return 3'b011;
+           else
+               return 3'b100;
+       endmethod
+       method Bit#(2) readBurstType();  // drive with 2'b01
+           return 2'b01;
+       endmethod
+       method Bit#(3) readBurstProt(); // drive with 3'b000
+           return 3'b000;
+       endmethod
+       method Bit#(4) readBurstCache(); // drive with 4'b0011
+           return 4'b0011;
+       endmethod
+       method Bit#(1) readId();
+           return 0;
+       endmethod
+       method Action readData(Bit#(busWidth) data, Bit#(2) resp, Bit#(1) last, Bit#(1) id);
+       endmethod
    endinterface
 endmodule
 

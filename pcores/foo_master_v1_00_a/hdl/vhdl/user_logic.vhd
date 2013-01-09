@@ -682,7 +682,7 @@ begin
     );
 
   -- mirror signals for logic analyzer
-    OBUF_clk_mirror : OBUF
+    OBUF_vsync_mirror : OBUF
     generic map (
     DRIVE => 12,
     IOSTANDARD => "LVCMOS25",
@@ -690,10 +690,10 @@ begin
     port map (
     O => xadc_gpio_0,
     -- Buffer output (connect directly to top-level port)
-    I => usr_clk
+    I => hdmi_vsync_unbuf
     -- Buffer input
     );
-    OBUF_vsync_mirror : OBUF
+    OBUF_readAddr_mirror : OBUF
     generic map (
     DRIVE => 12,
     IOSTANDARD => "LVCMOS25",
@@ -701,10 +701,10 @@ begin
     port map (
     O => xadc_gpio_1,
     -- Buffer output (connect directly to top-level port)
-    I => hdmi_vsync_unbuf
+    I => WILL_FIRE_axir1_readAddr
     -- Buffer input
     );
-    OBUF_hsync_mirror : OBUF
+    OBUF_readData_mirror : OBUF
     generic map (
     DRIVE => 12,
     IOSTANDARD => "LVCMOS25",
@@ -712,7 +712,7 @@ begin
     port map (
     O => xadc_gpio_2,
     -- Buffer output (connect directly to top-level port)
-    I => hdmi_hsync_unbuf
+    I => m_axi1_rvalid -- hdmi_hsync_unbuf
     -- Buffer input
     );
     OBUF_de_mirror : OBUF

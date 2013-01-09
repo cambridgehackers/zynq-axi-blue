@@ -146,10 +146,15 @@ pcores/foo_master_v1_00_a/hdl/vhdl/foo_master.vhd \
 pcores/foo_master_v1_00_a/hdl/vhdl/user_logic.vhd \
 pcores/foo_master_v1_00_a/hdl/verilog/mkIpSlaveWithMaster.v \
 pcores/foo_master_v1_00_a/hdl/verilog/mkFifoToAxi.v \
+pcores/foo_master_v1_00_a/hdl/verilog/BRAM2.v \
 pcores/foo_master_v1_00_a/hdl/verilog/RegFile.v \
-pcores/foo_master_v1_00_a/hdl/verilog/SyncFIFO1.v \
+pcores/foo_master_v1_00_a/hdl/verilog/FIFO1.v \
 pcores/foo_master_v1_00_a/hdl/verilog/FIFO2.v \
+pcores/foo_master_v1_00_a/hdl/verilog/RevertReg.v \
 pcores/foo_master_v1_00_a/hdl/verilog/SizedFIFO.v \
+pcores/foo_master_v1_00_a/hdl/verilog/SyncFIFO.v \
+pcores/foo_master_v1_00_a/hdl/verilog/SyncFIFO1.v \
+pcores/foo_master_v1_00_a/hdl/verilog/SyncHandshake.v \
 pcores/foo_master_v1_00_a/hdl/verilog/SyncResetA.v
 
 WRAPPER_NGC_FILES = implementation/module_bcl_processing_system7_0_wrapper.ngc \

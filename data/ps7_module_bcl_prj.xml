@@ -209,7 +209,7 @@
   <set param="PCW::MIO::MIO[27]::PULLUP" value="disabled" />
   <set param="PCW::MIO::MIO[43]::SLEW" value="fast" />
   <set param="PCW::MIO::MIO[51]::PULLUP" value="disabled" />
-  <set param="PCW::FPGA0::PERIPHERAL::FREQMHZ" value="75.000000" />
+  <set param="PCW::FPGA0::PERIPHERAL::FREQMHZ" value="100.000000" />
   <set param="PCW::UIPARAM::DDR::BOARD_DELAY1" value="0.411" />
   <set param="PCW::MIO::MIO[0]::IOTYPE" value="LVCMOS 3.3V" />
   <set param="PCW::PRESET::BANK0::VOLTAGE" value="LVCMOS 3.3V" />

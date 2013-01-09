@@ -21,11 +21,13 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import FIFOF::*;
-import AxiMasterSlave::*;
+import BRAMFIFO::*;
 import GetPut::*;
+import FIFOF::*;
+import SpecialFIFOs::*;
+import AxiMasterSlave::*;
 
-Integer bytesperpixel = 2;
+Integer bytesperpixel = 4;
 
 typedef struct {
     Bit#(32) base;
@@ -35,7 +37,9 @@ typedef struct {
 } FrameBufferConfig deriving (Bits);
 
 interface FrameBuffer;
+    method Bool running();
     method Action start(FrameBufferConfig fbc);
+    method Action startLine();
     interface Get#(Bit#(64)) pixels;
     interface AxiMasterWrite#(64,8) axiw;
     interface AxiMasterRead#(64) axir;
@@ -43,21 +47,21 @@ endinterface
 
 module mkFrameBuffer(FrameBuffer);
     Reg#(FrameBufferConfig) fbc <- mkReg(FrameBufferConfig {base: 0, lines: 0, pixels: 0, stridebytes: 0});
-    Reg#(Bool) running <- mkReg(False);
+    Reg#(Bool) runningReg <- mkReg(False);
 
     Reg#(Bit#(32)) lineAddrReg <- mkReg(0); // address of start of line
     Reg#(Bit#(32)) readAddrReg <- mkReg(0); // next address to read
     Reg#(Bit#(12)) pixelCountReg <- mkReg(0);
     Reg#(Bit#(12)) lineCountReg <- mkReg(0);
+    
+    AxiMasterServer#(64,8) axiMaster <- mkAxiMasterServer;
 
-    AxiMasterServer#(64, 8) axiMaster <- mkAxiMasterServer;
-
-    let burstCount = 8;
+    let burstCount = 32;
     let bytesPerWord = 8;
-    let bytesPerPixel = 2; // storing yuv422 format, 2 bytes per pixel
+    let bytesPerPixel = 4;
     let pixelsPerWord = bytesPerWord / bytesPerPixel;
 
-    rule issueRead if (running);
+    rule issueRead if (runningReg);
         axiMaster.readAddr(readAddrReg, burstCount);
         let pixelCount = pixelCountReg - burstCount*pixelsPerWord;
         if (pixelCount == 0)
@@ -67,7 +71,7 @@ module mkFrameBuffer(FrameBuffer);
             if (lineCount == 0)
             begin
                 $display("issuing last read of frame");
-                running <= False;
+                runningReg <= False;
             end
             else
             begin
@@ -84,13 +88,20 @@ module mkFrameBuffer(FrameBuffer);
         end
     endrule
 
-    method Action start(FrameBufferConfig newConfig) if (!running);
+    method Bool running();
+        return runningReg;
+    endmethod
+
+    method Action start(FrameBufferConfig newConfig) if (!runningReg);
         fbc <= newConfig;
         lineAddrReg <= newConfig.base;
         readAddrReg <= newConfig.base;
         lineCountReg <= newConfig.lines;
         pixelCountReg <= newConfig.pixels;
-        running <= True;
+        runningReg <= True;
+    endmethod
+
+    method Action startLine();
     endmethod
 
     interface Get pixels;
