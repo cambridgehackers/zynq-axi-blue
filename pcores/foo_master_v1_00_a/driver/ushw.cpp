@@ -59,6 +59,8 @@ PortalInstance::PortalInstance(const char *instanceName)
     char path[128];
     snprintf(path, sizeof(path), "/dev/%s", instanceName);
     this->fd = open(path, O_RDWR);
+    void *mappedAddress = mmap(0, 4096, PROT_READ|PROT_WRITE, MAP_SHARED, this->fd, 0);
+    fprintf(stderr, "Mapped device %s at %p\n", instanceName, mappedAddress);
     portal.registerInstance(this);
 }
 
