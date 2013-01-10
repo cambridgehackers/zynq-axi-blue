@@ -99,7 +99,9 @@ entity foo_master is
     C_S_AXI_SUPPORTS_READ          : integer              := 1;
     C_FAMILY                       : string               := "virtex6";
     C_S_AXI_MEM0_BASEADDR          : std_logic_vector     := X"FFFFFFFF";
-    C_S_AXI_MEM0_HIGHADDR          : std_logic_vector     := X"00000000"
+    C_S_AXI_MEM0_HIGHADDR          : std_logic_vector     := X"00000000";
+    C_S_AXI_MEM1_BASEADDR          : std_logic_vector     := X"FFFFFFFF";
+    C_S_AXI_MEM1_HIGHADDR          : std_logic_vector     := X"00000000"
     -- DO NOT EDIT ABOVE THIS LINE ---------------------
   );
   port
@@ -274,14 +276,17 @@ architecture IMP of foo_master is
   constant IPIF_ARD_ADDR_RANGE_ARRAY      : SLV64_ARRAY_TYPE     := 
     (
       ZERO_ADDR_PAD & C_S_AXI_MEM0_BASEADDR,-- user logic memory space 0 base address
-      ZERO_ADDR_PAD & C_S_AXI_MEM0_HIGHADDR -- user logic memory space 0 high address
+      ZERO_ADDR_PAD & C_S_AXI_MEM0_HIGHADDR, -- user logic memory space 0 high address
+      ZERO_ADDR_PAD & C_S_AXI_MEM1_BASEADDR,-- user logic memory space 0 base address
+      ZERO_ADDR_PAD & C_S_AXI_MEM1_HIGHADDR -- user logic memory space 0 high address
     );
 
-  constant USER_NUM_MEM                   : integer              := 1;
+  constant USER_NUM_MEM                   : integer              := 2;
 
   constant IPIF_ARD_NUM_CE_ARRAY          : INTEGER_ARRAY_TYPE   := 
     (
-      0  => 1                             -- number of ce for user logic memory space 0 (always 1 chip enable)
+      0  => 1,                            -- number of ce for user logic memory space 0 (always 1 chip enable)
+      1  => 1                             -- number of ce for user logic memory space 1 (always 1 chip enable)
     );
 
   ------------------------------------------

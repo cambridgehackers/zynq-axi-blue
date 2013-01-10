@@ -31,11 +31,16 @@ import GetPut::*;
 import Connectable::*;
 import Clocks::*;
 
-interface IpSlaveWithMaster;
+interface IpSlave;
    method Action put(Bit#(12) addr, Bit#(32) v);
    method ActionValue#(Bit#(32)) get(Bit#(12) addr);
+endinterface
+
+interface IpSlaveWithMaster;
    method Bit#(1) error();
    method Bit#(1) interrupt();
+   interface IpSlave ctrl;
+   interface IpSlave fifo;
    interface AxiMasterWrite#(64,8) axiw0;
    interface AxiMasterRead#(64) axir0;
    interface AxiMasterWrite#(64,8) axiw1;
@@ -63,23 +68,16 @@ module mkIpSlaveWithMaster#(Clock hdmi_ref_clk)(IpSlaveWithMaster);
        interruptCleared <= False;
    endrule
 
-   method Action put(Bit#(12) addr, Bit#(32) v);
-       if (addr == 12'h000 && v[0] == 1'b1 && interrupted)
-       begin
-           interruptCleared <= True;
-       end
-       if (addr < 12'h100)
+   interface IpSlave ctrl;
+       method Action put(Bit#(12) addr, Bit#(32) v);
+           if (addr == 12'h000 && v[0] == 1'b1 && interrupted)
+           begin
+               interruptCleared <= True;
+           end
            rf.upd(addr, v);
-       else
-         begin
-           putWordCount <= putWordCount + 1;
-           requestFifo.enq(v);
-         end
-   endmethod
+       endmethod
 
-   method ActionValue#(Bit#(32)) get(Bit#(12) addr);
-       if (addr < 12'h100)
-         begin
+       method ActionValue#(Bit#(32)) get(Bit#(12) addr);
            let v = rf.sub(addr);
            if (addr == 12'h000)
            begin
@@ -101,26 +99,33 @@ module mkIpSlaveWithMaster#(Clock hdmi_ref_clk)(IpSlaveWithMaster);
            if (addr == 12'h024)
                v = dutWrapper.frameCount;
            return v;
-         end
-       else
+       endmethod
+   endinterface
+
+   interface IpSlave fifo;
+       method Action put(Bit#(12) addr, Bit#(32) v);
+           putWordCount <= putWordCount + 1;
+           requestFifo.enq(v);
+       endmethod
+
+       method ActionValue#(Bit#(32)) get(Bit#(12) addr);
+           let v = 32'h050a050a;
+           if (responseFifo.notEmpty)
            begin
-               let v = 32'h050a050a;
-               if (responseFifo.notEmpty)
-               begin
-                   let r = responseFifo.first(); 
-                   if (r matches tagged Valid .b) begin
-                       v = b;
-                       responseFifo.deq;
-                       getWordCount <= getWordCount + 1;
-                   end
+               let r = responseFifo.first(); 
+               if (r matches tagged Valid .b) begin
+                   v = b;
+                   responseFifo.deq;
+                   getWordCount <= getWordCount + 1;
                end
-               else
-               begin
-                   underflowCount <= underflowCount + 1;
-               end
-               return v;
            end
-   endmethod
+           else
+           begin
+               underflowCount <= underflowCount + 1;
+           end
+           return v;
+       endmethod
+   endinterface
 
    method Bit#(1) error();
        return 0;

@@ -25,6 +25,8 @@ UcfFile: data/module_bcl.ucf
 EnableParTimingError: 0
 ShowLicenseDialog: 1
 BInfo: 
+LockAddr: foo_master_0,C_S_AXI_MEM0_BASEADDR
+LockAddr: foo_master_0,C_S_AXI_MEM1_BASEADDR
 Processor: processing_system7_0
 ElfImp: 
 ElfSim: 

@@ -78,7 +78,7 @@ entity user_logic is
     -- Bus protocol parameters, do not add to or delete
     C_SLV_AWIDTH                   : integer              := 32;
     C_SLV_DWIDTH                   : integer              := 32;
-    C_NUM_MEM                      : integer              := 1
+    C_NUM_MEM                      : integer              := 2
     -- DO NOT EDIT ABOVE THIS LINE ---------------------
   );
   port
@@ -230,11 +230,17 @@ architecture IMP of user_logic is
   signal mem_read_ack                   : std_logic;
   signal mem_write_ack                  : std_logic;
 
-  signal ip_slave_d : std_logic_vector(C_SLV_DWIDTH-1 downto 0);
-  signal ip_slave_rdy_put : std_logic;
-  signal ip_slave_rdy_get : std_logic;
-  signal ip_slave_en_put : std_logic;
-  signal ip_slave_en_get : std_logic;
+  signal ctrl_get_d : std_logic_vector(C_SLV_DWIDTH-1 downto 0);
+  signal fifo_get_d : std_logic_vector(C_SLV_DWIDTH-1 downto 0);
+  signal WILL_FIRE_ctrl_put : std_logic;
+  signal RDY_ctrl_put : std_logic;
+  signal WILL_FIRE_ctrl_get : std_logic;
+  signal RDY_ctrl_get : std_logic;
+
+  signal WILL_FIRE_fifo_put : std_logic;
+  signal RDY_fifo_put : std_logic;
+  signal WILL_FIRE_fifo_get : std_logic;
+  signal RDY_fifo_get : std_logic;
 
   signal RDY_axiw0_writeAddr : std_logic;
   signal RDY_axiw0_writeData : std_logic;
@@ -286,7 +292,8 @@ begin
   ------------------------------------------
   -- Example code to drive IP to Bus signals
   ------------------------------------------
-  IP2Bus_Data  <= ip_slave_d when mem_read_ack = '1' else
+  IP2Bus_Data  <= ctrl_get_d when WILL_FIRE_ctrl_get = '1' else
+                  fifo_get_d when WILL_FIRE_fifo_get = '1' else
                   (others => '0');
 
   IP2Bus_AddrAck <= mem_write_ack or mem_read_ack;
@@ -294,11 +301,13 @@ begin
   IP2Bus_RdAck <= mem_read_ack;
   IP2Bus_Error <= '0';
 
-  ip_slave_en_put <= Bus2IP_CS(0) and Bus2IP_WrCE(0);
-  ip_slave_en_get <= Bus2IP_CS(0) and Bus2IP_RdCE(0);
+  WILL_FIRE_ctrl_put <= Bus2IP_CS(0) and Bus2IP_WrCE(0) and RDY_ctrl_put;
+  WILL_FIRE_ctrl_get <= Bus2IP_CS(0) and Bus2IP_RdCE(0) and RDY_ctrl_put;
+  WILL_FIRE_fifo_put <= Bus2IP_CS(1) and Bus2IP_WrCE(1) and RDY_fifo_put;
+  WILL_FIRE_fifo_get <= Bus2IP_CS(1) and Bus2IP_RdCE(1) and RDY_fifo_put;
 
-  mem_read_ack    <= ip_slave_en_get and ip_slave_rdy_get;
-  mem_write_ack   <= ip_slave_en_put and ip_slave_rdy_put;
+  mem_read_ack    <= WILL_FIRE_ctrl_get or WILL_FIRE_ctrl_get;
+  mem_write_ack   <= WILL_FIRE_ctrl_put or WILL_FIRE_ctrl_put;
 
   IP_SLAVE : entity mkIpSlaveWithMaster
     port map (
@@ -306,15 +315,25 @@ begin
       CLK => Bus2IP_Clk,
       RST_N  => Bus2IP_Resetn,
 
-      put_addr => Bus2IP_Addr(11 downto 0),
-      put_v => Bus2IP_Data,
-      EN_put => ip_slave_en_put,
-      RDY_put => ip_slave_rdy_put,
+      ctrl_put_addr => Bus2IP_Addr(11 downto 0),
+      ctrl_put_v => Bus2IP_Data,
+      EN_ctrl_put => WILL_FIRE_ctrl_put,
+      RDY_ctrl_put => RDY_ctrl_put,
 
-      get_addr => Bus2IP_Addr(11 downto 0),
-      EN_get => ip_slave_en_get,
-      get => ip_slave_d,
-      RDY_get => ip_slave_rdy_get,
+      ctrl_get_addr => Bus2IP_Addr(11 downto 0),
+      EN_ctrl_get => WILL_FIRE_ctrl_get,
+      ctrl_get => ctrl_get_d,
+      RDY_ctrl_get => RDY_ctrl_get,
+
+      fifo_put_addr => Bus2IP_Addr(11 downto 0),
+      fifo_put_v => Bus2IP_Data,
+      EN_fifo_put => WILL_FIRE_fifo_put,
+      RDY_fifo_put => RDY_fifo_put,
+
+      fifo_get_addr => Bus2IP_Addr(11 downto 0),
+      EN_fifo_get => WILL_FIRE_fifo_get,
+      fifo_get => fifo_get_d,
+      RDY_fifo_get => RDY_fifo_get,
 
       interrupt => interrupt,
 
@@ -712,7 +731,7 @@ begin
     port map (
     O => xadc_gpio_2,
     -- Buffer output (connect directly to top-level port)
-    I => m_axi1_rvalid -- hdmi_hsync_unbuf
+    I => WILL_FIRE_axir1_readData -- hdmi_hsync_unbuf
     -- Buffer input
     );
     OBUF_de_mirror : OBUF
