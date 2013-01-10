@@ -12,6 +12,8 @@ import Clocks::*;
 
 
 interface DUTWrapper;
+   method Bit#(32) requestSize();
+   method Bit#(32) responseSize();
    interface Reg#(Bit#(32)) reqCount;
    interface Reg#(Bit#(32)) respCount;
    interface Reg#(Bit#(32)) junkReqCount;
@@ -110,7 +112,7 @@ typedef union tagged {
   Bit#(0) DutResponseUnused;
 } DutResponse deriving (Bits);
 
-module mkDUTWrapper#(Clock axis_clk, FromBit32#(DutRequest) requestFifo, ToBit32#(DutResponse) responseFifo)(DUTWrapper) provisos(Bits#(DutRequest,drsize));
+module mkDUTWrapper#(Clock axis_clk, FromBit32#(DutRequest) requestFifo, ToBit32#(DutResponse) responseFifo)(DUTWrapper) provisos(Bits#(DutRequest,dutRequestSize),Bits#(DutRequest,dutResponseSize));
 
     DUT dut <- mkDUT(axis_clk);
     Reg#(Bit#(32)) requestFired <- mkReg(0);
@@ -315,6 +317,12 @@ module mkDUTWrapper#(Clock axis_clk, FromBit32#(DutRequest) requestFifo, ToBit32
         responseFired <= responseFired + 1;
     endrule
 
+    method Bit#(32) requestSize();
+        return pack(fromInteger(valueof(dutRequestSize)));
+    endmethod
+    method Bit#(32) responseSize();
+        return pack(fromInteger(valueof(dutResponseSize)));
+    endmethod
     interface Reg reqCount = requestFired;
     interface Reg respCount = responseFired;
     interface Reg junkReqCount = junkReqReg;

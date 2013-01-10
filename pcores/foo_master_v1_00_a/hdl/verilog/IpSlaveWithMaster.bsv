@@ -98,6 +98,10 @@ module mkIpSlaveWithMaster#(Clock hdmi_ref_clk)(IpSlaveWithMaster);
                v = dutWrapper.vsyncPulseCount;
            if (addr == 12'h024)
                v = dutWrapper.frameCount;
+           if (addr == 12'h040)
+               v = dutWrapper.requestSize;
+           if (addr == 12'h044)
+               v = dutWrapper.responseSize;
            return v;
        endmethod
    endinterface
