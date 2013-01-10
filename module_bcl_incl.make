@@ -150,6 +150,7 @@ pcores/foo_master_v1_00_a/hdl/verilog/BRAM2.v \
 pcores/foo_master_v1_00_a/hdl/verilog/RegFile.v \
 pcores/foo_master_v1_00_a/hdl/verilog/FIFO1.v \
 pcores/foo_master_v1_00_a/hdl/verilog/FIFO2.v \
+pcores/foo_master_v1_00_a/hdl/verilog/NRCCBRAM2.v \
 pcores/foo_master_v1_00_a/hdl/verilog/RevertReg.v \
 pcores/foo_master_v1_00_a/hdl/verilog/SizedFIFO.v \
 pcores/foo_master_v1_00_a/hdl/verilog/SyncFIFO.v \

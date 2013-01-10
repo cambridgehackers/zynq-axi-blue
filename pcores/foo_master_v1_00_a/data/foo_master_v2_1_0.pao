@@ -15,6 +15,7 @@ lib foo_master_v1_00_a BRAM2 verilog
 lib foo_master_v1_00_a RegFile verilog
 lib foo_master_v1_00_a FIFO1 verilog
 lib foo_master_v1_00_a FIFO2 verilog
+lib foo_master_v1_00_a NRCCBRAM2 verilog
 lib foo_master_v1_00_a RevertReg verilog
 lib foo_master_v1_00_a SizedFIFO verilog
 lib foo_master_v1_00_a SyncFIFO verilog
