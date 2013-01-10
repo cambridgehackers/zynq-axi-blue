@@ -89,7 +89,7 @@ module mkDUT#(Clock hdmi_clk)(DUT);
     SyncFIFOIfc#(HdmiCommand) commandFifo <- mkSyncFIFOFromCC(2, hdmi_clk);
 
     Reg#(Bit#(32)) shadowFrameBufferBase <- mkReg(0);
-    FrameBuffer frameBuffer <- mkFrameBufferBram(hdmi_clk, hdmi_reset);
+    FrameBufferBram frameBuffer <- mkFrameBufferBram(hdmi_clk, hdmi_reset);
 
     HdmiTestPatternGenerator hdmiTpg <- mkHdmiTestPatternGenerator(clocked_by hdmi_clk, reset_by hdmi_reset,
                                                                    commandFifo, frameBuffer.buffer,
@@ -100,28 +100,25 @@ module mkDUT#(Clock hdmi_clk)(DUT);
          readFifo.enq(truncate(v));
     endrule
 
-    rule vsync;
-        if (vsyncPulse.pulse())
+    (* descending_urgency = "vsync, hsync" *)
+    rule vsync if (vsyncPulse.pulse());
+        $display("vsync pulse received %h", shadowFrameBufferBase);
+        vsyncPulseCountReg <= vsyncPulseCountReg + 1;
+        if (shadowFrameBufferBase != 0)
         begin
-            $display("vsync pulse received %h", shadowFrameBufferBase);
-            vsyncPulseCountReg <= vsyncPulseCountReg + 1;
-            if (shadowFrameBufferBase != 0)
-            begin
-                $display("frame started");
-                frameCountReg <= frameCountReg + 1;
-                FrameBufferConfig fbc;
-                fbc.base = shadowFrameBufferBase;
-                fbc.pixels = 1920;
-                fbc.lines = 1080;
-                fbc.stridebytes = 1920*fromInteger(bytesperpixel);
-                frameBuffer.start(fbc);
-                commandFifo.enq(tagged TestPattern {enabled: False});
-            end
+            $display("frame started");
+            frameCountReg <= frameCountReg + 1;
+            FrameBufferConfig fbc;
+            fbc.base = shadowFrameBufferBase;
+            fbc.pixels = 1920;
+            fbc.lines = 1080;
+            fbc.stridebytes = 1920*fromInteger(bytesperpixel);
+            frameBuffer.start(fbc);
+            commandFifo.enq(tagged TestPattern {enabled: False});
         end
     endrule
     rule hsync if (hsyncPulse.pulse());
-        if (frameBuffer.running)
-            frameBuffer.startLine();
+        frameBuffer.startLine();
     endrule
 
     method Action setBase(Bit#(32) base);

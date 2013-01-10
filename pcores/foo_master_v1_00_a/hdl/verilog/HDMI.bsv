@@ -1,8 +1,32 @@
+
+// Copyright (c) 2013 Nokia, Inc.
+
+// Permission is hereby granted, free of charge, to any person
+// obtaining a copy of this software and associated documentation
+// files (the "Software"), to deal in the Software without
+// restriction, including without limitation the rights to use, copy,
+// modify, merge, publish, distribute, sublicense, and/or sell copies
+// of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
+
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+// BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+// ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+// CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
 import Vector::*;
 import Clocks::*;
 import FIFO::*;
 import FIFOF::*;
 import YUV::*;
+import NrccSyncBRAM::*;
 
 interface HDMI;
     method Bit#(1) hdmi_vsync;
@@ -21,6 +45,8 @@ typedef union tagged {
 } HdmiCommand deriving (Bits);
 
 interface HdmiTestPatternGenerator;
+    method Bool vsync();
+    method Bool hsync();
     interface HDMI hdmi;
 endinterface
 
@@ -33,7 +59,8 @@ typedef struct {
     Bit#(1) vsync;
     Bit#(1) hsync;
     Bool de;
-    Rgb888 data;
+    Rgb888 pixel;
+    Bit#(12) dataCount;
 } Rgb888Stage deriving (Bits);
 
 typedef struct {
@@ -58,7 +85,7 @@ typedef struct {
 } Yuv422Stage deriving (Bits);
 
 module mkHdmiTestPatternGenerator#(SyncFIFOIfc#(HdmiCommand) commandFifo,
-                                   SyncFIFOIfc#(Bit#(64)) rgbrgbFifo,
+                                   BRAM#(Bit#(12), Bit#(64)) lineBuffer,
                                    SyncPulseIfc vsyncPulse,
                                    SyncPulseIfc hsyncPulse)(HdmiTestPatternGenerator);
     // 1920 * 1080
@@ -78,28 +105,25 @@ module mkHdmiTestPatternGenerator#(SyncFIFOIfc#(HdmiCommand) commandFifo,
     Reg#(Bit#(11)) lineCount <- mkReg(0);
     Reg#(Bit#(12)) pixelCount <- mkReg(0);
 
-    Reg#(Rgb888Stage) rgb888StageReg <- mkReg(Rgb888Stage { vsync: 0, hsync: 0, de: False, data: unpack(0) });
+    FIFOF#(Rgb888Stage) bramOutStageFifo <- mkSizedFIFOF(8);
+    Reg#(Rgb888Stage) rgb888StageReg <- mkReg(unpack(0));
     Reg#(Yuv444IntermediatesStage) yuv444IntermediatesStageReg <- mkReg(Yuv444IntermediatesStage { vsync: 0, hsync: 0, de: False, data: unpack(0) });
     Reg#(Yuv444Stage) yuv444StageReg <- mkReg(Yuv444Stage { vsync: 0, hsync: 0, de: False, data: unpack(0) });
     Reg#(Yuv422Stage) yuv422StageReg <- mkReg(Yuv422Stage { vsync: 0, hsync: 0, de: False, data: unpack(0) });
     Reg#(Bool) evenOddPixelReg <- mkReg(False);
 
-    Reg#(Bit#(1)) vsyncReg <- mkReg(0);
-    Reg#(Bit#(1)) hsyncReg <- mkReg(0);
-    Reg#(Bit#(22)) dataCount <- mkReg(0);
+    Reg#(Bit#(12)) dataCount <- mkReg(0);
     Reg#(Bit#(32)) patternReg0 <- mkReg(32'h00FFFFFF); // white
-    PulseWire sofPulse <- mkPulseWire;
 
     Vector#(4, Reg#(Bit#(32))) patternRegs <- replicateM(mkReg(0));
 
     Reg#(Bool) shadowTestPatternEnabled <- mkReg(True);
     Reg#(Bool) testPatternEnabled <- mkReg(True);
 
-    FIFOF#(Bit#(64)) dataFifo <- mkUGSizedFIFOF(32);
-
     let vsync = (lineCount < vsyncWidth) ? 1 : 0;
     let hsync = (pixelCount < hsyncWidth) ? 1 : 0;
 
+    let isActiveLine = (lineCount >= deLineCountMinimum && lineCount < deLineCountMaximum);
     let dataEnable = (pixelCount >= dePixelCountMinimum && pixelCount < dePixelCountMaximum
                       && lineCount >= deLineCountMinimum && lineCount < deLineCountMaximum);
 
@@ -141,7 +165,7 @@ module mkHdmiTestPatternGenerator#(SyncFIFOIfc#(HdmiCommand) commandFifo,
         $display("vsync pulse sent");
         vsyncPulse.send();
     endrule
-    rule sendHsyncPulse (pixelCount == 0);
+    rule sendHsyncPulse (isActiveLine && pixelCount == 0);
         $display("hsync pulse sent");
         hsyncPulse.send();
     endrule
@@ -175,83 +199,23 @@ module mkHdmiTestPatternGenerator#(SyncFIFOIfc#(HdmiCommand) commandFifo,
             index[1] = 1;
         Bit#(32) data = patternRegs[index];
 
-        vsyncReg <= vsync;
-        hsyncReg <= hsync;
-        rgb888StageReg <= Rgb888Stage { vsync: vsync, hsync: hsync, de: dataEnable, data: unpack(truncate(data)) };
+        bramOutStageFifo.enq(Rgb888Stage { vsync: vsync, hsync: hsync, de: dataEnable, pixel: unpack(truncate(data)) });
+        lineBuffer.readAddr(0);
 
         if (dataEnable)
             dataCount <= dataCount + 1;
-        else if (vsync == 1)
+        else if (hsync == 1)
             dataCount <= 0;
 
     endrule
 
-    rule fromRgbRgbFifo if (dataFifo.notFull);
-        dataFifo.enq(rgbrgbFifo.first);
-        rgbrgbFifo.deq;
-    endrule
-
-    // (* descending_urgency = "fbRule, notfbRule" *)
-    // rule notfbRule if (!testPatternEnabled);
-    //     rgb888StageReg <= Rgb888Stage { vsync: 0, hsync: 0, de: False, data: unpack(24'h070a0d) };
-    // endrule
-
     rule fbRule if (!testPatternEnabled);
+        LinePixelCount counts = newCounts(lineCount, pixelCount);
+        lineCount <= counts.line;
+        pixelCount <= counts.pixel;
+
         if (pixelCount == 0)
             $display("fb line %d", lineCount);
-
-        let myDataEnable = (pixelCount >= dePixelCountMinimum && pixelCount < dePixelCountMaximum
-                            && lineCount >= deLineCountMinimum && lineCount < deLineCountMaximum);
-        Rgb888 pixel = unpack(0);
-        if (myDataEnable && dataFifo.notEmpty)
-        begin
-            Bit#(64) data = pack(dataFifo.first);
-            Bit#(1) pixelSelect = dataCount[0];
-            if (pixelSelect == 0)
-            begin
-                pixel = unpack(data[23:0]);
-            end
-            else if (pixelSelect == 1)
-            begin
-                pixel = unpack(data[55:32]);
-            end
-            // else if (pixelSelect == 2)
-            // begin
-            //     pixel = unpack(data[87:64]);
-            // end
-            // else
-            // begin
-            //     pixel = unpack(data[119:96]);
-            // end
-            dataCount <= dataCount + 1;
-
-            if (pixelSelect == 1)
-                dataFifo.deq;
-        end
-        else if (myDataEnable && !dataFifo.notEmpty)
-        begin
-            pixel = unpack(24'h070a0d);
-            myDataEnable = False;
-        end
-        else 
-        begin
-            if (vsync == 1)
-            begin
-                dataCount <= 0;
-            end
-        end
-
-        vsyncReg <= vsync;
-        hsyncReg <= hsync;
-
-        rgb888StageReg <= Rgb888Stage { vsync: vsync, hsync: hsync, de: myDataEnable, data: pixel };
-
-        if (!myDataEnable)
-        begin
-            LinePixelCount counts = newCounts(lineCount, pixelCount);
-            lineCount <= counts.line;
-            pixelCount <= counts.pixel;
-        end
 
         if (lineCount == 0 && pixelCount == 0)
         begin
@@ -259,17 +223,44 @@ module mkHdmiTestPatternGenerator#(SyncFIFOIfc#(HdmiCommand) commandFifo,
             testPatternEnabled <= shadowTestPatternEnabled;
         end
 
+        if (hsync == 1)
+            dataCount <= 0;
+        else if (dataEnable)
+            dataCount <= dataCount + 1;
+
+        bramOutStageFifo.enq(Rgb888Stage { vsync: vsync, hsync: hsync, de: dataEnable, dataCount: dataCount });
+        lineBuffer.readAddr(dataCount >> 1);
+
     endrule
 
     let nonBlank = (lineCount > blankLines && pixelCount > blankPixels);
 
+    rule bramOutStage;
+        let d = lineBuffer.readData;
+        let stageData = bramOutStageFifo.first;
+        bramOutStageFifo.deq;
+
+        if (!testPatternEnabled)
+        begin
+            let pixel = stageData.pixel;
+            let pixelSelect = stageData.dataCount[0];
+            if (pixelSelect == 0)
+                pixel = unpack(d[23:0]);
+            else
+                pixel = unpack(d[55:32]);
+            stageData.pixel = pixel;
+        end
+        rgb888StageReg <= stageData;
+    endrule
+
     rule yuv444IntermediatesStage;
         let previous = rgb888StageReg;
+        let pixel = previous.pixel;
         yuv444IntermediatesStageReg <= Yuv444IntermediatesStage {
             vsync: previous.vsync,
             hsync: previous.hsync,
             de: previous.de,
-            data: (previous.de) ? rgbToYuvIntermediates(previous.data) : unpack(0)
+            data: (previous.de) ? rgbToYuvIntermediates(pixel) : unpack(0)
         };
     endrule
 
