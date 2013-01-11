@@ -59,7 +59,10 @@ module mkIpSlaveWithMaster#(Clock hdmi_ref_clk)(IpSlaveWithMaster);
    Reg#(Bool) interruptCleared <- mkReg(False);
    Reg#(Bit#(32)) getWordCount <- mkReg(0);
    Reg#(Bit#(32)) putWordCount <- mkReg(0);
+   Reg#(Bit#(32)) word0Put  <- mkReg(0);
+   Reg#(Bit#(32)) word1Put  <- mkReg(0);
    Reg#(Bit#(32)) underflowCount <- mkReg(0);
+   Reg#(Bit#(32)) overflowCount <- mkReg(0);
 
    rule interrupted_rule;
        interrupted <= responseFifo.notEmpty;
@@ -84,32 +87,59 @@ module mkIpSlaveWithMaster#(Clock hdmi_ref_clk)(IpSlaveWithMaster);
                v[0] = interrupted ? 1'd1 : 1'd0 ;
                v[16] = responseFifo.notFull ? 1'd1 : 1'd0;
            end
-           if (addr == 12'h008)
+           if (addr == 12'h004)
                v = 32'h02142011;
-           if (addr == 12'h00c)
-               v = dutWrapper.junkReqCount;
+           if (addr == 12'h008)
+               v = underflowCount;
+           if (addr == 12'h00C)
+               v = overflowCount;
            if (addr == 12'h010)
                v = dutWrapper.reqCount;
            if (addr == 12'h014)
                v = dutWrapper.respCount;
            if (addr == 12'h018)
-               v = underflowCount;
+               v = (32'h68470000
+                    | (responseFifo.notFull ? 32'h20 : 0) | (responseFifo.notEmpty ? 32'h10 : 0)
+                    | (requestFifo.notFull ? 32'h02 : 0) | (requestFifo.notEmpty ? 32'h01 : 0));
+           if (addr == 12'h01C)
+               v = putWordCount;
            if (addr == 12'h020)
-               v = dutWrapper.vsyncPulseCount;
+               v = getWordCount;
            if (addr == 12'h024)
+               v = word0Put;
+           if (addr == 12'h028)
+               v = word1Put;
+           if (addr == 12'h02C)
+               v = dutWrapper.vsyncPulseCount;
+           if (addr == 12'h030)
                v = dutWrapper.frameCount;
-           if (addr == 12'h040)
+           if (addr == 12'h034)
                v = dutWrapper.requestSize;
-           if (addr == 12'h044)
+           if (addr == 12'h038)
                v = dutWrapper.responseSize;
+           if (addr == 12'h03C)
+               v = dutWrapper.junkReqCount;
+           if (addr == 12'h040)
+               v = dutWrapper.blockedRequestsDiscardedCount;
+           if (addr == 12'h044)
+               v = dutWrapper.blockedResponsesDiscardedCount;
            return v;
        endmethod
    endinterface
 
    interface IpSlave fifo;
        method Action put(Bit#(12) addr, Bit#(32) v);
-           putWordCount <= putWordCount + 1;
-           requestFifo.enq(v);
+           word0Put <= word1Put;
+           word1Put <= v;
+           if (requestFifo.notFull)
+           begin
+               putWordCount <= putWordCount + 1;
+               requestFifo.enq(v);
+           end
+           else
+           begin
+               overflowCount <= overflowCount + 1;
+           end
        endmethod
 
        method ActionValue#(Bit#(32)) get(Bit#(12) addr);
