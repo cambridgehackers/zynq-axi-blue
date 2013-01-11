@@ -42,9 +42,32 @@ typedef union tagged {
     struct {
         Bool enabled;
     } TestPattern;
+    struct {
+        Bit#(32) value;
+    } LinesPixels;
+    struct {
+        Bit#(32) value;
+    } BlankLinesPixels;
+    struct {
+        Bit#(32) value;
+    } LineCountMinMax;
+    struct {
+        Bit#(32) value;
+    } PixelCountMinMax;
+    struct {
+        Bit#(32) value;
+    } SyncWidths;
 } HdmiCommand deriving (Bits);
 
 interface HdmiTestPatternGenerator;
+    method Action setHsyncWidth(Bit#(12) hsyncWidth);
+    method Action setDePixelCountMinMax(Bit#(12) min, Bit#(12) max);
+    method Action setVsyncWidth(Bit#(11) vsyncWidth);
+    method Action setDeLineCountMinMax(Bit#(11) min, Bit#(11) max);
+
+    method Action setNumberOfLines(Bit#(11) lines);
+    method Action setNumberOfPixels(Bit#(12) pixels);
+
     method Bool vsync();
     method Bool hsync();
     interface HDMI hdmi;
@@ -89,19 +112,18 @@ module mkHdmiTestPatternGenerator#(SyncFIFOIfc#(HdmiCommand) commandFifo,
                                    SyncPulseIfc vsyncPulse,
                                    SyncPulseIfc hsyncPulse)(HdmiTestPatternGenerator);
     // 1920 * 1080
-    let blankLines = 45;
-    let hsyncWidth = 44;
-    let dePixelCountMinimum = 192;
-    let dePixelCountMaximum = 2112;
-    let pixelMidpoint = 1152;
-    let vsyncWidth = 5;
-    let deLineCountMinimum = 41;
-    let deLineCountMaximum = 1121;
-    let lineMidpoint = 581;
+    Reg#(Bit#(12)) hsyncWidth <- mkReg(44);
+    Reg#(Bit#(12)) dePixelCountMinimum <- mkReg(192);
+    Reg#(Bit#(12)) dePixelCountMaximum <- mkReg(2112);
+    Reg#(Bit#(12)) pixelMidpoint <- mkReg(1152);
+    Reg#(Bit#(11)) vsyncWidth <- mkReg(5);
+    Reg#(Bit#(11)) deLineCountMinimum <- mkReg(41);
+    Reg#(Bit#(11)) deLineCountMaximum <- mkReg(1121);
+    Reg#(Bit#(11)) lineMidpoint <- mkReg(581);
 
-    let numberOfLines = 1125;
-    let numberOfPixels = 2200;
-    let blankPixels = 280;
+    Reg#(Bit#(11)) numberOfLines <- mkReg(1125);
+    Reg#(Bit#(12)) numberOfPixels <- mkReg(2200);
+
     Reg#(Bit#(11)) lineCount <- mkReg(0);
     Reg#(Bit#(12)) pixelCount <- mkReg(0);
 
@@ -157,6 +179,33 @@ module mkHdmiTestPatternGenerator#(SyncFIFOIfc#(HdmiCommand) commandFifo,
         shadowTestPatternEnabled <= x.enabled;
         commandFifo.deq;
     endrule
+
+    rule updateLinesPixels if (commandFifo.first matches tagged LinesPixels .x);
+        numberOfLines  <= x.value[10:0];
+        numberOfPixels <= x.value[27:16];
+        commandFifo.deq;
+    endrule
+    rule updateBlankLinesPixels if (commandFifo.first matches tagged BlankLinesPixels .x);
+        commandFifo.deq;
+    endrule
+    rule updateLineCountMinMax if (commandFifo.first matches tagged LineCountMinMax .x);
+        deLineCountMinimum <= x.value[10:0];
+        deLineCountMaximum <= x.value[26:16];
+        lineMidpoint <= (x.value[10:0] + x.value[26:16]) / 2;
+        commandFifo.deq;
+    endrule
+    rule updatePixelCountMinMax if (commandFifo.first matches tagged PixelCountMinMax .x);
+        dePixelCountMinimum <= x.value[11:0];
+        dePixelCountMaximum <= x.value[27:16];
+        pixelMidpoint <= (x.value[11:0] + x.value[27:16]) / 2;
+        commandFifo.deq;
+    endrule
+    rule updateSyncWidths if (commandFifo.first matches tagged SyncWidths .x);
+        vsyncWidth  <= x.value[10:0];
+        hsyncWidth <= x.value[27:16];
+        commandFifo.deq;
+    endrule
+
 
     // vsyncPulse is a SyncHandshake to a slow clock domain
     // so it is not ready every cycle.
@@ -233,8 +282,6 @@ module mkHdmiTestPatternGenerator#(SyncFIFOIfc#(HdmiCommand) commandFifo,
 
     endrule
 
-    let nonBlank = (lineCount > blankLines && pixelCount > blankPixels);
-
     rule bramOutStage;
         let d = lineBuffer.readData;
         let stageData = bramOutStageFifo.first;
@@ -287,6 +334,30 @@ module mkHdmiTestPatternGenerator#(SyncFIFOIfc#(HdmiCommand) commandFifo,
             data: data
         };
     endrule
+
+    method Action setHsyncWidth(Bit#(12) width);
+        hsyncWidth <= width;
+    endmethod
+    method Action setDePixelCountMinMax(Bit#(12) min, Bit#(12) max);
+        dePixelCountMinimum <= min;
+        dePixelCountMaximum <= max;
+        pixelMidpoint <= (min + max) / 2;
+    endmethod
+    method Action setVsyncWidth(Bit#(11) width);
+        vsyncWidth <= width;
+    endmethod
+    method Action setDeLineCountMinMax(Bit#(11) min, Bit#(11) max);
+        deLineCountMinimum <= min;
+        deLineCountMaximum <= max;
+        lineMidpoint <= (min + max) / 2;
+    endmethod
+
+    method Action setNumberOfLines(Bit#(11) lines);
+        numberOfLines <= lines;
+    endmethod
+    method Action setNumberOfPixels(Bit#(12) pixels);
+        numberOfPixels <= pixels;
+    endmethod
 
     interface HDMI hdmi;
         method Bit#(1) hdmi_vsync;

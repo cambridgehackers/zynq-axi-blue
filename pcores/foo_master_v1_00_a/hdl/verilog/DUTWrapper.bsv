@@ -17,6 +17,8 @@ interface DUTWrapper;
    interface Reg#(Bit#(32)) reqCount;
    interface Reg#(Bit#(32)) respCount;
    interface Reg#(Bit#(32)) junkReqCount;
+   interface Reg#(Bit#(32)) blockedRequestsDiscardedCount;
+   interface Reg#(Bit#(32)) blockedResponsesDiscardedCount;
    interface Reg#(Bit#(32)) vsyncPulseCount;
    interface Reg#(Bit#(32)) frameCount;
 
@@ -82,6 +84,26 @@ typedef union tagged {
         Bit#(32) base;
     } StartFrameBuffer$Request;
 
+    struct {
+        Bit#(32) unused;
+    } WaitForVsync$Request;
+
+    struct {
+        Bit#(32) value;
+    } HdmiLinesPixels$Request;
+    struct {
+        Bit#(32) value;
+    } HdmiBlankLinesPixels$Request;
+    struct {
+        Bit#(32) value;
+    } HdmiLineCountMinMax$Request;
+    struct {
+        Bit#(32) value;
+    } HdmiPixelCountMinMax$Request;
+    struct {
+        Bit#(32) value;
+    } HdmiSyncWidths$Request;
+
   Bit#(0) DutRequestUnused;
 } DutRequest deriving (Bits);
 
@@ -109,10 +131,12 @@ typedef union tagged {
 
     Bit#(32) Test2Completed$Response;
 
+    Bit#(32) VsyncReceived$Response;
+
   Bit#(0) DutResponseUnused;
 } DutResponse deriving (Bits);
 
-module mkDUTWrapper#(Clock axis_clk, FromBit32#(DutRequest) requestFifo, ToBit32#(DutResponse) responseFifo)(DUTWrapper) provisos(Bits#(DutRequest,dutRequestSize),Bits#(DutRequest,dutResponseSize));
+module mkDUTWrapper#(Clock axis_clk, FromBit32#(DutRequest) requestFifo, ToBit32#(DutResponse) responseFifo)(DUTWrapper) provisos(Bits#(DutRequest,dutRequestSize),Bits#(DutResponse,dutResponseSize));
 
     DUT dut <- mkDUT(axis_clk);
     Reg#(Bit#(32)) requestFired <- mkReg(0);
@@ -122,8 +146,10 @@ module mkDUTWrapper#(Clock axis_clk, FromBit32#(DutRequest) requestFifo, ToBit32
     Reg#(Bit#(16)) requestTimeLimitReg <- mkReg(maxBound);
     Reg#(Bit#(16)) responseTimerReg <- mkReg(0);
     Reg#(Bit#(16)) responseTimeLimitReg <- mkReg(maxBound);
+    Reg#(Bit#(32)) blockedRequestsDiscardedReg <- mkReg(0);
+    Reg#(Bit#(32)) blockedResponsesDiscardedReg <- mkReg(0);
 
-    Bit#(4) maxTag = 13;
+    Bit#(4) maxTag = 18;
 
     rule handleJunkRequest if (pack(requestFifo.first)[4+32-1:32] > maxTag);
         requestFifo.deq;
@@ -136,6 +162,7 @@ module mkDUTWrapper#(Clock axis_clk, FromBit32#(DutRequest) requestFifo, ToBit32
 
     rule discardBlockedRequests if (requestTimerReg > requestTimeLimitReg && requestFifo.notEmpty);
         requestFifo.deq;
+        blockedRequestsDiscardedReg <= blockedRequestsDiscardedReg + 1;
         requestTimerReg <= 0;
     endrule
 
@@ -145,6 +172,7 @@ module mkDUTWrapper#(Clock axis_clk, FromBit32#(DutRequest) requestFifo, ToBit32
 
     rule discardBlockedResponses if (responseTimerReg > responseTimeLimitReg && !responseFifo.notFull);
         responseFifo.deq;
+        blockedResponsesDiscardedReg <= blockedResponsesDiscardedReg + 1;
         responseTimerReg <= 0;
     endrule
 
@@ -317,6 +345,55 @@ module mkDUTWrapper#(Clock axis_clk, FromBit32#(DutRequest) requestFifo, ToBit32
         responseFired <= responseFired + 1;
     endrule
 
+    rule handle$WaitForVsync$request if (requestFifo.first matches tagged WaitForVsync$Request .unused);
+        requestFifo.deq;
+        dut.waitForVsync();
+        requestFired <= requestFired + 1;
+        requestTimerReg <= 0;
+    endrule
+
+    rule handle$HdmiLinesPixels$request if (requestFifo.first matches tagged HdmiLinesPixels$Request .x);
+        requestFifo.deq;
+        dut.hdmiLinesPixels(x.value);
+        requestFired <= requestFired + 1;
+        requestTimerReg <= 0;
+    endrule
+
+    rule handle$HdmiBlankLinesPixels$request if (requestFifo.first matches tagged HdmiBlankLinesPixels$Request .x);
+        requestFifo.deq;
+        dut.hdmiBlankLinesPixels(x.value);
+        requestFired <= requestFired + 1;
+        requestTimerReg <= 0;
+    endrule
+
+    rule handle$HdmiLineCountMinMax$request if (requestFifo.first matches tagged HdmiLineCountMinMax$Request .x);
+        requestFifo.deq;
+        dut.hdmiLineCountMinMax(x.value);
+        requestFired <= requestFired + 1;
+        requestTimerReg <= 0;
+    endrule
+
+    rule handle$HdmiPixelCountMinMax$request if (requestFifo.first matches tagged HdmiPixelCountMinMax$Request .x);
+        requestFifo.deq;
+        dut.hdmiPixelCountMinMax(x.value);
+        requestFired <= requestFired + 1;
+        requestTimerReg <= 0;
+    endrule
+
+    rule handle$HdmiSyncWidths$request if (requestFifo.first matches tagged HdmiSyncWidths$Request .x);
+        requestFifo.deq;
+        dut.hdmiSyncWidths(x.value);
+        requestFired <= requestFired + 1;
+        requestTimerReg <= 0;
+    endrule
+
+    rule vsyncReceived$response;
+        Bit#(32) r <- dut.vsyncReceived();
+        let response = tagged VsyncReceived$Response r;
+        responseFifo.enq(response);
+        responseFired <= responseFired + 1;
+    endrule
+
     method Bit#(32) requestSize();
         return pack(fromInteger(valueof(dutRequestSize)));
     endmethod
@@ -326,6 +403,8 @@ module mkDUTWrapper#(Clock axis_clk, FromBit32#(DutRequest) requestFifo, ToBit32
     interface Reg reqCount = requestFired;
     interface Reg respCount = responseFired;
     interface Reg junkReqCount = junkReqReg;
+    interface Reg blockedRequestsDiscardedCount = blockedRequestsDiscardedReg;
+    interface Reg blockedResponsesDiscardedCount = blockedResponsesDiscardedReg;
     interface Reg vsyncPulseCount = dut.vsyncPulseCount;
     interface Reg frameCount = dut.frameCount;
 
