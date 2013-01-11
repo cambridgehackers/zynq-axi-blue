@@ -31,8 +31,7 @@ module NRCCBRAM2(CLKA,
                  RSTA_N,
                  ENA,
                  WEA,
-                 RADDRA,
-                 WADDRA,
+                 ADDRA,
                  DIA,
                  DOA,
                  DRA,
@@ -40,8 +39,7 @@ module NRCCBRAM2(CLKA,
                  RSTB_N,
                  ENB,
                  WEB,
-                 RADDRB,
-                 WADDRB,
+                 ADDRB,
                  DIB,
                  DOB,
                  DRB
@@ -56,8 +54,7 @@ module NRCCBRAM2(CLKA,
    input                          RSTA_N;
    input                          ENA;
    input                          WEA;
-   input [ADDR_WIDTH-1:0]         RADDRA;
-   input [ADDR_WIDTH-1:0]         WADDRA;
+   input [ADDR_WIDTH-1:0]         ADDRA;
    input [DATA_WIDTH-1:0]         DIA;
    output [DATA_WIDTH-1:0]        DOA;
    output                         DRA;
@@ -66,8 +63,7 @@ module NRCCBRAM2(CLKA,
    input                          RSTB_N;
    input                          ENB;
    input                          WEB;
-   input [ADDR_WIDTH-1:0]         RADDRB;
-   input [ADDR_WIDTH-1:0]         WADDRB;
+   input [ADDR_WIDTH-1:0]         ADDRB;
    input [DATA_WIDTH-1:0]         DIB;
    output [DATA_WIDTH-1:0]        DOB;
    output                         DRB;
@@ -102,23 +98,45 @@ module NRCCBRAM2(CLKA,
 `endif // !`ifdef BSV_NO_INITIAL_BLOCKS
 
    always @(posedge CLKA) begin
+      if (ENA) begin
+         if (WEA) begin
+            DUALPORTBRAM[ADDRA] <= `BSV_ASSIGNMENT_DELAY DIA;
+            DOA_R <= `BSV_ASSIGNMENT_DELAY DIA;
+         end
+         else begin
+            DOA_R <= `BSV_ASSIGNMENT_DELAY DUALPORTBRAM[ADDRA];
+         end
+      end
+      DOA_R2 <= `BSV_ASSIGNMENT_DELAY DOA_R;
+   end
+
+   always @(posedge CLKA) begin
       if (RSTA_N == 0) begin
          DRA_R <= 0;
          DRA_R2 <= 0;
       end
       else if (ENA) begin
          if (WEA) begin
-            DUALPORTBRAM[WADDRA] <= `BSV_ASSIGNMENT_DELAY DIA;
-            DOA_R <= `BSV_ASSIGNMENT_DELAY DIA;
             DRA_R <= `BSV_ASSIGNMENT_DELAY 0;
          end
          else begin
-            DOA_R <= `BSV_ASSIGNMENT_DELAY DUALPORTBRAM[RADDRA];
             DRA_R <= `BSV_ASSIGNMENT_DELAY 1;
          end
       end
-      DOA_R2 <= `BSV_ASSIGNMENT_DELAY DOA_R;
       DRA_R2 <= `BSV_ASSIGNMENT_DELAY DRA_R;
+   end
+
+   always @(posedge CLKB) begin
+      if (ENB) begin
+         if (WEB) begin
+            DUALPORTBRAM[ADDRB] <= `BSV_ASSIGNMENT_DELAY DIB;
+            DOB_R <= `BSV_ASSIGNMENT_DELAY DIB;
+         end
+         else begin
+            DOB_R <= `BSV_ASSIGNMENT_DELAY DUALPORTBRAM[ADDRB];
+         end
+      end
+      DOB_R2 <= `BSV_ASSIGNMENT_DELAY DOB_R;
    end
 
    always @(posedge CLKB) begin
@@ -128,16 +146,12 @@ module NRCCBRAM2(CLKA,
       end
       else if (ENB) begin
          if (WEB) begin
-            DUALPORTBRAM[WADDRB] <= `BSV_ASSIGNMENT_DELAY DIB;
-            DOB_R <= `BSV_ASSIGNMENT_DELAY DIB;
             DRB_R <= `BSV_ASSIGNMENT_DELAY 0;
          end
          else begin
-            DOB_R <= `BSV_ASSIGNMENT_DELAY DUALPORTBRAM[RADDRB];
             DRB_R <= `BSV_ASSIGNMENT_DELAY 1;
          end
       end
-      DOB_R2 <= `BSV_ASSIGNMENT_DELAY DOB_R;
       DRB_R2 <= `BSV_ASSIGNMENT_DELAY DRB_R;
    end
 

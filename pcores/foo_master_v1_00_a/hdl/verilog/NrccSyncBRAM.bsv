@@ -27,13 +27,11 @@ interface BRAM#(type idx_type, type data_type);
 endinterface
 
 interface SyncBRAMBVI#(type idx_type, type data_type);
-  method Action portAReadAddr(idx_type idx);
+  method Action	portAReq(Bit#(1) we, idx_type idx, data_type data);
   method data_type portAReadData();
-  method Action	portAWrite(idx_type idx, data_type data);
 
-  method Action portBReadAddr(idx_type idx);
+  method Action	portBReq(Bit#(1) we, idx_type idx, data_type data);
   method data_type portBReadData();
-  method Action	portBWrite(idx_type idx, data_type data);
 endinterface
 
 interface SyncBRAM#(type idx_type, type data_type);
@@ -60,35 +58,22 @@ import "BVI" NRCCBRAM2 = module mkSyncBRAMBVI#(Integer memsize, Clock clkA, Rese
   input_reset (RSTA_N) clocked_by (clkA) = rstA;
   input_reset (RSTB_N) clocked_by (clkB) = rstB;
   default_reset rstA;
+
   method DOA portAReadData() ready (DRA) clocked_by(clkA) reset_by (rstA);
-  
-  method portAReadAddr(RADDRA) enable(ENA) clocked_by(clkA) reset_by (rstA);
-  method portAWrite(WADDRA, DIA) enable(WEA) clocked_by(clkA) reset_by (rstA);
+  method portAReq(WEA, ADDRA, DIA) enable(ENA) clocked_by(clkA) reset_by (rstA);
 
+  method portBReq(WEB, ADDRB, DIB) enable(ENB) clocked_by(clkB) reset_by (rstB);
   method DOB portBReadData() ready (DRB) clocked_by(clkB) reset_by (rstB);
+
+  schedule portAReadData  CF (portAReadData, portAReq);
+  schedule portAReq      CF (portAReadData);
   
-  method portBReadAddr(RADDRB) enable(ENB) clocked_by(clkB) reset_by (rstB);
-  method portBWrite(WADDRB, DIB) enable(WEB) clocked_by(clkB) reset_by (rstB);
+  schedule portAReq     C portAReq;
 
-  schedule portAReadAddr  CF (portAReadData);
-  schedule portAReadData  CF (portAReadAddr, portAReadData, portAWrite);
-  schedule portAWrite     CF (portAReadData);
-  
-  schedule portAReadAddr  C portAReadAddr;
-  //schedule portAReadData  C portAReadData;
-  schedule portAWrite     C portAWrite;
-  schedule portAReadAddr  C portAWrite;
-  schedule portAWrite     C portAReadAddr;
+  schedule portBReadData  CF (portBReadData, portBReq);
+  schedule portBReq     CF (portBReadData);
 
-  schedule portBReadAddr  CF (portBReadData);
-  schedule portBReadData  CF (portBReadAddr, portBReadData, portBWrite);
-  schedule portBWrite     CF (portBReadData);
-
-  schedule portBReadAddr  C portBReadAddr;
-  //schedule portBReadData  C portBReadData;
-  schedule portBWrite     C portBWrite;
-  schedule portBReadAddr  C portBWrite;
-  schedule portBWrite     C portBReadAddr;
+  schedule portBReq     C portBReq;
 
 endmodule
 
@@ -103,24 +88,24 @@ module mkSyncBRAM#(Integer memsize, Clock clkA, Reset resetA, Clock clkB, Reset 
 
     interface BRAM portA;
         method Action readAddr(idx_type idx);
-            syncBRAMBVI.portAReadAddr(idx);
+            syncBRAMBVI.portAReq(0, idx, 0);
         endmethod
         method data_type readData();
             return syncBRAMBVI.portAReadData();
         endmethod
         method Action write(idx_type idx, data_type data);
-            syncBRAMBVI.portAWrite(idx, data);
+            syncBRAMBVI.portAReq(1, idx, data);
         endmethod
     endinterface
     interface BRAM portB;
         method Action readAddr(idx_type idx);
-            syncBRAMBVI.portBReadAddr(idx);
+            syncBRAMBVI.portBReq(0, idx, 0);
         endmethod
         method data_type readData();
             return syncBRAMBVI.portBReadData();
         endmethod
         method Action write(idx_type idx, data_type data);
-            syncBRAMBVI.portBWrite(idx, data);
+            syncBRAMBVI.portBReq(1, idx, data);
         endmethod
     endinterface
 endmodule
