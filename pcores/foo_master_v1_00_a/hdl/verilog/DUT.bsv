@@ -76,11 +76,16 @@ module mkDUT#(Clock hdmi_clk)(DUT);
     Reg#(Bool) writeQueuedSent <- mkReg(False);
     Reg#(Bool) readCompletedSent <- mkReg(False);
     Reg#(Bool) firstReadSent <- mkReg(False);
+    Reg#(Bool) waitingForVsync <- mkReg(False);
+    Reg#(Bool) sendVsyncIndication <- mkReg(False);
 
     Clock clock <- exposeCurrentClock;
     Reset reset <- exposeCurrentReset;
 
     Reset hdmi_reset <- mkAsyncReset(2, reset, hdmi_clk);
+
+    Reg#(Bit#(11)) linesReg <- mkReg(1080);
+    Reg#(Bit#(12)) pixelsReg <- mkReg(1920);
 
     SyncPulseIfc vsyncPulse <- mkSyncHandshake(hdmi_clk, hdmi_reset, clock);
     SyncPulseIfc hsyncPulse <- mkSyncHandshake(hdmi_clk, hdmi_reset, clock);
@@ -108,13 +113,7 @@ module mkDUT#(Clock hdmi_clk)(DUT);
         begin
             $display("frame started");
             frameCountReg <= frameCountReg + 1;
-            FrameBufferConfig fbc;
-            fbc.base = shadowFrameBufferBase;
-            fbc.pixels = 1920;
-            fbc.lines = 1080;
-            fbc.stridebytes = 1920*fromInteger(bytesperpixel);
-            frameBuffer.start(fbc);
-            commandFifo.enq(tagged TestPattern {enabled: False});
+            frameBuffer.startFrame();
         end
     endrule
     rule hsync if (hsyncPulse.pulse());
@@ -223,10 +222,43 @@ module mkDUT#(Clock hdmi_clk)(DUT);
     method Action setPatternReg(Bit#(32) yuv422);
         commandFifo.enq(tagged PatternColor {yuv422: yuv422});
     endmethod
+    method Action hdmiLinesPixels(Bit#(32) value);
+        commandFifo.enq(tagged LinesPixels {value: value});
+    endmethod
+    method Action hdmiBlankLinesPixels(Bit#(32) value);
+        commandFifo.enq(tagged BlankLinesPixels {value: value});
+    endmethod
+    method Action hdmiLineCountMinMax(Bit#(32) value);
+        commandFifo.enq(tagged LineCountMinMax {value: value});
+    endmethod
+    method Action hdmiPixelCountMinMax(Bit#(32) value);
+        commandFifo.enq(tagged PixelCountMinMax {value: value});
+    endmethod
+    method Action hdmiSyncWidths(Bit#(32) value);
+        commandFifo.enq(tagged SyncWidths {value: value});
+    endmethod
 
     method Action startFrameBuffer(Bit#(32) base);
         $display("startFrameBuffer %h", base);
         shadowFrameBufferBase <= base;
+        FrameBufferConfig fbc;
+        fbc.base = base;
+        fbc.pixels = pixelsReg;
+        fbc.lines = linesReg;
+        fbc.stridebytes = pixelsReg*fromInteger(bytesperpixel);
+        frameBuffer.configure(fbc);
+        commandFifo.enq(tagged TestPattern {enabled: False});
+    endmethod
+
+    method Action waitForVsync();
+        waitingForVsync <= True;
+    endmethod
+
+    method ActionValue#(Bit#(32)) vsyncReceived() if (sendVsyncIndication);
+        sendVsyncIndication <= False;
+        let v = frameBuffer.base |  vsyncPulseCountReg;
+        v[16] = frameBuffer.running ? 1 : 0;
+        return v;
     endmethod
 
     interface Reg vsyncPulseCount = vsyncPulseCountReg;
