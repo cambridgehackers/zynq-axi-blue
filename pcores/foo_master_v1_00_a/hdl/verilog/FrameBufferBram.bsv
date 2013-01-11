@@ -33,7 +33,9 @@ Integer bytesperpixel = 4;
 
 interface FrameBufferBram;
     method Bool running();
-    method Action start(FrameBufferConfig fbc);
+    method Bit#(32) base();
+    method Action configure(FrameBufferConfig fbc);
+    method Action startFrame();
     method Action startLine();
     interface AxiMasterRead#(64) axir;
     interface AxiMasterWrite#(64,8) axiw;
@@ -41,10 +43,11 @@ interface FrameBufferBram;
 endinterface
 
 module mkFrameBufferBram#(Clock displayClk, Reset displayRst)(FrameBufferBram);
+    Reg#(FrameBufferConfig) nextFbc <- mkReg(FrameBufferConfig {base: 0, lines: 0, pixels: 0, stridebytes: 0});
     Reg#(FrameBufferConfig) fbc <- mkReg(FrameBufferConfig {base: 0, lines: 0, pixels: 0, stridebytes: 0});
     Reg#(Bool) runningReg <- mkReg(False);
 
-    let burstCount = 32;
+    let burstCount = 16;
     let bytesPerWord = 8;
     let busWidth = bytesPerWord * 8;
     let bytesPerPixel = 4;
@@ -54,7 +57,7 @@ module mkFrameBufferBram#(Clock displayClk, Reset displayRst)(FrameBufferBram);
     Reg#(Bit#(32)) readAddrReg <- mkReg(0); // next address to read
     Reg#(Bit#(32)) readLimitReg <- mkReg(0); // address of end of line
     Reg#(Bit#(12)) pixelCountReg <- mkReg(0);
-    Reg#(Bit#(12)) lineCountReg <- mkReg(0);
+    Reg#(Bit#(11)) lineCountReg <- mkReg(0);
     
     AxiMaster#(64,8) nullAxiMaster <- mkNullAxiMaster();
 
@@ -67,19 +70,23 @@ module mkFrameBufferBram#(Clock displayClk, Reset displayRst)(FrameBufferBram);
         return runningReg;
     endmethod
 
-    method Action start(FrameBufferConfig newConfig);
-        if (!runningReg)
-        begin
-            fbc <= newConfig;
-            lineAddrReg <= newConfig.base;
-            readAddrReg <= 0; // indicates have not received first hsync pulse
-            Bit#(32) pixelCount32 = extend(newConfig.pixels);
-            readLimitReg <= newConfig.base + pixelCount32 * bytesPerPixel;
-            lineCountReg <= newConfig.lines;
-            pixelCountReg <= newConfig.pixels;
-            pixelCountReg2 <= 0;
-            runningReg <= True;
-        end
+    method Bit#(32) base();
+        return fbc.base;
+    endmethod
+
+    method Action configure(FrameBufferConfig newConfig);
+        nextFbc <= newConfig;
+    endmethod
+
+    method Action startFrame();
+        fbc <= nextFbc;
+        lineAddrReg <= nextFbc.base;
+        readAddrReg <= 0; // indicates have not received first hsync pulse
+        Bit#(32) pixelCount32 = extend(nextFbc.pixels);
+        readLimitReg <= nextFbc.base + pixelCount32 * bytesPerPixel;
+        lineCountReg <= nextFbc.lines;
+        pixelCountReg <= nextFbc.pixels;
+        runningReg <= True;
     endmethod
 
     method Action startLine();
@@ -88,7 +95,7 @@ module mkFrameBufferBram#(Clock displayClk, Reset displayRst)(FrameBufferBram);
             let lineAddr = lineAddrReg;
             let readLimit = readLimitReg;
             let lineCount = lineCountReg;
-            if (readAddrReg == 0) // if not the first line
+            if (readAddrReg != 0) // if not the first line
             begin
                 lineAddr = lineAddr + extend(fbc.stridebytes);
                 readLimit = readLimit + extend(fbc.stridebytes);

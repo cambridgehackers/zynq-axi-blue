@@ -31,7 +31,7 @@ Integer bytesperpixel = 4;
 
 typedef struct {
     Bit#(32) base;
-    Bit#(12) lines;
+    Bit#(11) lines;
     Bit#(12) pixels;
     Bit#(12) stridebytes;
 } FrameBufferConfig deriving (Bits);
@@ -52,7 +52,7 @@ module mkFrameBuffer(FrameBuffer);
     Reg#(Bit#(32)) lineAddrReg <- mkReg(0); // address of start of line
     Reg#(Bit#(32)) readAddrReg <- mkReg(0); // next address to read
     Reg#(Bit#(12)) pixelCountReg <- mkReg(0);
-    Reg#(Bit#(12)) lineCountReg <- mkReg(0);
+    Reg#(Bit#(11)) lineCountReg <- mkReg(0);
     
     AxiMasterServer#(64,8) axiMaster <- mkAxiMasterServer;
 
