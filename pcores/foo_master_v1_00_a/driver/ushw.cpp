@@ -154,7 +154,7 @@ int PortalInterface::exec(idleFunc func)
     int messageReceived = 0;
 
     int rc;
-    while ((rc = poll(portal.fds, portal.numFds, 1000)) >= 0) {
+    while ((rc = poll(portal.fds, portal.numFds, 100)) >= 0) {
         for (int i = 0; i < portal.numFds; i++) {
             if (portal.fds[i].revents == 0)
                 continue;

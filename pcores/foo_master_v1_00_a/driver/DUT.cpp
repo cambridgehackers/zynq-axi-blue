@@ -278,3 +278,118 @@ void DUT::startFrameBuffer ( unsigned int base )
 
   p->sendMessage(&msg);
 };
+
+struct DUTwaitForVsyncMSG : public PortalMessage
+{
+  struct Request {
+    //fix Adapter.bsv to unreverse these
+    unsigned int base;
+
+  } request;
+  int channelNumber;
+};
+
+void DUT::waitForVsync ( unsigned int base )
+{
+  DUTwaitForVsyncMSG msg;
+  msg.size = sizeof(msg.request) + sizeof(msg.channelNumber);
+  msg.channelNumber = baseChannelNumber + 13;
+  msg.request.base = base;
+
+  p->sendMessage(&msg);
+};
+struct DUThdmiLinesPixelsMSG : public PortalMessage
+{
+  struct Request {
+    //fix Adapter.bsv to unreverse these
+    unsigned int base;
+
+  } request;
+  int channelNumber;
+};
+
+void DUT::hdmiLinesPixels ( unsigned int base )
+{
+  DUThdmiLinesPixelsMSG msg;
+  msg.size = sizeof(msg.request) + sizeof(msg.channelNumber);
+  msg.channelNumber = baseChannelNumber + 14;
+  msg.request.base = base;
+
+  p->sendMessage(&msg);
+};
+struct DUThdmiBlankLinesPixelsMSG : public PortalMessage
+{
+  struct Request {
+    //fix Adapter.bsv to unreverse these
+    unsigned int base;
+
+  } request;
+  int channelNumber;
+};
+
+void DUT::hdmiBlankLinesPixels ( unsigned int base )
+{
+  DUThdmiBlankLinesPixelsMSG msg;
+  msg.size = sizeof(msg.request) + sizeof(msg.channelNumber);
+  msg.channelNumber = baseChannelNumber + 15;
+  msg.request.base = base;
+
+  p->sendMessage(&msg);
+};
+struct DUThdmiLineCountMinMaxMSG : public PortalMessage
+{
+  struct Request {
+    //fix Adapter.bsv to unreverse these
+    unsigned int base;
+
+  } request;
+  int channelNumber;
+};
+
+void DUT::hdmiLineCountMinMax ( unsigned int base )
+{
+  DUThdmiLineCountMinMaxMSG msg;
+  msg.size = sizeof(msg.request) + sizeof(msg.channelNumber);
+  msg.channelNumber = baseChannelNumber + 16;
+  msg.request.base = base;
+
+  p->sendMessage(&msg);
+};
+struct DUThdmiPixelCountMinMaxMSG : public PortalMessage
+{
+  struct Request {
+    //fix Adapter.bsv to unreverse these
+    unsigned int base;
+
+  } request;
+  int channelNumber;
+};
+
+void DUT::hdmiPixelCountMinMax ( unsigned int base )
+{
+  DUThdmiPixelCountMinMaxMSG msg;
+  msg.size = sizeof(msg.request) + sizeof(msg.channelNumber);
+  msg.channelNumber = baseChannelNumber + 17;
+  msg.request.base = base;
+
+  p->sendMessage(&msg);
+};
+struct DUThdmiSyncWidthsMSG : public PortalMessage
+{
+  struct Request {
+    //fix Adapter.bsv to unreverse these
+    unsigned int base;
+
+  } request;
+  int channelNumber;
+};
+
+void DUT::hdmiSyncWidths ( unsigned int base )
+{
+  DUThdmiSyncWidthsMSG msg;
+  msg.size = sizeof(msg.request) + sizeof(msg.channelNumber);
+  msg.channelNumber = baseChannelNumber + 18;
+  msg.request.base = base;
+
+  p->sendMessage(&msg);
+};

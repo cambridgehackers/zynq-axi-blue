@@ -23,6 +23,12 @@ public:
     void runTest2 ( unsigned int );
     void setPatternReg ( unsigned int );
     void startFrameBuffer ( unsigned int );
+    void waitForVsync(unsigned int );
+    void hdmiLinesPixels(unsigned int);
+    void hdmiBlankLinesPixels(unsigned int);
+    void hdmiLineCountMinMax(unsigned int);
+    void hdmiPixelCountMinMax(unsigned int);
+    void hdmiSyncWidths(unsigned int);
 private:
     DUT(PortalInstance *, int baseChannelNumber=0);
     ~DUT();
