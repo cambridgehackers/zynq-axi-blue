@@ -302,12 +302,12 @@ begin
   IP2Bus_Error <= '0';
 
   WILL_FIRE_ctrl_put <= Bus2IP_CS(0) and Bus2IP_WrCE(0) and RDY_ctrl_put;
-  WILL_FIRE_ctrl_get <= Bus2IP_CS(0) and Bus2IP_RdCE(0) and RDY_ctrl_put;
+  WILL_FIRE_ctrl_get <= Bus2IP_CS(0) and Bus2IP_RdCE(0) and RDY_ctrl_get;
   WILL_FIRE_fifo_put <= Bus2IP_CS(1) and Bus2IP_WrCE(1) and RDY_fifo_put;
-  WILL_FIRE_fifo_get <= Bus2IP_CS(1) and Bus2IP_RdCE(1) and RDY_fifo_put;
+  WILL_FIRE_fifo_get <= Bus2IP_CS(1) and Bus2IP_RdCE(1) and RDY_fifo_get;
 
-  mem_read_ack    <= WILL_FIRE_ctrl_get or WILL_FIRE_ctrl_get;
-  mem_write_ack   <= WILL_FIRE_ctrl_put or WILL_FIRE_ctrl_put;
+  mem_read_ack    <= WILL_FIRE_ctrl_get or WILL_FIRE_fifo_get;
+  mem_write_ack   <= WILL_FIRE_ctrl_put or WILL_FIRE_fifo_put;
 
   IP_SLAVE : entity mkIpSlaveWithMaster
     port map (
