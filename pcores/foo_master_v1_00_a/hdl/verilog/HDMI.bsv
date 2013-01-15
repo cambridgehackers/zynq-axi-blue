@@ -152,10 +152,10 @@ module mkHdmiTestPatternGenerator#(SyncFIFOIfc#(HdmiCommand) commandFifo,
     function LinePixelCount newCounts(Bit#(11) lc, Bit#(12) pc);
         let newLineCount = lc;
         let newPixelCount = pc;
-        if (pc == numberOfPixels-2)
+        if (pc == numberOfPixels-1)
         begin
            newPixelCount = 0; 
-           if (lc == numberOfLines-2)
+           if (lc == numberOfLines-1)
            begin
                newLineCount = 0;
            end
@@ -215,7 +215,7 @@ module mkHdmiTestPatternGenerator#(SyncFIFOIfc#(HdmiCommand) commandFifo,
         vsyncPulse.send();
     endrule
     rule sendHsyncPulse (isActiveLine && pixelCount == 0);
-        $display("hsync pulse sent");
+        //$display("hsync pulse sent");
         hsyncPulse.send();
     endrule
 
@@ -224,8 +224,7 @@ module mkHdmiTestPatternGenerator#(SyncFIFOIfc#(HdmiCommand) commandFifo,
         lineCount <= counts.line;
         pixelCount <= counts.pixel;
 
-        if (pixelCount == 0)
-            $display("tpg line %d", lineCount);
+        //if (pixelCount == 0) $display("tpg line %d", lineCount);
 
         if (lineCount == 0 && pixelCount == 0)
         begin
@@ -263,8 +262,7 @@ module mkHdmiTestPatternGenerator#(SyncFIFOIfc#(HdmiCommand) commandFifo,
         lineCount <= counts.line;
         pixelCount <= counts.pixel;
 
-        if (pixelCount == 0)
-            $display("fb line %d", lineCount);
+        //if (pixelCount == 0) $display("fb line %d", lineCount);
 
         if (lineCount == 0 && pixelCount == 0)
         begin

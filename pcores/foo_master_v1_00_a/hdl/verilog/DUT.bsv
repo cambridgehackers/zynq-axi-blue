@@ -86,6 +86,7 @@ module mkDUT#(Clock hdmi_clk)(DUT);
 
     Reg#(Bit#(11)) linesReg <- mkReg(1080);
     Reg#(Bit#(12)) pixelsReg <- mkReg(1920);
+    Reg#(Bit#(14)) strideBytesReg <- mkReg(1920*4);
 
     SyncPulseIfc vsyncPulse <- mkSyncHandshake(hdmi_clk, hdmi_reset, clock);
     SyncPulseIfc hsyncPulse <- mkSyncHandshake(hdmi_clk, hdmi_reset, clock);
@@ -93,7 +94,11 @@ module mkDUT#(Clock hdmi_clk)(DUT);
     SyncFIFOIfc#(Bit#(64)) rgbrgbFifo <- mkSyncFIFOFromCC(4, hdmi_clk);
     SyncFIFOIfc#(HdmiCommand) commandFifo <- mkSyncFIFOFromCC(2, hdmi_clk);
 
-    Reg#(Bit#(32)) shadowFrameBufferBase <- mkReg(0);
+    Reg#(Bit#(6)) segmentIndexReg <- mkReg(0);
+    Reg#(Bit#(24)) segmentOffsetReg <- mkReg(0);
+    FIFOF#(Bit#(96)) translationEntryFifo <- mkFIFOF();
+
+    Reg#(Bool) frameBufferEnabled <- mkReg(False);
     FrameBufferBram frameBuffer <- mkFrameBufferBram(hdmi_clk, hdmi_reset);
 
     HdmiTestPatternGenerator hdmiTpg <- mkHdmiTestPatternGenerator(clocked_by hdmi_clk, reset_by hdmi_reset,
@@ -107,9 +112,14 @@ module mkDUT#(Clock hdmi_clk)(DUT);
 
     (* descending_urgency = "vsync, hsync" *)
     rule vsync if (vsyncPulse.pulse());
-        $display("vsync pulse received %h", shadowFrameBufferBase);
+        $display("vsync pulse received %h", frameBufferEnabled);
         vsyncPulseCountReg <= vsyncPulseCountReg + 1;
-        if (shadowFrameBufferBase != 0)
+        if (waitingForVsync)
+        begin
+            waitingForVsync <= False;
+            sendVsyncIndication <= True;
+        end
+        if (frameBufferEnabled)
         begin
             $display("frame started");
             frameCountReg <= frameCountReg + 1;
@@ -223,7 +233,12 @@ module mkDUT#(Clock hdmi_clk)(DUT);
         commandFifo.enq(tagged PatternColor {yuv422: yuv422});
     endmethod
     method Action hdmiLinesPixels(Bit#(32) value);
+        linesReg <= value[10:0];
+        pixelsReg <= value[27:16];
         commandFifo.enq(tagged LinesPixels {value: value});
+    endmethod
+    method Action hdmiStrideBytes(Bit#(32) value);
+        strideBytesReg <= value[13:0];
     endmethod
     method Action hdmiBlankLinesPixels(Bit#(32) value);
         commandFifo.enq(tagged BlankLinesPixels {value: value});
@@ -240,29 +255,50 @@ module mkDUT#(Clock hdmi_clk)(DUT);
 
     method Action startFrameBuffer(Bit#(32) base);
         $display("startFrameBuffer %h", base);
-        shadowFrameBufferBase <= base;
+        frameBufferEnabled <= True;
         FrameBufferConfig fbc;
         fbc.base = base;
         fbc.pixels = pixelsReg;
         fbc.lines = linesReg;
-        fbc.stridebytes = pixelsReg*fromInteger(bytesperpixel);
+        Bit#(14) stridebytes = strideBytesReg;
+        $display("startFrameBuffer lines %d pixels %d bytesperpixel %d stridebytes %d",
+                 linesReg, pixelsReg, bytesperpixel, stridebytes);
+        fbc.stridebytes = stridebytes;
         frameBuffer.configure(fbc);
         commandFifo.enq(tagged TestPattern {enabled: False});
     endmethod
 
-    method Action waitForVsync();
+    method Action waitForVsync(Bit#(32) unused);
         waitingForVsync <= True;
     endmethod
 
     method ActionValue#(Bit#(32)) vsyncReceived() if (sendVsyncIndication);
         sendVsyncIndication <= False;
-        let v = frameBuffer.base |  vsyncPulseCountReg;
-        v[16] = frameBuffer.running ? 1 : 0;
-        return v;
+        return vsyncPulseCountReg;
     endmethod
 
-    interface Reg vsyncPulseCount = vsyncPulseCountReg;
-    interface Reg frameCount = frameCountReg;
+    method Action beginTranslationTable(Bit#(6) index);
+        segmentIndexReg <= index;
+        segmentOffsetReg <= 0;
+    endmethod
+    method Action addTranslationEntry(Bit#(20) address, Bit#(12) length);
+        frameBuffer.setSgEntry(segmentIndexReg, segmentOffsetReg, address, extend(length));
+        segmentIndexReg <= segmentIndexReg + 1;
+        segmentOffsetReg <= segmentOffsetReg + {length,12'd0};
+        Bit#(96) entry;
+        entry[95:64] = extend(address);
+        entry[63:32] = extend(segmentOffsetReg);
+        entry[31:0] = extend(length);        
+        translationEntryFifo.enq(entry);
+    endmethod
+    method ActionValue#(Bit#(96)) translationTableEntry();
+        translationEntryFifo.deq();
+        return translationEntryFifo.first();
+    endmethod
+    method ActionValue#(Bit#(96)) fbReading();
+        let v <- frameBuffer.reading();
+        return v;
+    endmethod
 
     interface AxiMasterWrite axiw0 = axiMaster.axi.write;
     interface AxiMasterWrite axir0 = axiMaster.axi.read;

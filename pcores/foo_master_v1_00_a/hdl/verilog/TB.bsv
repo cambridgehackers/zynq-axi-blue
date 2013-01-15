@@ -29,8 +29,7 @@ import AxiMasterSlave::*;
 import DUTWrapper::*;
 
 typedef enum {
-    Initial,
-    FirstWordSent,
+    State[12],
     Running
 } State deriving (Bits,Eq);
 
@@ -48,16 +47,46 @@ module mkTb();
     mkMasterSlaveConnection(dutWrapper.axiw0, dutWrapper.axir0, axiSlave0);
     mkMasterSlaveConnection(dutWrapper.axiw1, dutWrapper.axir1, axiSlave1);
 
-    Reg#(State) state <- mkReg(Initial);
+    Reg#(State) state <- mkReg(State0);
 
-    Bit#(64) request = extend(pack(tagged StartFrameBuffer$Request { base: 32'h10000 }));
-    rule startIt1 if (state == Initial);
-        requestFifo.enq(request[31:0]);
-        state <= FirstWordSent;
+    Bit#(64) request0 = extend(pack(BeginTranslationTable$Request { index: 0 }));
+    Bit#(64) request1 = extend(pack(AddTranslationEntry$Request { address: 20'hc0000, length: 12'h3f4 }));
+    Bit#(64) request2 = extend(pack(AddTranslationEntry$Request { address: 20'hb0000, length: 12'h3f5 }));
+    Bit#(64) request3 = extend(pack(tagged StartFrameBuffer$Request { base: 32'h10000 }));
+    rule startIt0 if (state == State0);
+        requestFifo.enq(request0[31:0]);
+        state <= State1;
     endrule
-    rule startIt2 if (state == FirstWordSent);
-        requestFifo.enq(request[63:32]);
-        state <= Running;
+    rule startIt1 if (state == State1);
+        requestFifo.enq(request0[63:32]);
+        state <= State2;
+    endrule
+
+    rule startIt2 if (state == State2);
+        requestFifo.enq(request1[31:0]);
+        state <= State3;
+    endrule
+    rule startIt3 if (state == State3);
+        requestFifo.enq(request1[63:32]);
+        state <= State4;
+    endrule
+
+    rule startIt4 if (state == State4);
+        requestFifo.enq(request2[31:0]);
+        state <= State5;
+    endrule
+    rule startIt5 if (state == State5);
+        requestFifo.enq(request2[63:32]);
+        state <= State6;
+    endrule
+
+    rule startIt6 if (state == State6);
+        requestFifo.enq(request3[31:0]);
+        state <= State7;
+    endrule
+    rule startIt7 if (state == State7);
+        requestFifo.enq(request3[63:32]);
+        state <= State8;
     endrule
 
 endmodule

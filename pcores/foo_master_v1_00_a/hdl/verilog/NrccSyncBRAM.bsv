@@ -20,6 +20,8 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+import RegFile::*;
+
 interface BRAM#(type idx_type, type data_type);
   method Action readAddr(idx_type idx);
   method data_type readData();
@@ -106,6 +108,51 @@ module mkSyncBRAM#(Integer memsize, Clock clkA, Reset resetA, Clock clkB, Reset 
         endmethod
         method Action write(idx_type idx, data_type data);
             syncBRAMBVI.portBReq(1, idx, data);
+        endmethod
+    endinterface
+endmodule
+
+typedef enum {
+        Idle, Read, Write
+} Op deriving (Bits);
+
+module mkSimSyncBRAM#(Integer memsize, Clock clkA, Reset resetA, Clock clkB, Reset resetB)
+                  (SyncBRAM#(idx_type, data_type))
+                  provisos(Bits#(idx_type, idxbits),
+                           Bounded#(idx_type),
+                           Literal#(idx_type),
+                           Bits#(data_type, databits),
+                           Literal#(data_type),
+                           Add#(1, z, databits));
+    RegFile#(idx_type, data_type) rf <- mkRegFileFull;
+
+    Reg#(idx_type) aAddr <- mkReg(0, clocked_by clkA, reset_by resetA);
+    Reg#(Op) aOp <- mkReg(Idle, clocked_by clkA, reset_by resetA);
+    Reg#(idx_type) bAddr <- mkReg(0, clocked_by clkA, reset_by resetA);
+    Reg#(Op) bOp <- mkReg(Idle, clocked_by clkA, reset_by resetA);
+
+    interface BRAM portA;
+        method Action readAddr(idx_type idx);
+            aAddr <= idx;
+            aOp <= Read;
+        endmethod
+        method data_type readData() if (aOp matches Read);
+            return rf.sub(aAddr);
+        endmethod
+        method Action write(idx_type idx, data_type data);
+            rf.upd(idx, data);
+        endmethod
+    endinterface
+    interface BRAM portB;
+        method Action readAddr(idx_type idx);
+            bAddr <= idx;
+            bOp <= Read;
+        endmethod
+        method data_type readData() if (bOp matches Read);
+            return rf.sub(bAddr);
+        endmethod
+        method Action write(idx_type idx, data_type data);
+            rf.upd(idx, data);
         endmethod
     endinterface
 endmodule

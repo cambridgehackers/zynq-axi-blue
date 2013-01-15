@@ -90,38 +90,34 @@ module mkIpSlaveWithMaster#(Clock hdmi_ref_clk)(IpSlaveWithMaster);
            if (addr == 12'h004)
                v = 32'h02142011;
            if (addr == 12'h008)
-               v = underflowCount;
+               v = dutWrapper.requestSize;
            if (addr == 12'h00C)
-               v = overflowCount;
+               v = dutWrapper.responseSize;
            if (addr == 12'h010)
                v = dutWrapper.reqCount;
            if (addr == 12'h014)
                v = dutWrapper.respCount;
            if (addr == 12'h018)
+               v = underflowCount;
+           if (addr == 12'h01C)
+               v = overflowCount;
+           if (addr == 12'h020)
                v = (32'h68470000
                     | (responseFifo.notFull ? 32'h20 : 0) | (responseFifo.notEmpty ? 32'h10 : 0)
                     | (requestFifo.notFull ? 32'h02 : 0) | (requestFifo.notEmpty ? 32'h01 : 0));
-           if (addr == 12'h01C)
-               v = putWordCount;
-           if (addr == 12'h020)
-               v = getWordCount;
            if (addr == 12'h024)
-               v = word0Put;
+               v = putWordCount;
            if (addr == 12'h028)
-               v = word1Put;
+               v = getWordCount;
            if (addr == 12'h02C)
-               v = dutWrapper.vsyncPulseCount;
+               v = word0Put;
            if (addr == 12'h030)
-               v = dutWrapper.frameCount;
+               v = word1Put;
            if (addr == 12'h034)
-               v = dutWrapper.requestSize;
-           if (addr == 12'h038)
-               v = dutWrapper.responseSize;
-           if (addr == 12'h03C)
                v = dutWrapper.junkReqCount;
-           if (addr == 12'h040)
+           if (addr == 12'h038)
                v = dutWrapper.blockedRequestsDiscardedCount;
-           if (addr == 12'h044)
+           if (addr == 12'h03C)
                v = dutWrapper.blockedResponsesDiscardedCount;
            return v;
        endmethod

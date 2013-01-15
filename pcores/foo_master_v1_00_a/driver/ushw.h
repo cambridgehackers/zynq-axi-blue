@@ -4,9 +4,13 @@
 class PortalInterface;
 
 typedef struct PortalAlloc {
-    size_t size;
-    int fd;
-    unsigned long dma_address;
+        size_t size;
+        int fd;
+        struct {
+                unsigned long dma_address;
+                unsigned long length;
+        } entries[64];
+        int numEntries;
 } PortalAlloc;
 
 typedef struct PortalMessage {
@@ -38,7 +42,8 @@ public:
     ~PortalInterface();
     typedef void (*idleFunc)(void);
     static int exec(idleFunc func = 0);
-    static int alloc(size_t size, int *fd, unsigned long *dma_address);
+    static int alloc(size_t size, int *fd, PortalAlloc *portalAlloc);
+    static int free(int fd);
     int registerInstance(PortalInstance *instance);
     int dumpRegs();
 private:

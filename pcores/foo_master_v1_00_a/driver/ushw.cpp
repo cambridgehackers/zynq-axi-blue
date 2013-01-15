@@ -104,7 +104,7 @@ PortalInterface::PortalInterface()
 PortalInterface::~PortalInterface()
 {
     if (fds) {
-        free(fds);
+        ::free(fds);
         fds = 0;
     }
 }
@@ -122,9 +122,10 @@ int PortalInterface::registerInstance(PortalInstance *instance)
     return 0;
 }
 
-int PortalInterface::alloc(size_t size, int *fd, unsigned long *dma_address)
+int PortalInterface::alloc(size_t size, int *fd, PortalAlloc *portalAlloc)
 {
     PortalAlloc alloc;
+    memset(&alloc, 0, sizeof(alloc));
     void *ptr = 0;
     alloc.size = size;
     int rc = ioctl(portal.fds[0].fd, PORTAL_ALLOC, &alloc);
@@ -134,8 +135,13 @@ int PortalInterface::alloc(size_t size, int *fd, unsigned long *dma_address)
     fprintf(stderr, "alloc size=%d rc=%d alloc.fd=%d ptr=%p\n", size, rc, alloc.fd, ptr);
     if (fd)
       *fd = alloc.fd;
-    if (dma_address)
-      *dma_address = alloc.dma_address;
+    if (portalAlloc)
+      *portalAlloc = alloc;
+    return 0;
+}
+
+int PortalInterface::free(int fd)
+{
     return 0;
 }
 
@@ -165,8 +171,10 @@ int PortalInterface::exec(idleFunc func)
             size_t size = msg->size;
             if (!size)
                 continue;
-            int channel = *(buf+1+(size-1)/4); // channel number is last word of message
-            if (0) fprintf(stderr, "channel %x messageHandlers=%p\n", channel, instance->messageHandlers);
+            int channel = buf[4]; // channel number is last word of message
+            if (0) fprintf(stderr, "size=%d w0=%x w1=%x w2=%x w3=%x channel %x messageHandlers=%p handler=%p\n",
+                           size, buf[0], buf[1], buf[2], buf[3],
+                           channel, instance->messageHandlers, instance->messageHandlers[channel]);
             if (instance->messageHandlers && instance->messageHandlers[channel])
                 instance->messageHandlers[channel](msg);
         }

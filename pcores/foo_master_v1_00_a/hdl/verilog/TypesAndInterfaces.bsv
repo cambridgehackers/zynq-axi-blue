@@ -57,18 +57,21 @@ interface DUT;
     method Action setPatternReg(Bit#(32) yuv422);
     method Action startFrameBuffer(Bit#(32) base);
 
-    method Action waitForVsync();
+    method Action waitForVsync(Bit#(32) unused);
     method ActionValue#(Bit#(32)) vsyncReceived();
 
     method Action hdmiLinesPixels(Bit#(32) value);
     method Action hdmiBlankLinesPixels(Bit#(32) value);
+    method Action hdmiStrideBytes(Bit#(32) strideBytes);
     method Action hdmiLineCountMinMax(Bit#(32) value);
     method Action hdmiPixelCountMinMax(Bit#(32) value);
     method Action hdmiSyncWidths(Bit#(32) value);
 
-    interface Reg#(Bit#(32)) vsyncPulseCount;
-    interface Reg#(Bit#(32)) frameCount;
- 
+    method Action beginTranslationTable(Bit#(6) index);
+    method Action addTranslationEntry(Bit#(20) address, Bit#(12) length); // shift address and length left 12 bits
+    method ActionValue#(Bit#(96)) translationTableEntry();
+    method ActionValue#(Bit#(96)) fbReading();
+
     interface AxiMasterWrite#(64,8) axiw0;
     interface AxiMasterRead#(64) axir0;
     interface AxiMasterWrite#(64,8) axiw1;

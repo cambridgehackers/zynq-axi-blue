@@ -53,9 +53,10 @@ int main(int argc, char **argv)
     fprintf(stderr, "%s:%d dut=%p\n", __FUNCTION__, __LINE__, dut);
 
     int fd;
-    unsigned long base;
-    portal.alloc(4096, &fd, &base);
-    unsigned long bound = base + 4096;
+    PortalAlloc portalAlloc;
+    portal.alloc(4096, &fd, &portalAlloc);
+    unsigned long base = portalAlloc.entries[0].dma_address;
+    unsigned long bound = base + portalAlloc.entries[0].length;
     fprintf(stderr, "%s:%d dut=%p base=%lx bound=%lx\n", __FUNCTION__, __LINE__, dut, base, bound);
     dut->setBase(base);
     dut->setBounds(bound);

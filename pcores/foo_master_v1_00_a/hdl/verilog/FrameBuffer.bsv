@@ -33,7 +33,7 @@ typedef struct {
     Bit#(32) base;
     Bit#(11) lines;
     Bit#(12) pixels;
-    Bit#(12) stridebytes;
+    Bit#(14) stridebytes;
 } FrameBufferConfig deriving (Bits);
 
 interface FrameBuffer;
