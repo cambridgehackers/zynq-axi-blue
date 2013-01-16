@@ -38,7 +38,7 @@ interface FrameBufferBram;
     method Action configure(FrameBufferConfig fbc);
     method Action startFrame();
     method Action startLine();
-    method Action setSgEntry(Bit#(6) index, Bit#(24) startingOffset, Bit#(20) address, Bit#(20) length);
+    method Action setSgEntry(Bit#(8) index, Bit#(24) startingOffset, Bit#(20) address, Bit#(20) length);
     method ActionValue#(Bit#(96)) reading();
     interface AxiMasterRead#(64) axir;
     interface AxiMasterWrite#(64,8) axiw;
@@ -75,7 +75,7 @@ module mkFrameBufferBram#(Clock displayClk, Reset displayRst)(FrameBufferBram);
     Reg#(Bit#(12)) pixelCountReg <- mkReg(0);
     Reg#(Bit#(11)) lineCountReg <- mkReg(0);
     
-    Vector#(64, Reg#(ScatterGather)) sglist <- replicateM(mkReg(unpack(0)));
+    Vector#(256, Reg#(ScatterGather)) sglist <- replicateM(mkReg(unpack(0)));
 
     AxiMaster#(64,8) nullAxiMaster <- mkNullAxiMaster();
 
@@ -118,10 +118,10 @@ module mkFrameBufferBram#(Clock displayClk, Reset displayRst)(FrameBufferBram);
 
     method Action configure(FrameBufferConfig newConfig);
         nextFbc <= newConfig;
-        traceReadingReg <= True;
+        //traceReadingReg <= True;
     endmethod
 
-    method Action setSgEntry(Bit#(6) index, Bit#(24) startingOffset, Bit#(20) address, Bit#(20) length);
+    method Action setSgEntry(Bit#(8) index, Bit#(24) startingOffset, Bit#(20) address, Bit#(20) length);
         ScatterGather newEnt = ScatterGather { 
             startingOffset: startingOffset,
             address:  address,
