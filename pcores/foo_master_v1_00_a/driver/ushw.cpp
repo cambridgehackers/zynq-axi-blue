@@ -37,6 +37,10 @@
 
 #include "ushw.h"
 
+#include <sys/cdefs.h>
+#include <cutils/ashmem.h>
+#include <cutils/log.h>
+
 #define PORTAL_ALLOC _IOWR('B', 10, PortalAlloc)
 #define PORTAL_PUTGET _IOWR('B', 17, PortalMessage)
 #define PORTAL_PUT _IOWR('B', 18, PortalMessage)
@@ -80,8 +84,9 @@ PortalInstance *portalOpen(const char *instanceName)
 int PortalInstance::sendMessage(PortalMessage *msg)
 {
     int rc = ioctl(fd, PORTAL_PUT, msg);
+    //ALOGD("sendmessage portal fd=%d rc=%d\n", fd, rc);
     if (rc)
-        fprintf(stderr, "sendMessage fd=%d rc=%d errno=%d:%s PUTGET=%x PUT=%x GET=%x\n", fd, rc, errno, strerror(errno),
+        ALOGE("PortalInstance::sendMessage fd=%d rc=%d errno=%d:%s PUTGET=%x PUT=%x GET=%x\n", fd, rc, errno, strerror(errno),
                 PORTAL_PUTGET, PORTAL_PUT, PORTAL_GET);
     return rc;
 }
@@ -156,14 +161,23 @@ int PortalInterface::exec(idleFunc func)
 {
     unsigned int *buf = new unsigned int[1024];
     PortalMessage *msg = (PortalMessage *)(buf);
-    fprintf(stderr, "exec()\n");
+    fprintf(stderr, "PortalInterface::exec()\n");
     int messageReceived = 0;
+
+    if (!portal.numFds) {
+        fprintf(stderr, "PortalInterface::exec No fds open\n");
+        return -ENODEV;
+    }
 
     int rc;
     while ((rc = poll(portal.fds, portal.numFds, 100)) >= 0) {
+        fprintf(stderr, "pid %d poll rc=%d", getpid(), rc);
         for (int i = 0; i < portal.numFds; i++) {
             if (portal.fds[i].revents == 0)
                 continue;
+            if (!portal.instances) {
+                fprintf(stderr, "No instances but rc=%d revents=%d\n", rc, portal.fds[i].revents);
+            }
             PortalInstance *instance = portal.instances[i];
             int messageReceived = instance->receiveMessage(msg);
             if (!messageReceived)
@@ -172,14 +186,20 @@ int PortalInterface::exec(idleFunc func)
             if (!size)
                 continue;
             int channel = buf[4]; // channel number is last word of message
-            if (0) fprintf(stderr, "size=%d w0=%x w1=%x w2=%x w3=%x channel %x messageHandlers=%p handler=%p\n",
-                           size, buf[0], buf[1], buf[2], buf[3],
-                           channel, instance->messageHandlers, instance->messageHandlers[channel]);
-            if (instance->messageHandlers && instance->messageHandlers[channel])
+
+            //ALOGD("channel+%d\n", channel);
+            if (0)
+            if (instance && instance->messageHandlers && instance->messageHandlers[channel]) {
+                if (1) ALOGD("size=%d w0=%x w1=%x w2=%x w3=%x channel %x messageHandlers=%p handler=%p\n",
+                             size, buf[0], buf[1], buf[2], buf[3],
+                             channel, instance->messageHandlers, instance->messageHandlers[channel]);
                 instance->messageHandlers[channel](msg);
+            }
         }
         if (rc == 0) {
-          fprintf(stderr, "poll returned rc=%d errno=%d:%s\n", rc, errno, strerror(errno));
+            if (0)
+            ALOGD("poll returned rc=%d errno=%d:%s func=%p\n",
+                  rc, errno, strerror(errno), func);
           if (func)
             func();
         }

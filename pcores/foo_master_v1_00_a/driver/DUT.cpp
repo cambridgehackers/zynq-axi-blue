@@ -459,6 +459,7 @@ void DUT::addTranslationEntry ( unsigned int address, unsigned int length )
     //msg.request.address = address;
     //msg.request.length = length;
     *(int *)&msg.request = (address << 12) | length;
+    if (0)
     fprintf(stderr, "DUT::addTranslationEntry sizeof(request)=%d address=%x length=%x request=%x\n",
             sizeof(msg.request), address, length, *(int *)&msg.request);
 
