@@ -68,10 +68,6 @@ entity user_logic is
     C_M_AXI0_ADDR_WIDTH : integer := 32;
     C_M_AXI0_DATA_WIDTH : integer := 64;
     C_M_AXI0_ID_WIDTH : integer := 1;
-
-    C_M_AXI1_ADDR_WIDTH : integer := 32;
-    C_M_AXI1_DATA_WIDTH : integer := 64;
-    C_M_AXI1_ID_WIDTH : integer := 1;
     -- ADD USER GENERICS ABOVE THIS LINE ---------------
 
     -- DO NOT EDIT BELOW THIS LINE ---------------------
@@ -123,42 +119,6 @@ entity user_logic is
     m_axi0_bid                      : in std_logic_vector(C_M_AXI0_ID_WIDTH-1 downto 0);
     m_axi0_bvalid                   : in  std_logic;
     m_axi0_bresp                    : in  std_logic_vector(1 downto 0);
-
-    m_axi1_aclk                     : in  std_logic;
-    m_axi1_aresetn                  : in  std_logic;
-    m_axi1_arready                  : in  std_logic;
-    m_axi1_arvalid                  : out std_logic;
-    m_axi1_arid                     : out std_logic_vector(C_M_AXI1_ID_WIDTH-1 downto 0);
-    m_axi1_araddr                   : out std_logic_vector(C_M_AXI1_ADDR_WIDTH-1 downto 0);
-    m_axi1_arlen                    : out std_logic_vector(7 downto 0);
-    m_axi1_arsize                   : out std_logic_vector(2 downto 0);
-    m_axi1_arburst                  : out std_logic_vector(1 downto 0);
-    m_axi1_arprot                   : out std_logic_vector(2 downto 0);
-    m_axi1_arcache                  : out std_logic_vector(3 downto 0);
-    m_axi1_rready                   : out std_logic;
-    m_axi1_rvalid                   : in  std_logic;
-    m_axi1_rid                      : in  std_logic_vector(C_M_AXI1_ID_WIDTH-1 downto 0);
-    m_axi1_rdata                    : in  std_logic_vector(C_M_AXI1_DATA_WIDTH-1 downto 0);
-    m_axi1_rresp                    : in  std_logic_vector(1 downto 0);
-    m_axi1_rlast                    : in  std_logic;
-    m_axi1_awready                  : in  std_logic;
-    m_axi1_awvalid                  : out std_logic;
-    m_axi1_awid                     : out std_logic_vector(C_M_AXI1_ID_WIDTH-1 downto 0);
-    m_axi1_awaddr                   : out std_logic_vector(C_M_AXI1_ADDR_WIDTH-1 downto 0);
-    m_axi1_awlen                    : out std_logic_vector(7 downto 0);
-    m_axi1_awsize                   : out std_logic_vector(2 downto 0);
-    m_axi1_awburst                  : out std_logic_vector(1 downto 0);
-    m_axi1_awprot                   : out std_logic_vector(2 downto 0);
-    m_axi1_awcache                  : out std_logic_vector(3 downto 0);
-    m_axi1_wready                   : in  std_logic;
-    m_axi1_wvalid                   : out std_logic;
-    m_axi1_wdata                    : out std_logic_vector(C_M_AXI1_DATA_WIDTH-1 downto 0);
-    m_axi1_wstrb                    : out std_logic_vector((C_M_AXI1_DATA_WIDTH)/8 - 1 downto 0);
-    m_axi1_wlast                    : out std_logic;
-    m_axi1_bready                   : out std_logic;
-    m_axi1_bid                      : in std_logic_vector(C_M_AXI1_ID_WIDTH-1 downto 0);
-    m_axi1_bvalid                   : in  std_logic;
-    m_axi1_bresp                    : in  std_logic_vector(1 downto 0);
 
     usr_clk_p : in std_logic;
     usr_clk_n : in std_logic;
@@ -398,68 +358,6 @@ begin
       axir0_readData_id => m_axi0_rid(0),
       EN_axir0_readData => WILL_FIRE_axir0_readData,
       RDY_axir0_readData => RDY_axir0_readData,
-
-      EN_axiw1_writeAddr => WILL_FIRE_axiw1_writeAddr,
-      axiw1_writeAddr => m_axi1_awaddr,
-      axiw1_writeId => m_axi1_awid(0),
-      RDY_axiw1_writeAddr => RDY_axiw1_writeAddr,
-
-      axiw1_writeBurstLen => m_axi1_awlen,
-      -- RDY_axiw1_writeBurstLen,
-
-      axiw1_writeBurstWidth => m_axi1_awsize,
-      -- RDY_axiw1_writeBurstWidth,
-
-      axiw1_writeBurstType => m_axi1_awburst,
-      -- RDY_axiw1_writeBurstType,
-
-      axiw1_writeBurstProt => m_axi1_awprot,
-      -- RDY_axiw1_writeBurstProt,
-
-      axiw1_writeBurstCache => m_axi1_awcache,
-      -- RDY_axiw1_writeBurstCache,
-
-      EN_axiw1_writeData => WILL_FIRE_axiw1_writeData,
-      axiw1_writeData => m_axi1_wdata,
-      RDY_axiw1_writeData => RDY_axiw1_writeData,
-
-      axiw1_writeDataByteEnable => m_axi1_wstrb,
-      -- RDY_axiw1_writeDataByteEnable,
-
-      axiw1_writeLastDataBeat => m_axi1_wlast,
-      -- RDY_axiw1_writeLastDataBeat,
-
-      EN_axiw1_writeResponse => WILL_FIRE_axiw1_writeResponse,
-      axiw1_writeResponse_responseCode => m_axi1_bresp,
-      axiw1_writeResponse_id => m_axi1_bid(0),
-      RDY_axiw1_writeResponse => RDY_axiw1_writeResponse,
-
-      EN_axir1_readAddr => WILL_FIRE_axir1_readAddr,
-      axir1_readId => m_axi1_arid(0),
-      axir1_readAddr => m_axi1_araddr,
-      RDY_axir1_readAddr => RDY_axir1_readAddr,
-
-      axir1_readBurstLen => m_axi1_arlen,
-      -- RDY_axir1_readBurstLen,
-
-      axir1_readBurstWidth => m_axi1_arsize,
-      -- RDY_axir1_readBurstWidth,
-
-      axir1_readBurstType => m_axi1_arburst,
-      -- RDY_axir1_readBurstType,
-
-      axir1_readBurstProt => m_axi1_arprot,
-      -- RDY_axir1_readBurstProt,
-
-      axir1_readBurstCache => m_axi1_arcache,
-      -- RDY_axir1_readBurstCache,
-
-      axir1_readData_data => m_axi1_rdata,
-      axir1_readData_resp => m_axi1_rresp,
-      axir1_readData_last => m_axi1_rlast,
-      axir1_readData_id => m_axi1_rid(0),
-      EN_axir1_readData => WILL_FIRE_axir1_readData,
-      RDY_axir1_readData => RDY_axir1_readData,
 
       hdmi_hdmi_vsync => hdmi_vsync_unbuf,
       hdmi_hdmi_hsync => hdmi_hsync_unbuf,
@@ -720,7 +618,7 @@ begin
     port map (
     O => xadc_gpio_1,
     -- Buffer output (connect directly to top-level port)
-    I => WILL_FIRE_axir1_readAddr
+    I => WILL_FIRE_axir0_readAddr
     -- Buffer input
     );
     OBUF_readData_mirror : OBUF
@@ -731,7 +629,7 @@ begin
     port map (
     O => xadc_gpio_2,
     -- Buffer output (connect directly to top-level port)
-    I => WILL_FIRE_axir1_readData -- hdmi_hsync_unbuf
+    I => WILL_FIRE_axir0_readData -- hdmi_hsync_unbuf
     -- Buffer input
     );
     OBUF_de_mirror : OBUF
@@ -759,17 +657,5 @@ begin
   m_axi0_awvalid <= RDY_axiw0_writeAddr;
   m_axi0_wvalid <= RDY_axiw0_writeData;
   m_axi0_bready <= RDY_axiw0_writeResponse;
-
-  WILL_FIRE_axir1_readAddr <= (m_axi1_arready and RDY_axir1_readAddr);
-  WILL_FIRE_axir1_readData <= (m_axi1_rvalid and RDY_axir1_readData);
-  m_axi1_arvalid <= RDY_axir1_readAddr;
-  m_axi1_rready <= RDY_axir1_readData;
-
-  WILL_FIRE_axiw1_writeAddr <= (m_axi1_awready and RDY_axiw1_writeAddr);
-  WILL_FIRE_axiw1_writeData <= (m_axi1_wready and RDY_axiw1_writeData);
-  WILL_FIRE_axiw1_writeResponse <= (m_axi1_bvalid and RDY_axiw1_writeResponse);
-  m_axi1_awvalid <= RDY_axiw1_writeAddr;
-  m_axi1_wvalid <= RDY_axiw1_writeData;
-  m_axi1_bready <= RDY_axiw1_writeResponse;
 
 end IMP;

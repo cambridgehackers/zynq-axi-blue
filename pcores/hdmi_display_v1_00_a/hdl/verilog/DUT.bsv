@@ -48,7 +48,6 @@ endfunction
 module mkDUT#(Clock hdmi_clk)(DUT);
 
     let busWidthBytes=8;
-    AxiMasterServer#(64, 8) axiMaster <- mkAxiMasterServer;
 
     Reg#(Bit#(32)) vsyncPulseCountReg <- mkReg(0);
     Reg#(Bit#(32)) frameCountReg <- mkReg(0);
@@ -174,9 +173,7 @@ module mkDUT#(Clock hdmi_clk)(DUT);
         return v;
     endmethod
 
-    interface AxiMasterWrite axiw0 = axiMaster.axi.write;
-    interface AxiMasterWrite axir0 = axiMaster.axi.read;
-    interface AxiMasterWrite axiw1 = frameBuffer.axiw;
-    interface AxiMasterWrite axir1 = frameBuffer.axir;
+    interface AxiMasterWrite axiw0 = frameBuffer.axiw;
+    interface AxiMasterWrite axir0 = frameBuffer.axir;
     interface HDMI hdmi = hdmiTpg.hdmi;
 endmodule

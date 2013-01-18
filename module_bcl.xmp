@@ -3,6 +3,7 @@ XmpVersion: 14.3
 VerMgmt: 14.3
 IntStyle: default
 Flow: ise
+ModuleSearchPath: pcores/hdmi_display_v1_00_a/../../../
 ModuleSearchPath: /home/jamey/bluespec/cf_lib
 MHS File: module_bcl.mhs
 Architecture: zynq

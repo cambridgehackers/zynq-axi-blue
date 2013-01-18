@@ -20,8 +20,6 @@ interface DUTWrapper;
 
    interface AxiMasterWrite#(64,8) axiw0;
    interface AxiMasterRead#(64) axir0;
-   interface AxiMasterWrite#(64,8) axiw1;
-   interface AxiMasterRead#(64) axir1;
    interface HDMI hdmi;
 endinterface
 
@@ -221,7 +219,5 @@ module mkDUTWrapper#(Clock axis_clk, FromBit32#(DutRequest) requestFifo, ToBit32
 
     interface AxiMasterWrite axiw0 = dut.axiw0;
     interface AxiMasterRead axir0 = dut.axir0;
-    interface AxiMasterWrite axiw1 = dut.axiw1;
-    interface AxiMasterRead axir1 = dut.axir1;
     interface HDMI hdmi = dut.hdmi;
 endmodule

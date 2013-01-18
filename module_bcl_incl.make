@@ -23,13 +23,13 @@ INTSTYLE = default
 
 XPS_HDL_LANG = verilog
 GLOBAL_SEARCHPATHOPT = 
-PROJECT_SEARCHPATHOPT =  -lp /home/jamey/bluespec/cf_lib/
+PROJECT_SEARCHPATHOPT =  -lp /home/jamey/bluespec/ -lp /home/jamey/bluespec/cf_lib/
 
 SEARCHPATHOPT = $(PROJECT_SEARCHPATHOPT) $(GLOBAL_SEARCHPATHOPT)
 
 SUBMODULE_OPT =  -toplevel no -ti module_bcl_i
 
-PLATGEN_OPTIONS = -p $(DEVICE) -lang $(XPS_HDL_LANG) -intstyle $(INTSTYLE) $(SEARCHPATHOPT) $(SUBMODULE_OPT) -parallel yes
+PLATGEN_OPTIONS = -p $(DEVICE) -lang $(XPS_HDL_LANG) -intstyle $(INTSTYLE) $(SEARCHPATHOPT) $(SUBMODULE_OPT) -msg __xps/ise/xmsgprops.lst -parallel yes
 
 OBSERVE_PAR_OPTIONS = -error no
 
@@ -55,7 +55,7 @@ TIMING_SIM_SCRIPT = simulation/timing/$(SYSTEM)_setup.do
 
 DEFAULT_SIM_SCRIPT = $(STRUCTURAL_SIM_SCRIPT)
 
-SIMGEN_OPTIONS = -p $(DEVICE) -lang $(XPS_HDL_LANG) -intstyle $(INTSTYLE) $(SEARCHPATHOPT) $(BRAMINIT_ELF_SIM_FILE_ARGS) -s mgm
+SIMGEN_OPTIONS = -p $(DEVICE) -lang $(XPS_HDL_LANG) -intstyle $(INTSTYLE) $(SEARCHPATHOPT) $(BRAMINIT_ELF_SIM_FILE_ARGS) -msg __xps/ise/xmsgprops.lst -s mgm
 
 
 CORE_STATE_DEVELOPMENT_FILES = /home/xilinx/14.3/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/family.vhd \
@@ -142,28 +142,27 @@ CORE_STATE_DEVELOPMENT_FILES = /home/xilinx/14.3/ISE_DS/EDK/hw/XilinxProcessorIP
 /home/xilinx/14.3/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_master_burst_v1_00_a/hdl/vhdl/axi_master_burst_rd_llink.vhd \
 /home/xilinx/14.3/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_master_burst_v1_00_a/hdl/vhdl/axi_master_burst_wr_llink.vhd \
 /home/xilinx/14.3/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_master_burst_v1_00_a/hdl/vhdl/axi_master_burst.vhd \
-pcores/foo_master_v1_00_a/hdl/vhdl/foo_master.vhd \
-pcores/foo_master_v1_00_a/hdl/vhdl/user_logic.vhd \
-pcores/foo_master_v1_00_a/hdl/verilog/mkIpSlaveWithMaster.v \
-pcores/foo_master_v1_00_a/hdl/verilog/mkFifoToAxi.v \
-pcores/foo_master_v1_00_a/hdl/verilog/BRAM2.v \
-pcores/foo_master_v1_00_a/hdl/verilog/RegFile.v \
-pcores/foo_master_v1_00_a/hdl/verilog/FIFO1.v \
-pcores/foo_master_v1_00_a/hdl/verilog/FIFO2.v \
-pcores/foo_master_v1_00_a/hdl/verilog/NRCCBRAM2.v \
-pcores/foo_master_v1_00_a/hdl/verilog/RevertReg.v \
-pcores/foo_master_v1_00_a/hdl/verilog/SizedFIFO.v \
-pcores/foo_master_v1_00_a/hdl/verilog/SyncFIFO.v \
-pcores/foo_master_v1_00_a/hdl/verilog/SyncFIFO1.v \
-pcores/foo_master_v1_00_a/hdl/verilog/SyncHandshake.v \
-pcores/foo_master_v1_00_a/hdl/verilog/SyncResetA.v
+pcores/hdmi_display_v1_00_a/hdl/vhdl/hdmi_display.vhd \
+pcores/hdmi_display_v1_00_a/hdl/vhdl/user_logic.vhd \
+pcores/hdmi_display_v1_00_a/hdl/verilog/mkIpSlaveWithMaster.v \
+pcores/hdmi_display_v1_00_a/hdl/verilog/mkFifoToAxi.v \
+pcores/hdmi_display_v1_00_a/hdl/verilog/BRAM2.v \
+pcores/hdmi_display_v1_00_a/hdl/verilog/RegFile.v \
+pcores/hdmi_display_v1_00_a/hdl/verilog/FIFO1.v \
+pcores/hdmi_display_v1_00_a/hdl/verilog/FIFO2.v \
+pcores/hdmi_display_v1_00_a/hdl/verilog/NRCCBRAM2.v \
+pcores/hdmi_display_v1_00_a/hdl/verilog/RevertReg.v \
+pcores/hdmi_display_v1_00_a/hdl/verilog/SizedFIFO.v \
+pcores/hdmi_display_v1_00_a/hdl/verilog/SyncFIFO.v \
+pcores/hdmi_display_v1_00_a/hdl/verilog/SyncFIFO1.v \
+pcores/hdmi_display_v1_00_a/hdl/verilog/SyncHandshake.v \
+pcores/hdmi_display_v1_00_a/hdl/verilog/SyncResetA.v
 
 WRAPPER_NGC_FILES = implementation/module_bcl_processing_system7_0_wrapper.ngc \
 implementation/module_bcl_axi4lite_0_wrapper.ngc \
-implementation/module_bcl_foo_master_0_wrapper.ngc \
+implementation/module_bcl_hdmi_display_0_wrapper.ngc \
 implementation/module_bcl_clock_generator_0_wrapper.ngc \
-implementation/module_bcl_axi_interconnect_0_wrapper.ngc \
-implementation/module_bcl_axi_interconnect_1_wrapper.ngc
+implementation/module_bcl_axi_interconnect_0_wrapper.ngc
 
 POSTSYN_NETLIST = implementation/$(SYSTEM).ngc
 

@@ -97,8 +97,8 @@ NET "xadc_gpio_3_pin" LOC = H18;
 NET "xadc_gpio_3_pin" IOSTANDARD = LVCMOS25;
 
 
-INST "foo_master_0" AREA_GROUP = "pblock_foo_master_0";
-AREA_GROUP "pblock_foo_master_0" RANGE=SLICE_X28Y68:SLICE_X59Y149;
-AREA_GROUP "pblock_foo_master_0" RANGE=DSP48_X2Y28:DSP48_X2Y59;
-AREA_GROUP "pblock_foo_master_0" RANGE=RAMB18_X2Y28:RAMB18_X3Y59;
-AREA_GROUP "pblock_foo_master_0" RANGE=RAMB36_X2Y14:RAMB36_X3Y29;
+INST "hdmi_display_0" AREA_GROUP = "pblock_hdmi_display_0";
+AREA_GROUP "pblock_hdmi_display_0" RANGE=SLICE_X28Y93:SLICE_X67Y149;
+AREA_GROUP "pblock_hdmi_display_0" RANGE=DSP48_X2Y38:DSP48_X2Y59;
+AREA_GROUP "pblock_hdmi_display_0" RANGE=RAMB18_X2Y38:RAMB18_X3Y59;
+AREA_GROUP "pblock_hdmi_display_0" RANGE=RAMB36_X2Y19:RAMB36_X3Y29;

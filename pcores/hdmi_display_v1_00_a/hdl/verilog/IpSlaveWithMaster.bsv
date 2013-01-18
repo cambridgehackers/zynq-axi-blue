@@ -43,8 +43,6 @@ interface IpSlaveWithMaster;
    interface IpSlave fifo;
    interface AxiMasterWrite#(64,8) axiw0;
    interface AxiMasterRead#(64) axir0;
-   interface AxiMasterWrite#(64,8) axiw1;
-   interface AxiMasterRead#(64) axir1;
    interface HDMI hdmi;
 endinterface
 
@@ -170,7 +168,5 @@ module mkIpSlaveWithMaster#(Clock hdmi_ref_clk)(IpSlaveWithMaster);
 
    interface AxiMasterWrite axiw0 = dutWrapper.axiw0;
    interface AxiMasterWrite axir0 = dutWrapper.axir0;
-   interface AxiMasterWrite axiw1 = dutWrapper.axiw1;
-   interface AxiMasterWrite axir1 = dutWrapper.axir1;
    interface HDMI hdmi = dutWrapper.hdmi;
 endmodule

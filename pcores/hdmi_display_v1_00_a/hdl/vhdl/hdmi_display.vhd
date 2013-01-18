@@ -1,5 +1,5 @@
 ------------------------------------------------------------------------------
--- foo_master.vhd - entity/architecture pair
+-- hdmi_display.vhd - entity/architecture pair
 ------------------------------------------------------------------------------
 -- IMPORTANT:
 -- DO NOT MODIFY THIS FILE EXCEPT IN THE DESIGNATED SECTIONS.
@@ -32,7 +32,7 @@
 -- ***************************************************************************
 --
 ------------------------------------------------------------------------------
--- Filename:          foo_master.vhd
+-- Filename:          hdmi_display.vhd
 -- Version:           1.00.a
 -- Description:       Top level design, instantiates library components and user logic.
 -- Date:              Tue Nov 20 15:03:36 2012 (by Create and Import Peripheral Wizard)
@@ -69,10 +69,10 @@ use proc_common_v3_00_a.ipif_pkg.all;
 library axi_slave_burst_v1_00_a;
 use axi_slave_burst_v1_00_a.axi_slave_burst;
 
-library foo_master_v1_00_a;
-use foo_master_v1_00_a.user_logic;
+library hdmi_display_v1_00_a;
+use hdmi_display_v1_00_a.user_logic;
 
-entity foo_master is
+entity hdmi_display is
   generic
   (
     -- ADD USER GENERICS BELOW THIS LINE ---------------
@@ -80,10 +80,6 @@ entity foo_master is
     C_M_AXI0_DATA_WIDTH             : integer              := 32;
     C_M_AXI0_ADDR_WIDTH             : integer              := 32;
     C_M_AXI0_ID_WIDTH               : integer              := 1;
-
-    C_M_AXI1_DATA_WIDTH             : integer              := 32;
-    C_M_AXI1_ADDR_WIDTH             : integer              := 32;
-    C_M_AXI1_ID_WIDTH               : integer              := 1;
     -- ADD USER GENERICS ABOVE THIS LINE ---------------
 
     -- DO NOT EDIT BELOW THIS LINE ---------------------
@@ -200,43 +196,7 @@ entity foo_master is
     m_axi0_bready                   : out std_logic;
     m_axi0_bid                      : in std_logic_vector(C_M_AXI0_ID_WIDTH-1 downto 0);
     m_axi0_bvalid                   : in  std_logic;
-    m_axi0_bresp                    : in  std_logic_vector(1 downto 0);
-
-    m_axi1_aclk                     : in  std_logic;
-    m_axi1_aresetn                  : in  std_logic;
-    m_axi1_arready                  : in  std_logic;
-    m_axi1_arvalid                  : out std_logic;
-    m_axi1_arid                     : out std_logic_vector(C_M_AXI1_ID_WIDTH-1 downto 0);
-    m_axi1_araddr                   : out std_logic_vector(C_M_AXI1_ADDR_WIDTH-1 downto 0);
-    m_axi1_arlen                    : out std_logic_vector(7 downto 0);
-    m_axi1_arsize                   : out std_logic_vector(2 downto 0);
-    m_axi1_arburst                  : out std_logic_vector(1 downto 0);
-    m_axi1_arprot                   : out std_logic_vector(2 downto 0);
-    m_axi1_arcache                  : out std_logic_vector(3 downto 0);
-    m_axi1_rready                   : out std_logic;
-    m_axi1_rvalid                   : in  std_logic;
-    m_axi1_rid                      : in  std_logic_vector(C_M_AXI1_ID_WIDTH-1 downto 0);
-    m_axi1_rdata                    : in  std_logic_vector(C_M_AXI1_DATA_WIDTH-1 downto 0);
-    m_axi1_rresp                    : in  std_logic_vector(1 downto 0);
-    m_axi1_rlast                    : in  std_logic;
-    m_axi1_awready                  : in  std_logic;
-    m_axi1_awvalid                  : out std_logic;
-    m_axi1_awid                     : out std_logic_vector(C_M_AXI1_ID_WIDTH-1 downto 0);
-    m_axi1_awaddr                   : out std_logic_vector(C_M_AXI1_ADDR_WIDTH-1 downto 0);
-    m_axi1_awlen                    : out std_logic_vector(7 downto 0);
-    m_axi1_awsize                   : out std_logic_vector(2 downto 0);
-    m_axi1_awburst                  : out std_logic_vector(1 downto 0);
-    m_axi1_awprot                   : out std_logic_vector(2 downto 0);
-    m_axi1_awcache                  : out std_logic_vector(3 downto 0);
-    m_axi1_wready                   : in  std_logic;
-    m_axi1_wvalid                   : out std_logic;
-    m_axi1_wdata                    : out std_logic_vector(C_M_AXI1_DATA_WIDTH-1 downto 0);
-    m_axi1_wstrb                    : out std_logic_vector((C_M_AXI1_DATA_WIDTH)/8 - 1 downto 0);
-    m_axi1_wlast                    : out std_logic;
-    m_axi1_bready                   : out std_logic;
-    m_axi1_bid                      : in std_logic_vector(C_M_AXI1_ID_WIDTH-1 downto 0);
-    m_axi1_bvalid                   : in  std_logic;
-    m_axi1_bresp                    : in  std_logic_vector(1 downto 0)
+    m_axi0_bresp                    : in  std_logic_vector(1 downto 0)
    -- DO NOT EDIT ABOVE THIS LINE ---------------------
   );
 
@@ -252,20 +212,15 @@ entity foo_master is
   attribute SIGIS of m_axi0_aclk       : signal is "Clk";
   attribute SIGIS of m_axi0_aresetn       : signal is "Rst";
 
-  attribute MAX_FANOUT of m_axi1_aclk       : signal is "10000";
-  attribute MAX_FANOUT of m_axi1_aresetn       : signal is "10000";
-  attribute SIGIS of m_axi1_aclk       : signal is "Clk";
-  attribute SIGIS of m_axi1_aresetn       : signal is "Rst";
-
   attribute SIGIS of hdmi_ref_clk : signal is "Clk";
   attribute SIGIS of hdmi_clk : signal is "Clk";
-end entity foo_master;
+end entity hdmi_display;
 
 ------------------------------------------------------------------------------
 -- Architecture section
 ------------------------------------------------------------------------------
 
-architecture IMP of foo_master is
+architecture IMP of hdmi_display is
 
   constant USER_SLV_DWIDTH                : integer              := C_S_AXI_DATA_WIDTH;
 
@@ -415,7 +370,7 @@ begin
   ------------------------------------------
   -- instantiate User Logic
   ------------------------------------------
-  USER_LOGIC_I : entity foo_master_v1_00_a.user_logic
+  USER_LOGIC_I : entity hdmi_display_v1_00_a.user_logic
     generic map
     (
       -- MAP USER GENERICS BELOW THIS LINE ---------------
@@ -423,10 +378,6 @@ begin
       C_M_AXI0_ADDR_WIDTH => C_M_AXI0_ADDR_WIDTH,
       C_M_AXI0_DATA_WIDTH => C_M_AXI0_DATA_WIDTH,
       C_M_AXI0_ID_WIDTH => C_M_AXI0_ID_WIDTH,
-
-      C_M_AXI1_ADDR_WIDTH => C_M_AXI1_ADDR_WIDTH,
-      C_M_AXI1_DATA_WIDTH => C_M_AXI1_DATA_WIDTH,
-      C_M_AXI1_ID_WIDTH => C_M_AXI1_ID_WIDTH,
       -- MAP USER GENERICS ABOVE THIS LINE ---------------
 
       C_SLV_AWIDTH                   => USER_SLV_AWIDTH,
@@ -475,42 +426,6 @@ begin
       m_axi0_bid			=> m_axi0_bid,
       m_axi0_bvalid			=> m_axi0_bvalid,
       m_axi0_bresp			=> m_axi0_bresp,
-
-      m_axi1_aclk			=> m_axi1_aclk,
-      m_axi1_aresetn 			=> m_axi1_aresetn,
-      m_axi1_arready			=> m_axi1_arready,
-      m_axi1_arvalid			=> m_axi1_arvalid,
-      m_axi1_arid			=> m_axi1_arid,
-      m_axi1_araddr			=> m_axi1_araddr,
-      m_axi1_arlen			=> m_axi1_arlen,
-      m_axi1_arsize			=> m_axi1_arsize,
-      m_axi1_arburst			=> m_axi1_arburst,
-      m_axi1_arprot			=> m_axi1_arprot,
-      m_axi1_arcache			=> m_axi1_arcache,
-      m_axi1_rready			=> m_axi1_rready,
-      m_axi1_rvalid			=> m_axi1_rvalid,
-      m_axi1_rid			=> m_axi1_rid,
-      m_axi1_rdata			=> m_axi1_rdata,
-      m_axi1_rresp			=> m_axi1_rresp,
-      m_axi1_rlast			=> m_axi1_rlast,
-      m_axi1_awready			=> m_axi1_awready,
-      m_axi1_awvalid			=> m_axi1_awvalid,
-      m_axi1_awid			=> m_axi1_awid,
-      m_axi1_awaddr			=> m_axi1_awaddr,
-      m_axi1_awlen			=> m_axi1_awlen,
-      m_axi1_awsize			=> m_axi1_awsize,
-      m_axi1_awburst			=> m_axi1_awburst,
-      m_axi1_awprot			=> m_axi1_awprot,
-      m_axi1_awcache			=> m_axi1_awcache,
-      m_axi1_wready			=> m_axi1_wready,
-      m_axi1_wvalid			=> m_axi1_wvalid,
-      m_axi1_wdata			=> m_axi1_wdata,
-      m_axi1_wstrb			=> m_axi1_wstrb,
-      m_axi1_wlast			=> m_axi1_wlast,
-      m_axi1_bready			=> m_axi1_bready,
-      m_axi1_bid			=> m_axi1_bid,
-      m_axi1_bvalid			=> m_axi1_bvalid,
-      m_axi1_bresp			=> m_axi1_bresp,
 
       usr_clk_p => usr_clk_p,
       usr_clk_n => usr_clk_n,

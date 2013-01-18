@@ -32,17 +32,17 @@
  PORT processing_system7_0_DDR_DQS_n = processing_system7_0_DDR_DQS_n, DIR = IO, VEC = [3:0]
  PORT processing_system7_0_DDR_VRN = processing_system7_0_DDR_VRN, DIR = IO
  PORT processing_system7_0_DDR_VRP = processing_system7_0_DDR_VRP, DIR = IO
- PORT hdmi_clk_pin = foo_master_0_hdmi_clk, DIR = O, SIGIS = CLK
- PORT hdmi_vsync_pin = foo_master_0_hdmi_vsync, DIR = O
- PORT hdmi_hsync_pin = foo_master_0_hdmi_hsync, DIR = O
- PORT hdmi_de_pin = foo_master_0_hdmi_de, DIR = O
- PORT hdmi_data_pin = foo_master_0_hdmi_data, DIR = O, VEC = [15:0]
- PORT usr_clk_p_pin = foo_master_0_usr_clk_p, DIR = I
- PORT usr_clk_n_pin = foo_master_0_usr_clk_n, DIR = I
- PORT xadc_gpio_0_pin = foo_master_0_xadc_gpio_0, DIR = O
- PORT xadc_gpio_1_pin = foo_master_0_xadc_gpio_1, DIR = O
- PORT xadc_gpio_2_pin = foo_master_0_xadc_gpio_2, DIR = O
- PORT xadc_gpio_3_pin = foo_master_0_xadc_gpio_3, DIR = O
+ PORT hdmi_clk_pin = hdmi_display_0_hdmi_clk, DIR = O, SIGIS = CLK
+ PORT hdmi_vsync_pin = hdmi_display_0_hdmi_vsync, DIR = O
+ PORT hdmi_hsync_pin = hdmi_display_0_hdmi_hsync, DIR = O
+ PORT hdmi_de_pin = hdmi_display_0_hdmi_de, DIR = O
+ PORT hdmi_data_pin = hdmi_display_0_hdmi_data, DIR = O, VEC = [15:0]
+ PORT usr_clk_p_pin = hdmi_display_0_usr_clk_p, DIR = I
+ PORT usr_clk_n_pin = hdmi_display_0_usr_clk_n, DIR = I
+ PORT xadc_gpio_0_pin = hdmi_display_0_xadc_gpio_0, DIR = O
+ PORT xadc_gpio_1_pin = hdmi_display_0_xadc_gpio_1, DIR = O
+ PORT xadc_gpio_2_pin = hdmi_display_0_xadc_gpio_2, DIR = O
+ PORT xadc_gpio_3_pin = hdmi_display_0_xadc_gpio_3, DIR = O
 
 
 BEGIN processing_system7
@@ -105,17 +105,17 @@ BEGIN processing_system7
  PARAMETER C_FCLK_CLK3_FREQ = 50000000
  PARAMETER C_USE_CR_FABRIC = 1
  PARAMETER C_USE_S_AXI_HP0 = 1
- PARAMETER C_USE_S_AXI_HP1 = 1
+ PARAMETER C_USE_S_AXI_HP1 = 0
  PARAMETER C_USE_S_AXI_HP2 = 0
  PARAMETER C_USE_S_AXI_HP3 = 0
  PARAMETER C_USE_M_AXI_GP1 = 0
  PARAMETER C_USE_S_AXI_ACP = 0
- PARAMETER C_INTERCONNECT_S_AXI_HP0_MASTERS = foo_master_0.M_AXI0
- PARAMETER C_EMIO_GPIO_WIDTH = 64
- PARAMETER C_INTERCONNECT_S_AXI_HP1_MASTERS = foo_master_0.M_AXI1
+ PARAMETER C_INTERCONNECT_S_AXI_HP1_MASTERS = foo_master_0.M_AXI0
+ PARAMETER C_INTERCONNECT_S_AXI_HP0_MASTERS = hdmi_display_0.M_AXI0
+ PARAMETER C_INTERCONNECT_S_AXI_HP2_MASTERS = foo_master_0.M_AXI1
+ PARAMETER C_INTERCONNECT_S_AXI_HP3_MASTERS = foo_master_0.M_AXI2
  BUS_INTERFACE M_AXI_GP0 = axi4lite_0
  BUS_INTERFACE S_AXI_HP0 = axi_interconnect_0
- BUS_INTERFACE S_AXI_HP1 = axi_interconnect_1
  PORT MIO = processing_system7_0_MIO
  PORT PS_SRSTB = processing_system7_0_PS_SRSTB
  PORT PS_CLK = processing_system7_0_PS_CLK
@@ -140,13 +140,11 @@ BEGIN processing_system7
  PORT M_AXI_GP0_ARESETN = processing_system7_0_M_AXI_GP0_ARESETN
  PORT M_AXI_GP0_ACLK = processing_system7_0_FCLK_CLK0_0
  PORT FCLK_CLK2 = processing_system7_0_FCLK_CLK2
- PORT IRQ_F2P = foo_master_0_interrupt
+ PORT IRQ_F2P = hdmi_display_0_interrupt
  PORT FCLK_CLK3 = processing_system7_0_FCLK_CLK3
  PORT S_AXI_HP0_ARESETN = processing_system7_0_S_AXI_HP0_ARESETN
- PORT S_AXI_HP1_ARESETN = processing_system7_0_S_AXI_HP1_ARESETN
  PORT FCLK_CLK0 = processing_system7_0_FCLK_CLK0_0
  PORT S_AXI_HP0_ACLK = processing_system7_0_FCLK_CLK0_0
- PORT S_AXI_HP1_ACLK = processing_system7_0_FCLK_CLK0_0
  PORT FCLK_RESET0_N = processing_system7_0_FCLK_RESET0_N
  PORT FCLK_CLK1 = processing_system7_0_FCLK_CLK1
 END
@@ -159,39 +157,33 @@ BEGIN axi_interconnect
  PORT interconnect_aclk = processing_system7_0_FCLK_CLK0_0
 END
 
-BEGIN foo_master
- PARAMETER INSTANCE = foo_master_0
+BEGIN hdmi_display
+ PARAMETER INSTANCE = hdmi_display_0
  PARAMETER HW_VER = 1.00.a
  PARAMETER C_S_AXI_ID_WIDTH = 12
  PARAMETER C_M_AXI0_DATA_WIDTH = 64
- PARAMETER C_M_AXI1_DATA_WIDTH = 64
  PARAMETER C_M_AXI0_ID_WIDTH = 1
- PARAMETER C_M_AXI1_ID_WIDTH = 1
  PARAMETER C_S_AXI_MEM0_BASEADDR = 0x6e400000
  PARAMETER C_S_AXI_MEM0_HIGHADDR = 0x6e400fff
  PARAMETER C_S_AXI_MEM1_BASEADDR = 0x6e401000
  PARAMETER C_S_AXI_MEM1_HIGHADDR = 0x6e401fff
- PARAMETER C_INTERCONNECT_M_AXI1_ARB_PRIORITY = 15
- PARAMETER C_INTERCONNECT_M_AXI1_SINGLE_THREAD = 1
  BUS_INTERFACE S_AXI = axi4lite_0
  BUS_INTERFACE M_AXI0 = axi_interconnect_0
- BUS_INTERFACE M_AXI1 = axi_interconnect_1
  PORT S_AXI_ACLK = processing_system7_0_FCLK_CLK0_0
  PORT m_axi0_aclk = processing_system7_0_FCLK_CLK0_0
- PORT m_axi1_aclk = processing_system7_0_FCLK_CLK0_0
- PORT interrupt = foo_master_0_interrupt
- PORT hdmi_clk = foo_master_0_hdmi_clk
- PORT hdmi_vsync = foo_master_0_hdmi_vsync
- PORT hdmi_hsync = foo_master_0_hdmi_hsync
- PORT hdmi_de = foo_master_0_hdmi_de
- PORT hdmi_data = foo_master_0_hdmi_data
+ PORT interrupt = hdmi_display_0_interrupt
+ PORT hdmi_clk = hdmi_display_0_hdmi_clk
+ PORT hdmi_vsync = hdmi_display_0_hdmi_vsync
+ PORT hdmi_hsync = hdmi_display_0_hdmi_hsync
+ PORT hdmi_de = hdmi_display_0_hdmi_de
+ PORT hdmi_data = hdmi_display_0_hdmi_data
  PORT hdmi_ref_clk = clock_generator_0_CLKOUT0
- PORT usr_clk_p = foo_master_0_usr_clk_p
- PORT usr_clk_n = foo_master_0_usr_clk_n
- PORT xadc_gpio_0 = foo_master_0_xadc_gpio_0
- PORT xadc_gpio_1 = foo_master_0_xadc_gpio_1
- PORT xadc_gpio_2 = foo_master_0_xadc_gpio_2
- PORT xadc_gpio_3 = foo_master_0_xadc_gpio_3
+ PORT usr_clk_p = hdmi_display_0_usr_clk_p
+ PORT usr_clk_n = hdmi_display_0_usr_clk_n
+ PORT xadc_gpio_0 = hdmi_display_0_xadc_gpio_0
+ PORT xadc_gpio_1 = hdmi_display_0_xadc_gpio_1
+ PORT xadc_gpio_2 = hdmi_display_0_xadc_gpio_2
+ PORT xadc_gpio_3 = hdmi_display_0_xadc_gpio_3
 END
 
 BEGIN clock_generator
@@ -209,12 +201,5 @@ BEGIN axi_interconnect
  PARAMETER C_INTERCONNECT_CONNECTIVITY_MODE = 1
  PORT INTERCONNECT_ACLK = processing_system7_0_FCLK_CLK0_0
  PORT INTERCONNECT_ARESETN = processing_system7_0_S_AXI_HP0_ARESETN
-END
-
-BEGIN axi_interconnect
- PARAMETER INSTANCE = axi_interconnect_1
- PARAMETER HW_VER = 1.06.a
- PORT INTERCONNECT_ACLK = processing_system7_0_FCLK_CLK0_0
- PORT INTERCONNECT_ARESETN = processing_system7_0_S_AXI_HP1_ARESETN
 END
 
