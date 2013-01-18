@@ -10,8 +10,6 @@ default
 no
 -ti
 module_bcl_i
--msg
-__xps/ise/xmsgprops.lst
 -parallel
 yes
 module_bcl.mhs

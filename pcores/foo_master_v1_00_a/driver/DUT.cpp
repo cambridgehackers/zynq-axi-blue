@@ -1,6 +1,5 @@
 #include "ushw.h"
 #include "DUT.h"
-#include <stdio.h>
 
 DUT *DUT::createDUT(const char *instanceName)
 {
@@ -124,7 +123,7 @@ struct DUTreadFifoStatusMSG : public PortalMessage
 {
 struct Request {
 //fix Adapter.bsv to unreverse these
-unsigned int addr;
+unsigned int addr:12;
 
 } request;
 int channelNumber;
@@ -184,7 +183,7 @@ struct DUTreadFromFifoStatusMSG : public PortalMessage
 {
 struct Request {
 //fix Adapter.bsv to unreverse these
-unsigned int addr;
+unsigned int addr:12;
 
 } request;
 int channelNumber;
@@ -424,7 +423,7 @@ struct DUTbeginTranslationTableMSG : public PortalMessage
 {
 struct Request {
 //fix Adapter.bsv to unreverse these
-unsigned int index;
+unsigned int index:6;
 
 } request;
 int channelNumber;
@@ -444,8 +443,8 @@ struct DUTaddTranslationEntryMSG : public PortalMessage
 {
 struct Request {
 //fix Adapter.bsv to unreverse these
-  unsigned int length : 20;
-  unsigned int address : 12;
+unsigned int length:12;
+unsigned int address:20;
 
 } request;
 int channelNumber;
@@ -456,12 +455,8 @@ void DUT::addTranslationEntry ( unsigned int address, unsigned int length )
     DUTaddTranslationEntryMSG msg;
     msg.size = sizeof(msg.request) + sizeof(msg.channelNumber);
     msg.channelNumber = baseChannelNumber + 21;
-    //msg.request.address = address;
-    //msg.request.length = length;
-    *(int *)&msg.request = (address << 12) | length;
-    if (0)
-    fprintf(stderr, "DUT::addTranslationEntry sizeof(request)=%d address=%x length=%x request=%x\n",
-            sizeof(msg.request), address, length, *(int *)&msg.request);
+msg.request.address = address;
+msg.request.length = length;
 
     p->sendMessage(&msg);
 };

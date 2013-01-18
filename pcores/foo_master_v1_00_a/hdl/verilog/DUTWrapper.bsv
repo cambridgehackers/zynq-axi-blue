@@ -3,15 +3,10 @@ import GetPut::*;
 import Connectable::*;
 import Adapter::*;
 import AxiMasterSlave::*;
-import AxiStream::*;
-import FifoToAxi::*;
-import TypesAndInterfaces::*;
 import HDMI::*;
-import DUT::*;
 import Clocks::*;
 import TypesAndInterfaces::*;
 import DUT::*;
-
 
 
 interface DUTWrapper;
@@ -113,7 +108,7 @@ typedef union tagged {
     } HdmiSyncWidths$Request;
 
     struct {
-        Bit#(8) index;
+        Bit#(6) index;
     } BeginTranslationTable$Request;
 
     struct {
@@ -172,7 +167,7 @@ module mkDUTWrapper#(Clock axis_clk, FromBit32#(DutRequest) requestFifo, ToBit32
 
     Bit#(5) maxTag = 22;
 
-    rule handleJunkRequest if (pack(requestFifo.first)[4+32-1:32] > maxTag);
+    rule handleJunkRequest if (pack(requestFifo.first)[5+32-1:32] > maxTag);
         requestFifo.deq;
         junkReqReg <= junkReqReg + 1;
     endrule

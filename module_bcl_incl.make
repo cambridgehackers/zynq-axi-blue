@@ -29,7 +29,7 @@ SEARCHPATHOPT = $(PROJECT_SEARCHPATHOPT) $(GLOBAL_SEARCHPATHOPT)
 
 SUBMODULE_OPT =  -toplevel no -ti module_bcl_i
 
-PLATGEN_OPTIONS = -p $(DEVICE) -lang $(XPS_HDL_LANG) -intstyle $(INTSTYLE) $(SEARCHPATHOPT) $(SUBMODULE_OPT) -msg __xps/ise/xmsgprops.lst -parallel yes
+PLATGEN_OPTIONS = -p $(DEVICE) -lang $(XPS_HDL_LANG) -intstyle $(INTSTYLE) $(SEARCHPATHOPT) $(SUBMODULE_OPT) -parallel yes
 
 OBSERVE_PAR_OPTIONS = -error no
 
@@ -55,7 +55,7 @@ TIMING_SIM_SCRIPT = simulation/timing/$(SYSTEM)_setup.do
 
 DEFAULT_SIM_SCRIPT = $(STRUCTURAL_SIM_SCRIPT)
 
-SIMGEN_OPTIONS = -p $(DEVICE) -lang $(XPS_HDL_LANG) -intstyle $(INTSTYLE) $(SEARCHPATHOPT) $(BRAMINIT_ELF_SIM_FILE_ARGS) -msg __xps/ise/xmsgprops.lst -s mgm
+SIMGEN_OPTIONS = -p $(DEVICE) -lang $(XPS_HDL_LANG) -intstyle $(INTSTYLE) $(SEARCHPATHOPT) $(BRAMINIT_ELF_SIM_FILE_ARGS) -s mgm
 
 
 CORE_STATE_DEVELOPMENT_FILES = /home/xilinx/14.3/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/proc_common_v3_00_a/hdl/vhdl/family.vhd \

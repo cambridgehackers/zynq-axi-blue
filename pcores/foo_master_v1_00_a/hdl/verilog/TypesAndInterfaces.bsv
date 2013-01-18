@@ -67,7 +67,7 @@ interface DUT;
     method Action hdmiPixelCountMinMax(Bit#(32) value);
     method Action hdmiSyncWidths(Bit#(32) value);
 
-    method Action beginTranslationTable(Bit#(8) index);
+    method Action beginTranslationTable(Bit#(6) index);
     method Action addTranslationEntry(Bit#(20) address, Bit#(12) length); // shift address and length left 12 bits
     method ActionValue#(Bit#(96)) translationTableEntry();
     method ActionValue#(Bit#(96)) fbReading();
