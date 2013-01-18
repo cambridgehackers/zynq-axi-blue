@@ -26,34 +26,6 @@ import HDMI::*;
 import FifoToAxi::*;
 
 interface DUT;
-    method Action setBase(Bit#(32) base);
-    method Action setBounds(Bit#(32) bounds);
-    method Action setThreshold(Bit#(32) threshold);
-    method Action setEnabled(Bit#(32) v);
-    method Action enq(Bit#(32) v);
-
-    method Action readFifoStatus(Bit#(12) addr);
-    method ActionValue#(Bit#(32)) fifoStatus();
-    method ActionValue#(Bit#(32)) axiResponse();
-
-    method Action configure(Bit#(32) v);
-
-    method Action readRange(Bit#(32) addr);
-    method Action readFromFifoStatus(Bit#(12) addr);
-    method ActionValue#(Bit#(32)) fromFifoStatus();
-    method ActionValue#(Bit#(32)) axirResponse();
-    method ActionValue#(Bit#(32)) readValue();
-
-    method Action runTest(Bit#(32) numWords);
-    method ActionValue#(Bit#(32)) testCompleted();
-    method ActionValue#(Bit#(32)) writeQueued();
-    method ActionValue#(Bit#(32)) writeCompleted();
-    method ActionValue#(Bit#(32)) firstRead();
-    method ActionValue#(Bit#(32)) readCompleted();
-
-    method Action runTest2(Bit#(32) base);
-    method ActionValue#(Bit#(32)) test2Completed();
-
     method Action setPatternReg(Bit#(32) yuv422);
     method Action startFrameBuffer(Bit#(32) base);
 

@@ -29,10 +29,7 @@ import Connectable::*;
 
 import TypesAndInterfaces::*;
 import AxiMasterSlave::*;
-import AxiStream::*;
-import FifoToAxi::*;
 import HDMI::*;
-import TbAxi::*;
 import Timer::*;
 import FrameBuffer::*;
 import FrameBufferBram::*;
@@ -53,29 +50,9 @@ module mkDUT#(Clock hdmi_clk)(DUT);
     let busWidthBytes=8;
     AxiMasterServer#(64, 8) axiMaster <- mkAxiMasterServer;
 
-    Reg#(Maybe#(Bit#(32))) resultReg <- mkReg(tagged Invalid);
-    Reg#(Maybe#(Bit#(32))) result2Reg <- mkReg(tagged Invalid);
-    FIFOF#(Bit#(32)) fifoStatusFifo <- mkSizedBRAMFIFOF(16);
-    FIFOF#(Bit#(32)) fromFifoStatusFifo <- mkSizedBRAMFIFOF(16);
-    FIFOF#(Bit#(32)) readFifo <- mkSizedBRAMFIFOF(32);
-    FIFOF#(Bit#(2)) rRespFifo <- mkSizedBRAMFIFOF(32);
-
     Reg#(Bit#(32)) vsyncPulseCountReg <- mkReg(0);
     Reg#(Bit#(32)) frameCountReg <- mkReg(0);
 
-    Reg#(Bool) testReg <- mkReg(False);
-    Reg#(Bool) testCompletedReg <- mkReg(False);
-    Reg#(Bit#(32)) writeCountReg <- mkReg(0);
-    Reg#(Bit#(32)) readCountReg <- mkReg(0);
-    Reg#(Bit#(32)) numWordsReg <- mkReg(0);
-    Reg#(Bit#(32)) valueReg <- mkReg(13);
-    Reg#(Bit#(32)) testResultReg <- mkReg(0);
-
-    Timer#(32) writeTimer <- mkTimer();
-    Timer#(32) readTimer <- mkTimer();
-    Reg#(Bool) writeQueuedSent <- mkReg(False);
-    Reg#(Bool) readCompletedSent <- mkReg(False);
-    Reg#(Bool) firstReadSent <- mkReg(False);
     Reg#(Bool) waitingForVsync <- mkReg(False);
     Reg#(Bool) sendVsyncIndication <- mkReg(False);
 
@@ -105,11 +82,6 @@ module mkDUT#(Clock hdmi_clk)(DUT);
                                                                    commandFifo, frameBuffer.buffer,
                                                                    vsyncPulse, hsyncPulse);
 
-    rule axiReadData;
-         let v <- axiMaster.readData();
-         readFifo.enq(truncate(v));
-    endrule
-
     (* descending_urgency = "vsync, hsync" *)
     rule vsync if (vsyncPulse.pulse());
         $display("vsync pulse received %h", frameBufferEnabled);
@@ -129,105 +101,6 @@ module mkDUT#(Clock hdmi_clk)(DUT);
     rule hsync if (hsyncPulse.pulse());
         frameBuffer.startLine();
     endrule
-
-    method Action setBase(Bit#(32) base);
-        axiMaster.writeAddr(base, 8);
-    endmethod
-    method Action setBounds(Bit#(32) bounds);
-    endmethod
-    method Action setThreshold(Bit#(32) threshold);
-    endmethod
-    method Action setEnabled(Bit#(32) enabled);
-    endmethod
-    method Action enq(Bit#(32) v);
-        axiMaster.writeData(extend(v));
-    endmethod
-
-    method Action readFifoStatus(Bit#(12) addr) if (False);
-    endmethod
-
-    method ActionValue#(Bit#(32)) fifoStatus() if (fifoStatusFifo.notEmpty);
-        fifoStatusFifo.deq;
-        return fifoStatusFifo.first;
-    endmethod
-
-    method ActionValue#(Bit#(32)) axiResponse();
-        let r <- axiMaster.writeResponse();
-        return extend(r);
-    endmethod
-
-    method Action configure(Bit#(32) v);
-    endmethod
-
-    method Action readRange(Bit#(32) addr);
-        axiMaster.readAddr(addr, 8);
-    endmethod
-    
-    method Action readFromFifoStatus(Bit#(12) addr);
-    endmethod
-
-    method ActionValue#(Bit#(32)) fromFifoStatus() if (fromFifoStatusFifo.notEmpty);
-        fromFifoStatusFifo.deq;
-        return fromFifoStatusFifo.first;
-    endmethod
-
-    method ActionValue#(Bit#(32)) axirResponse();
-        let r = rRespFifo.first;
-        rRespFifo.deq;
-        return extend(r);
-    endmethod
-
-    method ActionValue#(Bit#(32)) readValue();
-        let v = readFifo.first;
-        readFifo.deq;
-        return v;
-    endmethod
-
-    method Action runTest(Bit#(32) numWords) if (!testReg);
-    endmethod
-
-    method ActionValue#(Bit#(32)) writeQueued() if (testReg
-                                                    && writeCountReg == numWordsReg
-                                                    && !writeQueuedSent);
-        writeQueuedSent <= True;
-        return writeTimer.elapsed;
-    endmethod
-    method ActionValue#(Bit#(32)) firstRead() if (testReg
-                                                  && writeCountReg == numWordsReg
-                                                  && !firstReadSent);
-        firstReadSent <= True;
-        let v = readTimer.elapsed;
-        return v;
-    endmethod
-
-    method ActionValue#(Bit#(32)) writeCompleted() if (testReg
-                                                       && writeCountReg == numWordsReg
-                                                       && writeTimer.running());
-        writeTimer.stop();
-        let v = writeTimer.elapsed; 
-        return v;
-    endmethod
-
-    method ActionValue#(Bit#(32)) readCompleted() if (testReg
-                                                      && readCountReg == numWordsReg
-                                                      && !readCompletedSent);
-        readTimer.stop();
-        readCompletedSent <= True;
-        return readTimer.elapsed;
-    endmethod
-
-    method ActionValue#(Bit#(32)) testCompleted() if (testCompletedReg);
-        testCompletedReg <= False;
-        testReg <= False;
-        return testResultReg;
-    endmethod
-
-    method Action runTest2(Bit#(32) numWords);
-    endmethod
-
-    method ActionValue#(Bit#(32)) test2Completed() if (False);
-        return 0;
-    endmethod
 
     method Action setPatternReg(Bit#(32) yuv422);
         commandFifo.enq(tagged PatternColor {yuv422: yuv422});

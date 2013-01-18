@@ -19,226 +19,6 @@ DUT::~DUT()
 }
 
 
-struct DUTsetBaseMSG : public PortalMessage
-{
-struct Request {
-//fix Adapter.bsv to unreverse these
-unsigned int base;
-
-} request;
-int channelNumber;
-};
-
-void DUT::setBase ( unsigned int base )
-{
-    DUTsetBaseMSG msg;
-    msg.size = sizeof(msg.request) + sizeof(msg.channelNumber);
-    msg.channelNumber = baseChannelNumber + 0;
-msg.request.base = base;
-
-    p->sendMessage(&msg);
-};
-
-struct DUTsetBoundsMSG : public PortalMessage
-{
-struct Request {
-//fix Adapter.bsv to unreverse these
-unsigned int bounds;
-
-} request;
-int channelNumber;
-};
-
-void DUT::setBounds ( unsigned int bounds )
-{
-    DUTsetBoundsMSG msg;
-    msg.size = sizeof(msg.request) + sizeof(msg.channelNumber);
-    msg.channelNumber = baseChannelNumber + 1;
-msg.request.bounds = bounds;
-
-    p->sendMessage(&msg);
-};
-
-struct DUTsetThresholdMSG : public PortalMessage
-{
-struct Request {
-//fix Adapter.bsv to unreverse these
-unsigned int threshold;
-
-} request;
-int channelNumber;
-};
-
-void DUT::setThreshold ( unsigned int threshold )
-{
-    DUTsetThresholdMSG msg;
-    msg.size = sizeof(msg.request) + sizeof(msg.channelNumber);
-    msg.channelNumber = baseChannelNumber + 2;
-msg.request.threshold = threshold;
-
-    p->sendMessage(&msg);
-};
-
-struct DUTsetEnabledMSG : public PortalMessage
-{
-struct Request {
-//fix Adapter.bsv to unreverse these
-unsigned int v;
-
-} request;
-int channelNumber;
-};
-
-void DUT::setEnabled ( unsigned int v )
-{
-    DUTsetEnabledMSG msg;
-    msg.size = sizeof(msg.request) + sizeof(msg.channelNumber);
-    msg.channelNumber = baseChannelNumber + 3;
-msg.request.v = v;
-
-    p->sendMessage(&msg);
-};
-
-struct DUTenqMSG : public PortalMessage
-{
-struct Request {
-//fix Adapter.bsv to unreverse these
-unsigned int v;
-
-} request;
-int channelNumber;
-};
-
-void DUT::enq ( unsigned int v )
-{
-    DUTenqMSG msg;
-    msg.size = sizeof(msg.request) + sizeof(msg.channelNumber);
-    msg.channelNumber = baseChannelNumber + 4;
-msg.request.v = v;
-
-    p->sendMessage(&msg);
-};
-
-struct DUTreadFifoStatusMSG : public PortalMessage
-{
-struct Request {
-//fix Adapter.bsv to unreverse these
-unsigned int addr:12;
-
-} request;
-int channelNumber;
-};
-
-void DUT::readFifoStatus ( unsigned int addr )
-{
-    DUTreadFifoStatusMSG msg;
-    msg.size = sizeof(msg.request) + sizeof(msg.channelNumber);
-    msg.channelNumber = baseChannelNumber + 5;
-msg.request.addr = addr;
-
-    p->sendMessage(&msg);
-};
-
-struct DUTconfigureMSG : public PortalMessage
-{
-struct Request {
-//fix Adapter.bsv to unreverse these
-unsigned int v;
-
-} request;
-int channelNumber;
-};
-
-void DUT::configure ( unsigned int v )
-{
-    DUTconfigureMSG msg;
-    msg.size = sizeof(msg.request) + sizeof(msg.channelNumber);
-    msg.channelNumber = baseChannelNumber + 6;
-msg.request.v = v;
-
-    p->sendMessage(&msg);
-};
-
-struct DUTreadRangeMSG : public PortalMessage
-{
-struct Request {
-//fix Adapter.bsv to unreverse these
-unsigned int addr;
-
-} request;
-int channelNumber;
-};
-
-void DUT::readRange ( unsigned int addr )
-{
-    DUTreadRangeMSG msg;
-    msg.size = sizeof(msg.request) + sizeof(msg.channelNumber);
-    msg.channelNumber = baseChannelNumber + 7;
-msg.request.addr = addr;
-
-    p->sendMessage(&msg);
-};
-
-struct DUTreadFromFifoStatusMSG : public PortalMessage
-{
-struct Request {
-//fix Adapter.bsv to unreverse these
-unsigned int addr:12;
-
-} request;
-int channelNumber;
-};
-
-void DUT::readFromFifoStatus ( unsigned int addr )
-{
-    DUTreadFromFifoStatusMSG msg;
-    msg.size = sizeof(msg.request) + sizeof(msg.channelNumber);
-    msg.channelNumber = baseChannelNumber + 8;
-msg.request.addr = addr;
-
-    p->sendMessage(&msg);
-};
-
-struct DUTrunTestMSG : public PortalMessage
-{
-struct Request {
-//fix Adapter.bsv to unreverse these
-unsigned int numWords;
-
-} request;
-int channelNumber;
-};
-
-void DUT::runTest ( unsigned int numWords )
-{
-    DUTrunTestMSG msg;
-    msg.size = sizeof(msg.request) + sizeof(msg.channelNumber);
-    msg.channelNumber = baseChannelNumber + 9;
-msg.request.numWords = numWords;
-
-    p->sendMessage(&msg);
-};
-
-struct DUTrunTest2MSG : public PortalMessage
-{
-struct Request {
-//fix Adapter.bsv to unreverse these
-unsigned int base;
-
-} request;
-int channelNumber;
-};
-
-void DUT::runTest2 ( unsigned int base )
-{
-    DUTrunTest2MSG msg;
-    msg.size = sizeof(msg.request) + sizeof(msg.channelNumber);
-    msg.channelNumber = baseChannelNumber + 10;
-msg.request.base = base;
-
-    p->sendMessage(&msg);
-};
-
 struct DUTsetPatternRegMSG : public PortalMessage
 {
 struct Request {
@@ -253,7 +33,7 @@ void DUT::setPatternReg ( unsigned int yuv422 )
 {
     DUTsetPatternRegMSG msg;
     msg.size = sizeof(msg.request) + sizeof(msg.channelNumber);
-    msg.channelNumber = baseChannelNumber + 11;
+    msg.channelNumber = baseChannelNumber + 0;
 msg.request.yuv422 = yuv422;
 
     p->sendMessage(&msg);
@@ -273,7 +53,7 @@ void DUT::startFrameBuffer ( unsigned int base )
 {
     DUTstartFrameBufferMSG msg;
     msg.size = sizeof(msg.request) + sizeof(msg.channelNumber);
-    msg.channelNumber = baseChannelNumber + 12;
+    msg.channelNumber = baseChannelNumber + 1;
 msg.request.base = base;
 
     p->sendMessage(&msg);
@@ -293,7 +73,7 @@ void DUT::waitForVsync ( unsigned int unused )
 {
     DUTwaitForVsyncMSG msg;
     msg.size = sizeof(msg.request) + sizeof(msg.channelNumber);
-    msg.channelNumber = baseChannelNumber + 13;
+    msg.channelNumber = baseChannelNumber + 2;
 msg.request.unused = unused;
 
     p->sendMessage(&msg);
@@ -313,7 +93,7 @@ void DUT::hdmiLinesPixels ( unsigned int value )
 {
     DUThdmiLinesPixelsMSG msg;
     msg.size = sizeof(msg.request) + sizeof(msg.channelNumber);
-    msg.channelNumber = baseChannelNumber + 14;
+    msg.channelNumber = baseChannelNumber + 3;
 msg.request.value = value;
 
     p->sendMessage(&msg);
@@ -333,7 +113,7 @@ void DUT::hdmiBlankLinesPixels ( unsigned int value )
 {
     DUThdmiBlankLinesPixelsMSG msg;
     msg.size = sizeof(msg.request) + sizeof(msg.channelNumber);
-    msg.channelNumber = baseChannelNumber + 15;
+    msg.channelNumber = baseChannelNumber + 4;
 msg.request.value = value;
 
     p->sendMessage(&msg);
@@ -353,7 +133,7 @@ void DUT::hdmiStrideBytes ( unsigned int strideBytes )
 {
     DUThdmiStrideBytesMSG msg;
     msg.size = sizeof(msg.request) + sizeof(msg.channelNumber);
-    msg.channelNumber = baseChannelNumber + 16;
+    msg.channelNumber = baseChannelNumber + 5;
 msg.request.strideBytes = strideBytes;
 
     p->sendMessage(&msg);
@@ -373,7 +153,7 @@ void DUT::hdmiLineCountMinMax ( unsigned int value )
 {
     DUThdmiLineCountMinMaxMSG msg;
     msg.size = sizeof(msg.request) + sizeof(msg.channelNumber);
-    msg.channelNumber = baseChannelNumber + 17;
+    msg.channelNumber = baseChannelNumber + 6;
 msg.request.value = value;
 
     p->sendMessage(&msg);
@@ -393,7 +173,7 @@ void DUT::hdmiPixelCountMinMax ( unsigned int value )
 {
     DUThdmiPixelCountMinMaxMSG msg;
     msg.size = sizeof(msg.request) + sizeof(msg.channelNumber);
-    msg.channelNumber = baseChannelNumber + 18;
+    msg.channelNumber = baseChannelNumber + 7;
 msg.request.value = value;
 
     p->sendMessage(&msg);
@@ -413,7 +193,7 @@ void DUT::hdmiSyncWidths ( unsigned int value )
 {
     DUThdmiSyncWidthsMSG msg;
     msg.size = sizeof(msg.request) + sizeof(msg.channelNumber);
-    msg.channelNumber = baseChannelNumber + 19;
+    msg.channelNumber = baseChannelNumber + 8;
 msg.request.value = value;
 
     p->sendMessage(&msg);
@@ -433,7 +213,7 @@ void DUT::beginTranslationTable ( unsigned int index )
 {
     DUTbeginTranslationTableMSG msg;
     msg.size = sizeof(msg.request) + sizeof(msg.channelNumber);
-    msg.channelNumber = baseChannelNumber + 20;
+    msg.channelNumber = baseChannelNumber + 9;
 msg.request.index = index;
 
     p->sendMessage(&msg);
@@ -454,7 +234,7 @@ void DUT::addTranslationEntry ( unsigned int address, unsigned int length )
 {
     DUTaddTranslationEntryMSG msg;
     msg.size = sizeof(msg.request) + sizeof(msg.channelNumber);
-    msg.channelNumber = baseChannelNumber + 21;
+    msg.channelNumber = baseChannelNumber + 10;
 msg.request.address = address;
 msg.request.length = length;
 
