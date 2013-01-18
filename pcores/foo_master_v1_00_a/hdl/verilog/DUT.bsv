@@ -139,6 +139,7 @@ module mkDUT#(Clock hdmi_clk)(DUT);
         fbc.stridebytes = stridebytes;
         frameBuffer.configure(fbc);
         commandFifo.enq(tagged TestPattern {enabled: False});
+        waitingForVsync <= True;
     endmethod
 
     method Action waitForVsync(Bit#(32) unused);

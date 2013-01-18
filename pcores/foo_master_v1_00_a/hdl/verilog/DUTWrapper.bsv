@@ -101,31 +101,13 @@ module mkDUTWrapper#(Clock axis_clk, FromBit32#(DutRequest) requestFifo, ToBit32
 
     Bit#(4) maxTag = 11;
 
-    rule handleJunkRequest if (pack(requestFifo.first)[4+32-1:32] > maxTag);
-        requestFifo.deq;
-        junkReqReg <= junkReqReg + 1;
-    endrule
-
     rule requestTimer if (requestFifo.notFull);
         requestTimerReg <= requestTimerReg + 1;
-    endrule
-
-    rule discardBlockedRequests if (requestTimerReg > requestTimeLimitReg && requestFifo.notEmpty);
-        requestFifo.deq;
-        blockedRequestsDiscardedReg <= blockedRequestsDiscardedReg + 1;
-        requestTimerReg <= 0;
     endrule
 
     rule responseTimer if (!responseFifo.notFull);
         responseTimerReg <= responseTimerReg + 1;
     endrule
-
-    rule discardBlockedResponses if (responseTimerReg > responseTimeLimitReg && !responseFifo.notFull);
-        responseFifo.deq;
-        blockedResponsesDiscardedReg <= blockedResponsesDiscardedReg + 1;
-        responseTimerReg <= 0;
-    endrule
-
 
     rule handle$setPatternReg$request if (requestFifo.first matches tagged SetPatternReg$Request .sp);
         requestFifo.deq;

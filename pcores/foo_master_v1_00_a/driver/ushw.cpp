@@ -179,21 +179,19 @@ int PortalInterface::exec(idleFunc func)
                 fprintf(stderr, "No instances but rc=%d revents=%d\n", rc, portal.fds[i].revents);
             }
             PortalInstance *instance = portal.instances[i];
+            memset(buf, 0, 1024);
             int messageReceived = instance->receiveMessage(msg);
             if (!messageReceived)
                 continue;
             size_t size = msg->size;
             if (!size)
                 continue;
-            int channel = buf[4]; // channel number is last word of message
+            unsigned int channel = buf[4]; // channel number is last word of message
 
-            //ALOGD("channel+%d\n", channel);
-            if (0)
-            if (instance && instance->messageHandlers && instance->messageHandlers[channel]) {
-                if (1) ALOGD("size=%d w0=%x w1=%x w2=%x w3=%x channel %x messageHandlers=%p handler=%p\n",
-                             size, buf[0], buf[1], buf[2], buf[3],
-                             channel, instance->messageHandlers, instance->messageHandlers[channel]);
-                instance->messageHandlers[channel](msg);
+            if (channel < 10) {
+                if (instance && instance->messageHandlers && instance->messageHandlers[channel]) {
+                    instance->messageHandlers[channel](msg);
+                }
             }
         }
         if (rc == 0) {

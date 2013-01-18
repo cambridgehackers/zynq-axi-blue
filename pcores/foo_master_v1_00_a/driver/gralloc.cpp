@@ -47,6 +47,9 @@
 struct gralloc_context_t {
     alloc_device_t  device;
     /* our private data here */
+    volatile int vsync;
+    pthread_mutex_t vsync_lock;
+    pthread_cond_t vsync_cond;
     DUT *dut;
     uint32_t nextSegmentNumber;
 };
@@ -257,6 +260,17 @@ static int fb_setSwapInterval(struct framebuffer_device_t* dev,
     return 0;
 }
 
+static void vsyncReceivedHandler(PortalMessage *msg)
+{
+    if (0)
+    if (gralloc_dev->vsync == 0)
+        ALOGD("vsyncReceivedHandler\n");
+    pthread_mutex_lock(&gralloc_dev->vsync_lock);
+    gralloc_dev->vsync = 1;
+    pthread_cond_signal(&gralloc_dev->vsync_cond);
+    pthread_mutex_unlock(&gralloc_dev->vsync_lock);
+}
+
 static int fb_post(struct framebuffer_device_t* dev, buffer_handle_t buffer)
 {
     if (private_handle_t::validate(buffer) < 0)
@@ -268,7 +282,15 @@ static int fb_post(struct framebuffer_device_t* dev, buffer_handle_t buffer)
 
     if (gralloc_dev && gralloc_dev->dut) {
         //ALOGD("fb_post segmentNumber=%d\n", hnd->segmentNumber);
+        pthread_mutex_lock(&gralloc_dev->vsync_lock);
+        gralloc_dev->vsync = 0;
+        gralloc_dev->dut->waitForVsync(0);
         gralloc_dev->dut->startFrameBuffer(hnd->segmentNumber);
+        while (!gralloc_dev->vsync) {
+            pthread_cond_wait(&gralloc_dev->vsync_cond, &gralloc_dev->vsync_lock);
+        }
+        pthread_mutex_unlock(&gralloc_dev->vsync_lock);
+        //ALOGD("fb posted\n");
     }
 
     return 0;
@@ -332,6 +354,12 @@ int gralloc_device_open(const hw_module_t* module, const char* name,
 
         *device = &dev->device.common;
 
+        pthread_mutexattr_t attr;
+        pthread_mutexattr_init(&attr);
+        pthread_mutex_init(&dev->vsync_lock, &attr);
+        pthread_condattr_t condattr;
+        pthread_condattr_init(&condattr);
+        pthread_cond_init(&dev->vsync_cond, &condattr);
         dev->dut = DUT::createDUT("foomaster0");
         dev->nextSegmentNumber = 0;
 
@@ -385,6 +413,7 @@ int gralloc_device_open(const hw_module_t* module, const char* name,
             const_cast<int&>(dev->minSwapInterval) = 1;
             const_cast<int&>(dev->maxSwapInterval) = 1;
 
+            gralloc_dev->dut->connectHandler(DUT::VsyncReceivedResponseChannel, vsyncReceivedHandler);
             gralloc_dev->dut->hdmiLinesPixels((pmin + npixels) << 16 | (lmin + vsyncwidth + nlines));
             gralloc_dev->dut->hdmiStrideBytes(stridebytes);
             gralloc_dev->dut->hdmiLineCountMinMax(lmax << 16 | lmin);
