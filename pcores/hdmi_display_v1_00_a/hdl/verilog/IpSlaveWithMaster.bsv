@@ -21,7 +21,6 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import RegFile::*;
 import Adapter::*;
 import AxiMasterSlave::*;
 import HDMI::*;
@@ -52,7 +51,7 @@ module mkIpSlaveWithMaster#(Clock hdmi_ref_clk)(IpSlaveWithMaster);
    ToBit32#(DutResponse) responseFifo <- mkToBit32();
    DUTWrapper dutWrapper <- mkDUTWrapper(hdmi_ref_clk, requestFifo, responseFifo);
 
-   RegFile#(Bit#(12), Bit#(32)) rf <- mkRegFile(0, 12'h00f);
+   Reg#(Bit#(32)) interruptEnableReg <- mkReg(0);
    Reg#(Bool) interrupted <- mkReg(False);
    Reg#(Bool) interruptCleared <- mkReg(False);
    Reg#(Bit#(32)) getWordCount <- mkReg(0);
@@ -75,18 +74,19 @@ module mkIpSlaveWithMaster#(Clock hdmi_ref_clk)(IpSlaveWithMaster);
            begin
                interruptCleared <= True;
            end
-           rf.upd(addr, v);
+           if (addr == 12'h004)
+               interruptEnableReg <= v;
        endmethod
 
        method ActionValue#(Bit#(32)) get(Bit#(12) addr);
-           let v = rf.sub(addr);
+           let v = 32'h05a05a0;
            if (addr == 12'h000)
            begin
                v[0] = interrupted ? 1'd1 : 1'd0 ;
                v[16] = responseFifo.notFull ? 1'd1 : 1'd0;
            end
            if (addr == 12'h004)
-               v = 32'h02142011;
+               v = interruptEnableReg;
            if (addr == 12'h008)
                v = dutWrapper.requestSize;
            if (addr == 12'h00C)
@@ -160,7 +160,7 @@ module mkIpSlaveWithMaster#(Clock hdmi_ref_clk)(IpSlaveWithMaster);
    endmethod
 
    method Bit#(1) interrupt();
-       if (rf.sub(12'h04)[0] == 1'd1 && !interruptCleared)
+       if (interruptEnableReg[0] == 1'd1 && !interruptCleared)
            return interrupted ? 1'd1 : 1'd0;
        else
            return 1'd0;
