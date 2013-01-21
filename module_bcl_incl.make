@@ -156,13 +156,32 @@ pcores/hdmi_display_v1_00_a/hdl/verilog/SizedFIFO.v \
 pcores/hdmi_display_v1_00_a/hdl/verilog/SyncFIFO.v \
 pcores/hdmi_display_v1_00_a/hdl/verilog/SyncFIFO1.v \
 pcores/hdmi_display_v1_00_a/hdl/verilog/SyncHandshake.v \
-pcores/hdmi_display_v1_00_a/hdl/verilog/SyncResetA.v
+pcores/hdmi_display_v1_00_a/hdl/verilog/SyncResetA.v \
+pcores/foo_master_v1_00_a/hdl/vhdl/foo_master.vhd \
+pcores/foo_master_v1_00_a/hdl/vhdl/user_logic.vhd \
+pcores/foo_master_v1_00_a/hdl/verilog/mkIpSlaveWithMaster.v \
+pcores/foo_master_v1_00_a/hdl/verilog/mkFifoToAxi.v \
+pcores/foo_master_v1_00_a/hdl/verilog/BRAM2.v \
+pcores/foo_master_v1_00_a/hdl/verilog/RegFile.v \
+pcores/foo_master_v1_00_a/hdl/verilog/FIFO1.v \
+pcores/foo_master_v1_00_a/hdl/verilog/FIFO2.v \
+pcores/foo_master_v1_00_a/hdl/verilog/NRCCBRAM2.v \
+pcores/foo_master_v1_00_a/hdl/verilog/RevertReg.v \
+pcores/foo_master_v1_00_a/hdl/verilog/SizedFIFO.v \
+pcores/foo_master_v1_00_a/hdl/verilog/SyncFIFO.v \
+pcores/foo_master_v1_00_a/hdl/verilog/SyncFIFO1.v \
+pcores/foo_master_v1_00_a/hdl/verilog/SyncHandshake.v \
+pcores/foo_master_v1_00_a/hdl/verilog/SyncResetA.v
 
 WRAPPER_NGC_FILES = implementation/module_bcl_processing_system7_0_wrapper.ngc \
 implementation/module_bcl_axi4lite_0_wrapper.ngc \
 implementation/module_bcl_hdmi_display_0_wrapper.ngc \
 implementation/module_bcl_clock_generator_0_wrapper.ngc \
-implementation/module_bcl_axi_interconnect_0_wrapper.ngc
+implementation/module_bcl_axi_interconnect_0_wrapper.ngc \
+implementation/module_bcl_foo_master_0_wrapper.ngc \
+implementation/module_bcl_axi_interconnect_1_wrapper.ngc \
+implementation/module_bcl_axi_interconnect_2_wrapper.ngc \
+implementation/module_bcl_axi_interconnect_3_wrapper.ngc
 
 POSTSYN_NETLIST = implementation/$(SYSTEM).ngc
 
