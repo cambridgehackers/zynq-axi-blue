@@ -21,10 +21,11 @@
 // SOFTWARE.
 
 import RegFile::*;
+import FIFO::*;
 
 interface BRAM#(type idx_type, type data_type);
   method Action readAddr(idx_type idx);
-  method data_type readData();
+  method ActionValue#(data_type) readData();
   method Action	write(idx_type idx, data_type data);
 endinterface
 
@@ -84,15 +85,14 @@ module mkSyncBRAM#(Integer memsize, Clock clkA, Reset resetA, Clock clkB, Reset 
                   provisos(Bits#(idx_type, idxbits),
                            Literal#(idx_type),
                            Bits#(data_type, databits),
-                           Literal#(data_type),
                            Add#(1, z, databits));
     SyncBRAMBVI#(idx_type, data_type) syncBRAMBVI <- mkSyncBRAMBVI(memsize, clkA, resetA, clkB, resetB);
 
     interface BRAM portA;
         method Action readAddr(idx_type idx);
-            syncBRAMBVI.portAReq(0, idx, 0);
+            syncBRAMBVI.portAReq(0, idx, unpack(0));
         endmethod
-        method data_type readData();
+        method ActionValue#(data_type) readData();
             return syncBRAMBVI.portAReadData();
         endmethod
         method Action write(idx_type idx, data_type data);
@@ -101,9 +101,9 @@ module mkSyncBRAM#(Integer memsize, Clock clkA, Reset resetA, Clock clkB, Reset 
     endinterface
     interface BRAM portB;
         method Action readAddr(idx_type idx);
-            syncBRAMBVI.portBReq(0, idx, 0);
+            syncBRAMBVI.portBReq(0, idx, unpack(0));
         endmethod
-        method data_type readData();
+        method ActionValue#(data_type) readData();
             return syncBRAMBVI.portBReadData();
         endmethod
         method Action write(idx_type idx, data_type data);
@@ -126,18 +126,19 @@ module mkSimSyncBRAM#(Integer memsize, Clock clkA, Reset resetA, Clock clkB, Res
                            Add#(1, z, databits));
     RegFile#(idx_type, data_type) rf <- mkRegFileFull;
 
-    Reg#(idx_type) aAddr <- mkReg(0, clocked_by clkA, reset_by resetA);
+    FIFO#(idx_type) aAddr <- mkFIFO(clocked_by clkA, reset_by resetA);
     Reg#(Op) aOp <- mkReg(Idle, clocked_by clkA, reset_by resetA);
-    Reg#(idx_type) bAddr <- mkReg(0, clocked_by clkA, reset_by resetA);
+    FIFO#(idx_type) bAddr <- mkFIFO(clocked_by clkA, reset_by resetA);
     Reg#(Op) bOp <- mkReg(Idle, clocked_by clkA, reset_by resetA);
 
     interface BRAM portA;
         method Action readAddr(idx_type idx);
-            aAddr <= idx;
+            aAddr.enq(idx);
             aOp <= Read;
         endmethod
-        method data_type readData() if (aOp matches Read);
-            return rf.sub(aAddr);
+        method ActionValue#(data_type) readData() if (aOp matches Read);
+            aAddr.deq;
+            return rf.sub(aAddr.first);
         endmethod
         method Action write(idx_type idx, data_type data);
             rf.upd(idx, data);
@@ -145,11 +146,12 @@ module mkSimSyncBRAM#(Integer memsize, Clock clkA, Reset resetA, Clock clkB, Res
     endinterface
     interface BRAM portB;
         method Action readAddr(idx_type idx);
-            bAddr <= idx;
+            bAddr.enq(idx);
             bOp <= Read;
         endmethod
-        method data_type readData() if (bOp matches Read);
-            return rf.sub(bAddr);
+        method ActionValue#(data_type) readData() if (bOp matches Read);
+            bAddr.deq;
+            return rf.sub(bAddr.first);
         endmethod
         method Action write(idx_type idx, data_type data);
             rf.upd(idx, data);

@@ -70,7 +70,7 @@ module mkDUT#(Clock hdmi_clk)(DUT);
     SyncFIFOIfc#(Bit#(64)) rgbrgbFifo <- mkSyncFIFOFromCC(4, hdmi_clk);
     SyncFIFOIfc#(HdmiCommand) commandFifo <- mkSyncFIFOFromCC(2, hdmi_clk);
 
-    Reg#(Bit#(6)) segmentIndexReg <- mkReg(0);
+    Reg#(Bit#(8)) segmentIndexReg <- mkReg(0);
     Reg#(Bit#(24)) segmentOffsetReg <- mkReg(0);
     FIFOF#(Bit#(96)) translationEntryFifo <- mkFIFOF();
 
@@ -150,7 +150,7 @@ module mkDUT#(Clock hdmi_clk)(DUT);
         return vsyncPulseCountReg;
     endmethod
 
-    method Action beginTranslationTable(Bit#(6) index);
+    method Action beginTranslationTable(Bit#(8) index);
         segmentIndexReg <= index;
         segmentOffsetReg <= 0;
     endmethod

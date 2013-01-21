@@ -38,7 +38,7 @@ interface FrameBufferBram;
     method Action configure(FrameBufferConfig fbc);
     method Action startFrame();
     method Action startLine();
-    method Action setSgEntry(Bit#(6) index, Bit#(24) startingOffset, Bit#(20) address, Bit#(20) length);
+    method Action setSgEntry(Bit#(8) index, Bit#(24) startingOffset, Bit#(20) address, Bit#(20) length);
     method ActionValue#(Bit#(96)) reading();
     interface AxiMasterRead#(64) axir;
     interface AxiMasterWrite#(64,8) axiw;
@@ -64,7 +64,7 @@ module mkFrameBufferBram#(Clock displayClk, Reset displayRst)(FrameBufferBram);
     let bytesPerPixel = 4;
     let pixelsPerWord = bytesPerWord / bytesPerPixel;
 
-    Reg#(Bit#(7))  sglistIndexReg <- mkReg(0); // which segment we're reading from
+    Reg#(Bit#(8))  sglistIndexReg <- mkReg(0); // which segment we're reading from
     Reg#(Bit#(24)) lineAddrReg <- mkReg(0); // address of start of line
     Reg#(Bit#(24)) readAddrReg <- mkReg(0); // next address to read
     Reg#(Bit#(24)) readLimitReg <- mkReg(0); // address of end of line
@@ -75,21 +75,34 @@ module mkFrameBufferBram#(Clock displayClk, Reset displayRst)(FrameBufferBram);
     Reg#(Bit#(12)) pixelCountReg <- mkReg(0);
     Reg#(Bit#(11)) lineCountReg <- mkReg(0);
     
-    Vector#(64, Reg#(ScatterGather)) sglist <- replicateM(mkReg(unpack(0)));
+    Clock clk <- exposeCurrentClock ;
+    Reset rst <- exposeCurrentReset ;
+
+    //Vector#(16, Reg#(ScatterGather)) sglist <- replicateM(mkReg(unpack(0)));
+    SyncBRAM#(Bit#(8), ScatterGather) sglist <- mkSyncBRAM( 256, clk, rst, clk, rst);
 
     AxiMaster#(64,8) nullAxiMaster <- mkNullAxiMaster();
 
-    Clock clk <- exposeCurrentClock ;
-    Reset rst <- exposeCurrentReset ;
     SyncBRAM#(Bit#(12), Bit#(64)) syncBRAM <- mkSyncBRAM( 4096, displayClk, displayRst, clk, rst );
     //SyncBRAM#(Bit#(12), Bit#(64)) syncBRAM <- mkSimSyncBRAM( 4096, displayClk, displayRst, clk, rst );
     Reg#(Bit#(12)) pixelCountReg2 <- mkReg(0);
     Reg#(Maybe#(Bit#(96))) readingReg <- mkReg(tagged Invalid);
 
-    rule nextent if (readAddrReg != 24'hFFFFFF && readAddrReg > segmentLimitReg);
+    Reg#(Bool) nextent2Enabled <- mkReg(False);
+    Reg#(Bool) startFrameEnabled <- mkReg(False);
+
+    rule nextent if (readAddrReg != 24'hFFFFFF && readAddrReg > segmentLimitReg
+                     && !nextent2Enabled);
         $display("nextent readAddrReg %h segmentLimitReg %h", readAddrReg, segmentLimitReg);
         let index = sglistIndexReg+1;
-        let sgent = sglist[index];
+        nextent2Enabled <= True;
+        sglist.portA.readAddr(index);
+    endrule
+
+    rule nextent2 if (nextent2Enabled);
+        nextent2Enabled <= False;
+        let index = sglistIndexReg+1;
+        let sgent <- sglist.portA.readData();
         sglistIndexReg <= index;
         let segmentOffset = {sgent.address,12'd0} - extend(sgent.startingOffset);
         let segmentLimit = sgent.limitOffset;
@@ -103,40 +116,11 @@ module mkFrameBufferBram#(Clock displayClk, Reset displayRst)(FrameBufferBram);
         readingReg <= tagged Valid reading;
     endrule
 
-    method Bool running();
-        return runningReg;
-    endmethod
-
-    method Bit#(32) base();
-        return fbc.base;
-    endmethod
-
-    method ActionValue#(Bit#(96)) reading() if (traceReadingReg &&& readingReg matches tagged Valid .value);
-        readingReg <= tagged Invalid;
-        return value;
-    endmethod
-
-    method Action configure(FrameBufferConfig newConfig);
-        nextFbc <= newConfig;
-        traceReadingReg <= True;
-    endmethod
-
-    method Action setSgEntry(Bit#(6) index, Bit#(24) startingOffset, Bit#(20) address, Bit#(20) length);
-        ScatterGather newEnt = ScatterGather { 
-            startingOffset: startingOffset,
-            address:  address,
-            length:  length,
-            limitOffset: startingOffset + truncate({length,12'd0})
-        };
-        $display("setSgEntry startingOffset %d address %d length %h limitOffset %h",
-                 startingOffset, address, length, startingOffset + {length,4'd0});
-        sglist[index] <= newEnt;
-    endmethod
-
-    method Action startFrame();
+    rule startFrameRule if (startFrameEnabled);
+        startFrameEnabled <= False;
         fbc <= nextFbc;
-        Bit#(7) segmentIndex = truncate(nextFbc.base);
-        ScatterGather sgent = sglist[segmentIndex];
+        Bit#(8) segmentIndex = truncate(nextFbc.base);
+        ScatterGather sgent <- sglist.portB.readData();
         sglistIndexReg <= segmentIndex;
         let segmentOffset = {sgent.address,12'd0} - extend(sgent.startingOffset);
         let segmentLimit = sgent.limitOffset;
@@ -160,6 +144,42 @@ module mkFrameBufferBram#(Clock displayClk, Reset displayRst)(FrameBufferBram);
         readingReg <= tagged Valid reading;
 
         runningReg <= True;
+    endrule
+
+    method Bool running();
+        return runningReg;
+    endmethod
+
+    method Bit#(32) base();
+        return fbc.base;
+    endmethod
+
+    method ActionValue#(Bit#(96)) reading() if (traceReadingReg &&& readingReg matches tagged Valid .value);
+        readingReg <= tagged Invalid;
+        return value;
+    endmethod
+
+    method Action configure(FrameBufferConfig newConfig);
+        nextFbc <= newConfig;
+        traceReadingReg <= True;
+    endmethod
+
+    method Action setSgEntry(Bit#(8) index, Bit#(24) startingOffset, Bit#(20) address, Bit#(20) length);
+        ScatterGather newEnt = ScatterGather { 
+            startingOffset: startingOffset,
+            address:  address,
+            length:  length,
+            limitOffset: startingOffset + truncate({length,12'd0})
+        };
+        $display("setSgEntry startingOffset %d address %d length %h limitOffset %h",
+                 startingOffset, address, length, startingOffset + {length,4'd0});
+        sglist.portA.write(index, newEnt);
+    endmethod
+
+    method Action startFrame() if (!startFrameEnabled);
+        startFrameEnabled <= True;
+        Bit#(8) segmentIndex = truncate(nextFbc.base);
+        sglist.portB.readAddr(segmentIndex);
     endmethod
 
     method Action startLine();

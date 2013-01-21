@@ -62,7 +62,7 @@ typedef union tagged {
     } HdmiSyncWidths$Request;
 
     struct {
-        Bit#(6) index;
+        Bit#(8) index;
     } BeginTranslationTable$Request;
 
     struct {

@@ -281,7 +281,7 @@ module mkHdmiTestPatternGenerator#(SyncFIFOIfc#(HdmiCommand) commandFifo,
     endrule
 
     rule bramOutStage;
-        let d = lineBuffer.readData;
+        let d <- lineBuffer.readData;
         let stageData = bramOutStageFifo.first;
         bramOutStageFifo.deq;
 
