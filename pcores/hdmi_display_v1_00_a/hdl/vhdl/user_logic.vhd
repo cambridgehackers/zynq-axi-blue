@@ -72,8 +72,13 @@ entity user_logic is
 
     -- DO NOT EDIT BELOW THIS LINE ---------------------
     -- Bus protocol parameters, do not add to or delete
-    C_SLV_AWIDTH                   : integer              := 32;
-    C_SLV_DWIDTH                   : integer              := 32;
+    C_S_AXI_DATA_WIDTH             : integer              := 32;
+    C_S_AXI_ADDR_WIDTH             : integer              := 32;
+    C_S_AXI_ID_WIDTH               : integer              := 4;
+    C_S_AXI_MEM0_BASEADDR          : std_logic_vector     := X"FFFFFFFF";
+    C_S_AXI_MEM0_HIGHADDR          : std_logic_vector     := X"00000000";
+    C_S_AXI_MEM1_BASEADDR          : std_logic_vector     := X"FFFFFFFF";
+    C_S_AXI_MEM1_HIGHADDR          : std_logic_vector     := X"00000000";
     C_NUM_MEM                      : integer              := 2
     -- DO NOT EDIT ABOVE THIS LINE ---------------------
   );
@@ -139,33 +144,51 @@ entity user_logic is
 
     -- DO NOT EDIT BELOW THIS LINE ---------------------
     -- Bus protocol ports, do not add to or delete
-    Bus2IP_Clk                     : in  std_logic;
-    Bus2IP_Resetn                  : in  std_logic;
-    Bus2IP_Addr                    : in  std_logic_vector(C_SLV_AWIDTH-1 downto 0);
-    Bus2IP_CS                      : in  std_logic_vector(C_NUM_MEM-1 downto 0);
-    Bus2IP_RNW                     : in  std_logic;
-    Bus2IP_Data                    : in  std_logic_vector(C_SLV_DWIDTH-1 downto 0);
-    Bus2IP_BE                      : in  std_logic_vector(C_SLV_DWIDTH/8-1 downto 0);
-    Bus2IP_RdCE                    : in  std_logic_vector(C_NUM_MEM-1 downto 0);
-    Bus2IP_WrCE                    : in  std_logic_vector(C_NUM_MEM-1 downto 0);
-    Bus2IP_Burst                   : in  std_logic;
-    Bus2IP_BurstLength             : in  std_logic_vector(7 downto 0);
-    Bus2IP_RdReq                   : in  std_logic;
-    Bus2IP_WrReq                   : in  std_logic;
-    IP2Bus_AddrAck                 : out std_logic;
-    IP2Bus_Data                    : out std_logic_vector(C_SLV_DWIDTH-1 downto 0);
-    IP2Bus_RdAck                   : out std_logic;
-    IP2Bus_WrAck                   : out std_logic;
-    IP2Bus_Error                   : out std_logic;
-    Type_of_xfer                   : out std_logic
+    S_AXI_ACLK                     : in  std_logic;
+    S_AXI_ARESETN                  : in  std_logic;
+    S_AXI_AWADDR                   : in  std_logic_vector(C_S_AXI_ADDR_WIDTH-1 downto 0);
+    S_AXI_AWVALID                  : in  std_logic;
+    S_AXI_WDATA                    : in  std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
+    S_AXI_WSTRB                    : in  std_logic_vector((C_S_AXI_DATA_WIDTH/8)-1 downto 0);
+    S_AXI_WVALID                   : in  std_logic;
+    S_AXI_BREADY                   : in  std_logic;
+    S_AXI_ARADDR                   : in  std_logic_vector(C_S_AXI_ADDR_WIDTH-1 downto 0);
+    S_AXI_ARVALID                  : in  std_logic;
+    S_AXI_RREADY                   : in  std_logic;
+    S_AXI_ARREADY                  : out std_logic;
+    S_AXI_RDATA                    : out std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
+    S_AXI_RRESP                    : out std_logic_vector(1 downto 0);
+    S_AXI_RVALID                   : out std_logic;
+    S_AXI_WREADY                   : out std_logic;
+    S_AXI_BRESP                    : out std_logic_vector(1 downto 0);
+    S_AXI_BVALID                   : out std_logic;
+    S_AXI_AWREADY                  : out std_logic;
+    S_AXI_AWID                     : in  std_logic_vector(C_S_AXI_ID_WIDTH-1 downto 0);
+    S_AXI_AWLEN                    : in  std_logic_vector(7 downto 0);
+    S_AXI_AWSIZE                   : in  std_logic_vector(2 downto 0);
+    S_AXI_AWBURST                  : in  std_logic_vector(1 downto 0);
+    S_AXI_AWLOCK                   : in  std_logic;
+    S_AXI_AWCACHE                  : in  std_logic_vector(3 downto 0);
+    S_AXI_AWPROT                   : in  std_logic_vector(2 downto 0);
+    S_AXI_WLAST                    : in  std_logic;
+    S_AXI_BID                      : out std_logic_vector(C_S_AXI_ID_WIDTH-1 downto 0);
+    S_AXI_ARID                     : in  std_logic_vector(C_S_AXI_ID_WIDTH-1 downto 0);
+    S_AXI_ARLEN                    : in  std_logic_vector(7 downto 0);
+    S_AXI_ARSIZE                   : in  std_logic_vector(2 downto 0);
+    S_AXI_ARBURST                  : in  std_logic_vector(1 downto 0);
+    S_AXI_ARLOCK                   : in  std_logic;
+    S_AXI_ARCACHE                  : in  std_logic_vector(3 downto 0);
+    S_AXI_ARPROT                   : in  std_logic_vector(2 downto 0);
+    S_AXI_RID                      : out std_logic_vector(C_S_AXI_ID_WIDTH-1 downto 0);
+    S_AXI_RLAST                    : out std_logic
     -- DO NOT EDIT ABOVE THIS LINE ---------------------
   );
 
   attribute MAX_FANOUT : string;
   attribute SIGIS : string;
 
-  attribute SIGIS of Bus2IP_Clk    : signal is "CLK";
-  attribute SIGIS of Bus2IP_Resetn : signal is "RST";
+  attribute SIGIS of S_AXI_AClk    : signal is "CLK";
+  attribute SIGIS of S_AXI_ARESETN : signal is "RST";
   attribute SIGIS of hdmi_ref_clk  : signal is "CLK";
   attribute SIGIS of hdmi_clk      : signal is "CLK";
 
@@ -179,28 +202,42 @@ architecture IMP of user_logic is
 
   --USER signal declarations added here, as needed for user logic
 
-  ------------------------------------------
-  -- Signals for user logic memory space example
-  ------------------------------------------
-  type BYTE_RAM_TYPE is array (0 to 255) of std_logic_vector(7 downto 0);
-  type DO_TYPE is array (0 to C_NUM_MEM-1) of std_logic_vector(C_SLV_DWIDTH-1 downto 0);
-  signal mem_data_out                   : DO_TYPE;
-  signal mem_address                    : std_logic_vector(7 downto 0);
-  signal mem_select                     : std_logic_vector(0 to 0);
-  signal mem_read_ack                   : std_logic;
-  signal mem_write_ack                  : std_logic;
+  signal mem0_araddr_matches : boolean;
+  signal mem1_araddr_matches : boolean;
+  signal mem0_awaddr_matches : boolean;
+  signal mem1_awaddr_matches : boolean;
 
-  signal ctrl_get_d : std_logic_vector(C_SLV_DWIDTH-1 downto 0);
-  signal fifo_get_d : std_logic_vector(C_SLV_DWIDTH-1 downto 0);
-  signal WILL_FIRE_ctrl_put : std_logic;
-  signal RDY_ctrl_put : std_logic;
-  signal WILL_FIRE_ctrl_get : std_logic;
-  signal RDY_ctrl_get : std_logic;
+  signal ctrl_read_readData : std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
+  signal fifo_read_readData : std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
+  signal ctrl_write_writeResponse : std_logic_vector(1 downto 0);
+  signal fifo_write_writeResponse : std_logic_vector(1 downto 0);
 
-  signal WILL_FIRE_fifo_put : std_logic;
-  signal RDY_fifo_put : std_logic;
-  signal WILL_FIRE_fifo_get : std_logic;
-  signal RDY_fifo_get : std_logic;
+  signal rdy_writeAddr : std_logic;
+  signal rdy_writeData : std_logic;
+
+  signal EN_ctrl_read_readAddr : std_logic;
+  signal RDY_ctrl_read_readAddr : std_logic;
+  signal EN_ctrl_read_readData : std_logic;
+  signal RDY_ctrl_read_readData : std_logic;
+  signal EN_ctrl_write_writeAddr : std_logic;
+  signal RDY_ctrl_write_writeAddr : std_logic;
+  signal EN_ctrl_write_writeData : std_logic;
+  signal RDY_ctrl_write_writeData : std_logic;
+  signal EN_ctrl_write_writeResponse : std_logic;
+  signal RDY_ctrl_write_writeResponse : std_logic;
+  signal ctrl_read_last : std_logic;
+
+  signal EN_fifo_read_readAddr : std_logic;
+  signal RDY_fifo_read_readAddr : std_logic;
+  signal EN_fifo_read_readData : std_logic;
+  signal RDY_fifo_read_readData : std_logic;
+  signal EN_fifo_write_writeAddr : std_logic;
+  signal RDY_fifo_write_writeAddr : std_logic;
+  signal EN_fifo_write_writeData : std_logic;
+  signal RDY_fifo_write_writeData : std_logic;
+  signal EN_fifo_write_writeResponse : std_logic;
+  signal RDY_fifo_write_writeResponse : std_logic;
+  signal fifo_read_last : std_logic;
 
   signal RDY_axiw0_writeAddr : std_logic;
   signal RDY_axiw0_writeData : std_logic;
@@ -252,48 +289,77 @@ begin
   ------------------------------------------
   -- Example code to drive IP to Bus signals
   ------------------------------------------
-  IP2Bus_Data  <= ctrl_get_d when WILL_FIRE_ctrl_get = '1' else
-                  fifo_get_d when WILL_FIRE_fifo_get = '1' else
-                  (others => '0');
-
-  IP2Bus_AddrAck <= mem_write_ack or mem_read_ack;
-  IP2Bus_WrAck <= mem_write_ack;
-  IP2Bus_RdAck <= mem_read_ack;
-  IP2Bus_Error <= '0';
-
-  WILL_FIRE_ctrl_put <= Bus2IP_CS(0) and Bus2IP_WrCE(0) and RDY_ctrl_put;
-  WILL_FIRE_ctrl_get <= Bus2IP_CS(0) and Bus2IP_RdCE(0) and RDY_ctrl_get;
-  WILL_FIRE_fifo_put <= Bus2IP_CS(1) and Bus2IP_WrCE(1) and RDY_fifo_put;
-  WILL_FIRE_fifo_get <= Bus2IP_CS(1) and Bus2IP_RdCE(1) and RDY_fifo_get;
-
-  mem_read_ack    <= WILL_FIRE_ctrl_get or WILL_FIRE_fifo_get;
-  mem_write_ack   <= WILL_FIRE_ctrl_put or WILL_FIRE_fifo_put;
-
   IP_SLAVE : entity mkIpSlaveWithMaster
     port map (
       CLK_hdmi_ref_clk => usr_clk,
-      CLK => Bus2IP_Clk,
-      RST_N  => Bus2IP_Resetn,
+      CLK => S_AXI_ACLK,
+      RST_N  => S_AXI_ARESETN,
 
-      ctrl_put_addr => Bus2IP_Addr(11 downto 0),
-      ctrl_put_v => Bus2IP_Data,
-      EN_ctrl_put => WILL_FIRE_ctrl_put,
-      RDY_ctrl_put => RDY_ctrl_put,
+      ctrl_read_readAddr_addr => S_AXI_ARADDR,
+      ctrl_read_readAddr_burstLen => S_AXI_ARLEN,
+      ctrl_read_readAddr_burstWidth => S_AXI_ARSIZE,
+      ctrl_read_readAddr_burstType => S_AXI_ARBURST,
+      ctrl_read_readAddr_burstProt => S_AXI_ARPROT,
+      ctrl_read_readAddr_burstCache => S_AXI_ARCACHE,
+      EN_ctrl_read_readAddr => EN_ctrl_read_readAddr,
+      RDY_ctrl_read_readAddr => RDY_ctrl_read_readAddr,
 
-      ctrl_get_addr => Bus2IP_Addr(11 downto 0),
-      EN_ctrl_get => WILL_FIRE_ctrl_get,
-      ctrl_get => ctrl_get_d,
-      RDY_ctrl_get => RDY_ctrl_get,
+      ctrl_read_last => ctrl_read_last,
+      EN_ctrl_read_readData => EN_ctrl_read_readData,
+      ctrl_read_readData => ctrl_read_readData,
+      RDY_ctrl_read_readData => RDY_ctrl_read_readData,
 
-      fifo_put_addr => Bus2IP_Addr(11 downto 0),
-      fifo_put_v => Bus2IP_Data,
-      EN_fifo_put => WILL_FIRE_fifo_put,
-      RDY_fifo_put => RDY_fifo_put,
+      ctrl_write_writeAddr_addr => S_AXI_AWADDR,
+      ctrl_write_writeAddr_burstLen => S_AXI_AWLEN,
+      ctrl_write_writeAddr_burstWidth => S_AXI_AWSIZE,
+      ctrl_write_writeAddr_burstType => S_AXI_AWBURST,
+      ctrl_write_writeAddr_burstProt => S_AXI_AWPROT,
+      ctrl_write_writeAddr_burstCache => S_AXI_AWCACHE,
+      EN_ctrl_write_writeAddr => EN_ctrl_write_writeAddr,
+      RDY_ctrl_write_writeAddr => RDY_ctrl_write_writeAddr,
 
-      fifo_get_addr => Bus2IP_Addr(11 downto 0),
-      EN_fifo_get => WILL_FIRE_fifo_get,
-      fifo_get => fifo_get_d,
-      RDY_fifo_get => RDY_fifo_get,
+      ctrl_write_writeData_data => S_AXI_WDATA,
+      ctrl_write_writeData_byteEnable => S_AXI_WSTRB,
+      ctrl_write_writeData_last => S_AXI_WLAST,
+      RDY_ctrl_write_writeData => RDY_ctrl_write_writeData,
+      EN_ctrl_write_writeData => EN_ctrl_write_writeData,
+
+      EN_ctrl_write_writeResponse => EN_ctrl_write_writeResponse,
+      RDY_ctrl_write_writeResponse => RDY_ctrl_write_writeResponse,
+      ctrl_write_writeResponse => ctrl_write_writeResponse,
+
+      fifo_read_readAddr_addr => S_AXI_ARADDR,
+      fifo_read_readAddr_burstLen => S_AXI_ARLEN,
+      fifo_read_readAddr_burstWidth => S_AXI_ARSIZE,
+      fifo_read_readAddr_burstType => S_AXI_ARBURST,
+      fifo_read_readAddr_burstProt => S_AXI_ARPROT,
+      fifo_read_readAddr_burstCache => S_AXI_ARCACHE,
+      EN_fifo_read_readAddr => EN_fifo_read_readAddr,
+      RDY_fifo_read_readAddr => RDY_fifo_read_readAddr,
+
+      fifo_read_last => fifo_read_last,
+      EN_fifo_read_readData => EN_fifo_read_readData,
+      fifo_read_readData => fifo_read_readData,
+      RDY_fifo_read_readData => RDY_fifo_read_readData,
+
+      fifo_write_writeAddr_addr => S_AXI_AWADDR,
+      fifo_write_writeAddr_burstLen => S_AXI_AWLEN,
+      fifo_write_writeAddr_burstWidth => S_AXI_AWSIZE,
+      fifo_write_writeAddr_burstType => S_AXI_AWBURST,
+      fifo_write_writeAddr_burstProt => S_AXI_AWPROT,
+      fifo_write_writeAddr_burstCache => S_AXI_AWCACHE,
+      EN_fifo_write_writeAddr => EN_fifo_write_writeAddr,
+      RDY_fifo_write_writeAddr => RDY_fifo_write_writeAddr,
+
+      fifo_write_writeData_data => S_AXI_WDATA,
+      fifo_write_writeData_byteEnable => S_AXI_WSTRB,
+      fifo_write_writeData_last => S_AXI_WLAST,
+      EN_fifo_write_writeData => EN_fifo_write_writeData,
+      RDY_fifo_write_writeData => RDY_fifo_write_writeData,
+
+      EN_fifo_write_writeResponse => EN_fifo_write_writeResponse,
+      RDY_fifo_write_writeResponse => RDY_fifo_write_writeResponse,
+      fifo_write_writeResponse => fifo_write_writeResponse,
 
       interrupt => interrupt,
 
@@ -607,7 +673,7 @@ begin
     port map (
     O => xadc_gpio_0,
     -- Buffer output (connect directly to top-level port)
-    I => hdmi_vsync_unbuf
+    I => S_AXI_AWVALID -- hdmi_vsync_unbuf
     -- Buffer input
     );
     OBUF_readAddr_mirror : OBUF
@@ -618,7 +684,7 @@ begin
     port map (
     O => xadc_gpio_1,
     -- Buffer output (connect directly to top-level port)
-    I => WILL_FIRE_axir0_readAddr
+    I => rdy_writeAddr -- WILL_FIRE_axir0_readAddr
     -- Buffer input
     );
     OBUF_readData_mirror : OBUF
@@ -629,7 +695,7 @@ begin
     port map (
     O => xadc_gpio_2,
     -- Buffer output (connect directly to top-level port)
-    I => WILL_FIRE_axir0_readData -- hdmi_hsync_unbuf
+    I => rdy_writeData -- WILL_FIRE_axir0_readData
     -- Buffer input
     );
     OBUF_de_mirror : OBUF
@@ -640,12 +706,57 @@ begin
     port map (
     O => xadc_gpio_3,
     -- Buffer output (connect directly to top-level port)
-    I => hdmi_de_unbuf
+    I => S_AXI_WLAST -- hdmi_de_unbuf
     -- Buffer input
     );
   
+  mem0_araddr_matches <= (S_AXI_ARADDR >= C_S_AXI_MEM0_BASEADDR and S_AXI_ARADDR <= C_S_AXI_MEM0_HIGHADDR);
+  mem1_araddr_matches <= (S_AXI_ARADDR >= C_S_AXI_MEM1_BASEADDR and S_AXI_ARADDR <= C_S_AXI_MEM1_HIGHADDR);
+  mem0_awaddr_matches <= (S_AXI_AWADDR >= C_S_AXI_MEM0_BASEADDR and S_AXI_AWADDR <= C_S_AXI_MEM0_HIGHADDR);
+  mem1_awaddr_matches <= (S_AXI_AWADDR >= C_S_AXI_MEM1_BASEADDR and S_AXI_AWADDR <= C_S_AXI_MEM1_HIGHADDR);
+
+  S_AXI_ARREADY  <= RDY_ctrl_read_readAddr when mem0_araddr_matches else
+                    RDY_fifo_read_readAddr when mem1_araddr_matches else
+                    '0';
+  S_AXI_RVALID <= EN_ctrl_read_readData or EN_fifo_read_readData;
+  S_AXI_RRESP  <= "00";
+
+  S_AXI_RDATA  <= ctrl_read_readData when EN_ctrl_read_readData = '1' else
+                  fifo_read_readData when EN_fifo_read_readData = '1' else
+                  (others => '0');
+  S_AXI_RLAST  <= ctrl_read_last when EN_ctrl_read_readData = '1' else
+                  fifo_read_last when EN_fifo_read_readData = '1' else
+                  '0';
+
+
+  S_AXI_RID <= (others => '0');
+  S_AXI_BID <= (others => '0');
+  rdy_writeAddr <= RDY_ctrl_write_writeAddr when mem0_awaddr_matches else
+                   RDY_fifo_write_writeAddr when mem1_awaddr_matches else
+                   '0';
+  S_AXI_AWREADY  <= rdy_writeAddr;
+
+  rdy_writeData  <= RDY_ctrl_write_writeData or RDY_fifo_write_writeData;
+  S_AXI_WREADY <= rdy_writeData;
+
+  S_AXI_BVALID  <= EN_ctrl_write_writeResponse or EN_fifo_write_writeResponse;
+  S_AXI_BRESP <= ctrl_write_writeResponse when EN_ctrl_write_writeResponse = '1' else
+                 fifo_write_writeResponse when EN_fifo_write_writeResponse = '1' else
+                 (others => '0');
 
   -- scheduler
+  EN_ctrl_read_readAddr <= RDY_ctrl_read_readAddr and S_AXI_ARVALID when mem0_araddr_matches else '0';
+  EN_fifo_read_readAddr <= RDY_fifo_read_readAddr and S_AXI_ARVALID when mem1_araddr_matches else '0';
+  EN_ctrl_read_readData <= RDY_ctrl_read_readData and S_AXI_RREADY;
+  EN_fifo_read_readData <= RDY_fifo_read_readData and S_AXI_RREADY;
+
+  EN_ctrl_write_writeAddr <= RDY_ctrl_write_writeAddr and S_AXI_AWVALID when mem0_awaddr_matches else '0';
+  EN_fifo_write_writeAddr <= RDY_fifo_write_writeAddr and S_AXI_AWVALID when mem1_awaddr_matches else '0';
+  EN_ctrl_write_writeData <= RDY_ctrl_write_writeData and S_AXI_WVALID;
+  EN_fifo_write_writeData <= RDY_fifo_write_writeData and S_AXI_WVALID;
+  EN_ctrl_write_writeResponse <= RDY_ctrl_write_writeResponse and S_AXI_BREADY;
+  EN_fifo_write_writeResponse <= RDY_fifo_write_writeResponse and S_AXI_BREADY;
+
   WILL_FIRE_axir0_readAddr <= (m_axi0_arready and RDY_axir0_readAddr);
   WILL_FIRE_axir0_readData <= (m_axi0_rvalid and RDY_axir0_readData);
   m_axi0_arvalid <= RDY_axir0_readAddr;

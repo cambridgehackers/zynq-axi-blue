@@ -23,12 +23,14 @@
 
 import Adapter::*;
 import AxiMasterSlave::*;
+import FIFO::*;
 import HDMI::*;
 import FifoToAxi::*;
 import DUTWrapper::*;
 import GetPut::*;
 import Connectable::*;
 import Clocks::*;
+import SpecialFIFOs::*;
 
 interface IpSlave;
    method Action put(Bit#(12) addr, Bit#(32) v);
@@ -38,8 +40,8 @@ endinterface
 interface IpSlaveWithMaster;
    method Bit#(1) error();
    method Bit#(1) interrupt();
-   interface IpSlave ctrl;
-   interface IpSlave fifo;
+   interface AxiSlave#(32, 4) ctrl;
+   interface AxiSlave#(32, 4) fifo;
    interface AxiMasterWrite#(64,8) axiw0;
    interface AxiMasterRead#(64) axir0;
    interface HDMI hdmi;
@@ -68,91 +70,167 @@ module mkIpSlaveWithMaster#(Clock hdmi_ref_clk)(IpSlaveWithMaster);
        interruptCleared <= False;
    endrule
 
-   interface IpSlave ctrl;
-       method Action put(Bit#(12) addr, Bit#(32) v);
-           if (addr == 12'h000 && v[0] == 1'b1 && interrupted)
-           begin
-               interruptCleared <= True;
-           end
-           if (addr == 12'h004)
-               interruptEnableReg <= v;
-       endmethod
+   Reg#(Bit#(12)) ctrlReadAddrReg <- mkReg(0);
+   Reg#(Bit#(12)) fifoReadAddrReg <- mkReg(0);
+   Reg#(Bit#(12)) ctrlWriteAddrReg <- mkReg(0);
+   Reg#(Bit#(12)) fifoWriteAddrReg <- mkReg(0);
+   Reg#(Bit#(8)) ctrlReadBurstCountReg <- mkReg(0);
+   Reg#(Bit#(8)) fifoReadBurstCountReg <- mkReg(0);
+   Reg#(Bit#(8)) ctrlWriteBurstCountReg <- mkReg(0);
+   Reg#(Bit#(8)) fifoWriteBurstCountReg <- mkReg(0);
+   FIFO#(Bit#(2)) ctrlBrespFifo <- mkFIFO();
+   FIFO#(Bit#(2)) fifoBrespFifo <- mkFIFO();
 
-       method ActionValue#(Bit#(32)) get(Bit#(12) addr);
-           let v = 32'h05a05a0;
-           if (addr == 12'h000)
-           begin
-               v[0] = interrupted ? 1'd1 : 1'd0 ;
-               v[16] = responseFifo.notFull ? 1'd1 : 1'd0;
-           end
-           if (addr == 12'h004)
-               v = interruptEnableReg;
-           if (addr == 12'h008)
-               v = dutWrapper.requestSize;
-           if (addr == 12'h00C)
-               v = dutWrapper.responseSize;
-           if (addr == 12'h010)
-               v = dutWrapper.reqCount;
-           if (addr == 12'h014)
-               v = dutWrapper.respCount;
-           if (addr == 12'h018)
-               v = underflowCount;
-           if (addr == 12'h01C)
-               v = overflowCount;
-           if (addr == 12'h020)
-               v = (32'h68470000
-                    | (responseFifo.notFull ? 32'h20 : 0) | (responseFifo.notEmpty ? 32'h10 : 0)
-                    | (requestFifo.notFull ? 32'h02 : 0) | (requestFifo.notEmpty ? 32'h01 : 0));
-           if (addr == 12'h024)
-               v = putWordCount;
-           if (addr == 12'h028)
-               v = getWordCount;
-           if (addr == 12'h02C)
-               v = word0Put;
-           if (addr == 12'h030)
-               v = word1Put;
-           if (addr == 12'h034)
-               v = dutWrapper.junkReqCount;
-           if (addr == 12'h038)
-               v = dutWrapper.blockedRequestsDiscardedCount;
-           if (addr == 12'h03C)
-               v = dutWrapper.blockedResponsesDiscardedCount;
-           return v;
-       endmethod
+   interface AxiSlave ctrl;
+       interface AxiSlaveWrite write;
+           method Action writeAddr(Bit#(32) addr, Bit#(8) burstLen, Bit#(3) burstWidth,
+                                    Bit#(2) burstType, Bit#(3) burstProt, Bit#(4) burstCache)
+                         if (ctrlWriteBurstCountReg == 0);
+               ctrlWriteBurstCountReg <= burstLen + 1;
+               ctrlWriteAddrReg <= truncate(addr);
+           endmethod
+           method Action writeData(Bit#(32) v, Bit#(4) byteEnable, Bit#(1) last)
+                         if (ctrlWriteBurstCountReg > 0);
+               let addr = ctrlWriteAddrReg;
+               ctrlWriteAddrReg <= ctrlWriteAddrReg + 12'd4;
+               ctrlWriteBurstCountReg <= ctrlWriteBurstCountReg - 1;
+               if (addr == 12'h000 && v[0] == 1'b1 && interrupted)
+               begin
+                   interruptCleared <= True;
+               end
+               if (addr == 12'h004)
+                   interruptEnableReg <= v;
+               ctrlBrespFifo.enq(0);
+           endmethod
+           method ActionValue#(Bit#(2)) writeResponse();
+               ctrlBrespFifo.deq;
+               return ctrlBrespFifo.first;
+           endmethod
+       endinterface
+       interface AxiSlaveRead read;
+           method Action readAddr(Bit#(32) addr, Bit#(8) burstLen, Bit#(3) burstWidth,
+                                  Bit#(2) burstType, Bit#(3) burstProt, Bit#(4) burstCache)
+                         if (ctrlReadBurstCountReg == 0);
+               ctrlReadBurstCountReg <= burstLen + 1;
+               ctrlReadAddrReg <= truncate(addr);
+           endmethod
+           method Bit#(1) last();
+               return (ctrlReadBurstCountReg == 1) ? 1 : 0;
+           endmethod
+           method ActionValue#(Bit#(32)) readData()
+                         if (ctrlReadBurstCountReg > 0);
+               let addr = ctrlReadAddrReg;
+               ctrlReadAddrReg <= ctrlReadAddrReg + 12'd4;
+               ctrlReadBurstCountReg <= ctrlReadBurstCountReg - 1;
+
+               let v = 32'h05a05a0;
+               if (addr == 12'h000)
+               begin
+                   v = 0;
+                   v[0] = interrupted ? 1'd1 : 1'd0 ;
+                   v[16] = responseFifo.notFull ? 1'd1 : 1'd0;
+               end
+               if (addr == 12'h004)
+                   v = interruptEnableReg;
+               if (addr == 12'h008)
+                   v = dutWrapper.requestSize;
+               if (addr == 12'h00C)
+                   v = dutWrapper.responseSize;
+               if (addr == 12'h010)
+                   v = dutWrapper.reqCount;
+               if (addr == 12'h014)
+                   v = dutWrapper.respCount;
+               if (addr == 12'h018)
+                   v = underflowCount;
+               if (addr == 12'h01C)
+                   v = overflowCount;
+               if (addr == 12'h020)
+                   v = (32'h68470000
+                        | (responseFifo.notFull ? 32'h20 : 0) | (responseFifo.notEmpty ? 32'h10 : 0)
+                        | (requestFifo.notFull ? 32'h02 : 0) | (requestFifo.notEmpty ? 32'h01 : 0));
+               if (addr == 12'h024)
+                   v = putWordCount;
+               if (addr == 12'h028)
+                   v = getWordCount;
+               if (addr == 12'h02C)
+                   v = word0Put;
+               if (addr == 12'h030)
+                   v = word1Put;
+               if (addr == 12'h034)
+                   v = dutWrapper.junkReqCount;
+               if (addr == 12'h038)
+                   v = dutWrapper.blockedRequestsDiscardedCount;
+               if (addr == 12'h03C)
+                   v = dutWrapper.blockedResponsesDiscardedCount;
+               return v;
+           endmethod
+       endinterface
    endinterface
 
-   interface IpSlave fifo;
-       method Action put(Bit#(12) addr, Bit#(32) v);
-           word0Put <= word1Put;
-           word1Put <= v;
-           if (requestFifo.notFull)
-           begin
-               putWordCount <= putWordCount + 1;
-               requestFifo.enq(v);
-           end
-           else
-           begin
-               overflowCount <= overflowCount + 1;
-           end
-       endmethod
+   interface AxiSlave fifo;
+       interface AxiSlaveWrite write;
+           method Action writeAddr(Bit#(32) addr, Bit#(8) burstLen, Bit#(3) burstWidth,
+                                   Bit#(2) burstType, Bit#(3) burstProt, Bit#(4) burstCache)
+                         if (fifoWriteBurstCountReg == 0);
+               fifoWriteBurstCountReg <= burstLen + 1;
+               fifoWriteAddrReg <= truncate(addr);
+           endmethod
+           method Action writeData(Bit#(32) v, Bit#(4) byteEnable, Bit#(1) last)
+                         if (fifoWriteBurstCountReg > 0);
+               let addr = fifoWriteAddrReg;
+               fifoWriteAddrReg <= fifoWriteAddrReg + 12'd4;
+               fifoWriteBurstCountReg <= fifoWriteBurstCountReg - 1;
 
-       method ActionValue#(Bit#(32)) get(Bit#(12) addr);
-           let v = 32'h050a050a;
-           if (responseFifo.notEmpty)
-           begin
-               let r = responseFifo.first(); 
-               if (r matches tagged Valid .b) begin
-                   v = b;
-                   responseFifo.deq;
-                   getWordCount <= getWordCount + 1;
+               word0Put <= word1Put;
+               word1Put <= v;
+               if (requestFifo.notFull)
+               begin
+                   putWordCount <= putWordCount + 1;
+                   requestFifo.enq(v);
                end
-           end
-           else
-           begin
-               underflowCount <= underflowCount + 1;
-           end
-           return v;
-       endmethod
+               else
+               begin
+                   overflowCount <= overflowCount + 1;
+               end
+               fifoBrespFifo.enq(0);
+           endmethod
+           method ActionValue#(Bit#(2)) writeResponse();
+               fifoBrespFifo.deq;
+               return fifoBrespFifo.first;
+           endmethod
+       endinterface
+       interface AxiSlaveRead read;
+           method Action readAddr(Bit#(32) addr, Bit#(8) burstLen, Bit#(3) burstWidth,
+                                  Bit#(2) burstType, Bit#(3) burstProt, Bit#(4) burstCache)
+                         if (fifoReadBurstCountReg == 0);
+               fifoReadBurstCountReg <= burstLen + 1;
+               fifoReadAddrReg <= truncate(addr);
+           endmethod
+           method Bit#(1) last();
+               return (fifoReadBurstCountReg == 1) ? 1 : 0;
+           endmethod
+           method ActionValue#(Bit#(32)) readData()
+                         if (fifoReadBurstCountReg > 0);
+               let addr = fifoReadAddrReg;
+               fifoReadAddrReg <= fifoReadAddrReg + 12'd4;
+               fifoReadBurstCountReg <= fifoReadBurstCountReg - 1;
+               let v = 32'h050a050a;
+               if (responseFifo.notEmpty)
+               begin
+                   let r = responseFifo.first(); 
+                   if (r matches tagged Valid .b) begin
+                       v = b;
+                       responseFifo.deq;
+                       getWordCount <= getWordCount + 1;
+                   end
+               end
+               else
+               begin
+                   underflowCount <= underflowCount + 1;
+               end
+               return v;
+           endmethod
+       endinterface
    endinterface
 
    method Bit#(1) error();

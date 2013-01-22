@@ -23,6 +23,7 @@
 
 import RegFile::*;
 import BRAMFIFO::*;
+import FIFO::*;
 import FIFOF::*;
 import FIFOLevel::*;
 import SpecialFIFOs::*;
@@ -63,14 +64,16 @@ interface AxiSlaveRead#(type busWidth, type busWidthBytes);
    method Action readAddr(Bit#(32) addr, Bit#(8) burstLen, Bit#(3) burstWidth,
                           Bit#(2) burstType, Bit#(3) burstProt, Bit#(4) burstCache);
 
-   method ActionValue#(Bit#(busWidth)) readData(Bit#(busWidthBytes) byteEnable, Bit#(1) last);
+   method ActionValue#(Bit#(busWidth)) readData();
+   method Bit#(1) last();
    // method Action readResponse(Bit#(2) responseCode);
 endinterface
 
 interface AxiSlaveWrite#(type busWidth, type busWidthBytes);
    method Action writeAddr(Bit#(32) addr, Bit#(8) burstLen, Bit#(3) burstWidth,
                            Bit#(2) burstType, Bit#(3) burstProt, Bit#(4) burstCache);
-   method ActionValue#(Bit#(2)) writeData(Bit#(busWidth) data, Bit#(busWidthBytes) byteEnable, Bit#(1) last);
+   method Action writeData(Bit#(busWidth) data, Bit#(busWidthBytes) byteEnable, Bit#(1) last);
+   method ActionValue#(Bit#(2)) writeResponse();
 endinterface
 
 interface AxiSlave#(type busWidth, type busWidthBytes);
@@ -318,6 +321,7 @@ module mkAxiSlaveFromRegFile#(RegFile#(Bit#(21), Bit#(busWidth)) rf)
     Reg#(Bit#(21)) writeAddrReg <- mkReg(0);
     Reg#(Bit#(8)) readBurstCountReg <- mkReg(0);
     Reg#(Bit#(8)) writeBurstCountReg <- mkReg(0);
+    FIFO#(Bit#(2)) writeRespFifo <- mkFIFO();
 
     Bool verbose = False;
     interface AxiSlaveRead read;
@@ -328,12 +332,15 @@ module mkAxiSlaveFromRegFile#(RegFile#(Bit#(21), Bit#(busWidth)) rf)
             readBurstCountReg <= burstLen+1;
         endmethod
 
-        method ActionValue#(Bit#(busWidth)) readData(Bit#(busWidthBytes) byteEnable, Bit#(1) last) if (readBurstCountReg > 0);
+        method ActionValue#(Bit#(busWidth)) readData() if (readBurstCountReg > 0);
             let data = rf.sub(readAddrReg);
             if (verbose) $display("axiSlave.read.readData %h %h %d", readAddrReg, data, readBurstCountReg);
             readBurstCountReg <= readBurstCountReg - 1;
             readAddrReg <= readAddrReg + 1;
             return data;
+        endmethod
+        method Bit#(1) last();
+            return (readBurstCountReg == 1) ? 1 : 0;
         endmethod
     endinterface
 
@@ -345,13 +352,18 @@ module mkAxiSlaveFromRegFile#(RegFile#(Bit#(21), Bit#(busWidth)) rf)
            writeBurstCountReg <= burstLen+1;
        endmethod
 
-       method ActionValue#(Bit#(2)) writeData(Bit#(busWidth) data, Bit#(busWidthBytes) byteEnable, Bit#(1) last) if (writeBurstCountReg > 0);
+       method Action writeData(Bit#(busWidth) data, Bit#(busWidthBytes) byteEnable, Bit#(1) last) if (writeBurstCountReg > 0);
            if (verbose) $display("writeData %h %h %d", writeAddrReg, data, writeBurstCountReg);
            rf.upd(writeAddrReg, data);
            writeAddrReg <= writeAddrReg + 1;
            writeBurstCountReg <= writeBurstCountReg - 1;
             if (verbose) $display("axiSlave.write.writeData %h %h %d", writeAddrReg, data, writeBurstCountReg);
-           return 2'b00;
+           if (writeBurstCountReg == 1)
+               writeRespFifo.enq(0);
+       endmethod
+       method ActionValue#(Bit#(2)) writeResponse();
+           writeRespFifo.deq;
+           return writeRespFifo.first;
        endmethod
     endinterface
 endmodule
@@ -386,7 +398,7 @@ module mkMasterSlaveConnection#(AxiMasterWrite#(busWidth, busWidthBytes) axiw,
 	if (verbose) $display("        MasterSlaveConnection.readAddr %h %d", addr, burstLen+1);
     endrule
     rule readData;
-        let data <- axiSlave.read.readData(maxBound, 0);
+        let data <- axiSlave.read.readData();
         axir.readData(data, 2'b00, 0, 0);
         if (verbose) $display("        MasterSlaveConnection.readData %h", data);
     endrule
@@ -404,8 +416,11 @@ module mkMasterSlaveConnection#(AxiMasterWrite#(busWidth, busWidthBytes) axiw,
         let data <- axiw.writeData;
         let byteEnable = axiw.writeDataByteEnable;
         let last = axiw.writeLastDataBeat;
-        let response <- axiSlave.write.writeData(data, byteEnable, last);
-        axiw.writeResponse(response, 0);
+        axiSlave.write.writeData(data, byteEnable, last);
         if (verbose) $display("        MasterSlaveConnection.writeData %h", data);
+    endrule
+    rule writeResponse;
+        let response <- axiSlave.write.writeResponse();
+        axiw.writeResponse(response, 0);
     endrule
 endmodule
