@@ -81,9 +81,11 @@ interface AxiSlave#(type busWidth, type busWidthBytes);
    interface AxiSlaveWrite#(busWidth, busWidthBytes) write;
 endinterface
 
-interface AxiMasterServer#(type busWidth, type busWidthBytes);
+interface AxiMasterServer#(type busWidth, type busWidthBytes, type tagSize);
    method Action readAddr(Bit#(32) addr, Bit#(8) numWords);
+   method Action readAddrTagged(Bit#(32) addr, Bit#(8) numWords, Bit#(tagSize) tag);
    method ActionValue#(Bit#(busWidth)) readData();
+   method Bit#(tagSize) readTag();
 
    method Action writeAddr(Bit#(32) addr, Bit#(8) numWords);
    method Action writeData(Bit#(busWidth) data);
@@ -97,7 +99,7 @@ typedef struct {
     Bit#(8) numWords;
 } AddrBurst deriving (Bits);
 
-module mkAxiMasterServer(AxiMasterServer#(busWidth,busWidthBytes)) provisos(Div#(busWidth,8,busWidthBytes),Add#(1,a,busWidth));
+module mkAxiMasterServer(AxiMasterServer#(busWidth,busWidthBytes,tagSize)) provisos(Div#(busWidth,8,busWidthBytes),Add#(1,a,busWidth));
    Reg#(Bit#(32)) wAddrReg <- mkReg(0);
    Reg#(Bit#(1)) writeIdReg <- mkReg(0);
    Reg#(Bit#(1)) readIdReg <- mkReg(0);
@@ -107,6 +109,7 @@ module mkAxiMasterServer(AxiMasterServer#(busWidth,busWidthBytes)) provisos(Div#
    Reg#(Bool) wAddressPresented <- mkReg(False);
 
    FIFOF#(AddrBurst) raddrFifo <- mkSizedBypassFIFOF(4);
+   FIFOF#(Bit#(tagSize)) tagFifo <- mkSizedFIFOF(4);
    //FIFOF#(AddrBurst) raddrFifo <- mkSizedBRAMFIFOF(8);
    let rfifoDepth = 1024;
    FIFOF#(Bit#(busWidth)) rfifo <- mkSizedBRAMFIFOF(rfifoDepth);
@@ -127,13 +130,25 @@ module mkAxiMasterServer(AxiMasterServer#(busWidth,busWidthBytes)) provisos(Div#
    method Action readAddr(Bit#(32) addr, Bit#(8) numWords);
        //$display("readAddr addr %h burstCountReg %d", addr, numWords);
        raddrFifo.enq(AddrBurst { addr: addr, numWords: numWords});
+       tagFifo.enq(0);
+   endmethod
+
+   method Action readAddrTagged(Bit#(32) addr, Bit#(8) numWords, Bit#(tagSize) tag);
+       //$display("readAddr addr %h burstCountReg %d", addr, numWords);
+       raddrFifo.enq(AddrBurst { addr: addr, numWords: numWords});
+       tagFifo.enq(tag);
    endmethod
 
    method ActionValue#(Bit#(busWidth)) readData() if (rfifo.notEmpty);
        //$display("axiMaster.readData %h", rfifo.first);
        deqPulse.send;
        rfifo.deq;
+       tagFifo.deq;
        return rfifo.first;
+   endmethod
+
+   method Bit#(tagSize) readTag();
+       return tagFifo.first;
    endmethod
 
    method Action writeAddr(Bit#(32) addr, Bit#(8) numWords) if (wBurstCountReg == 0);
@@ -315,10 +330,11 @@ module mkNullAxiMaster(AxiMaster#(busWidth,busWidthBytes)) provisos(Div#(busWidt
    endinterface
 endmodule
 
-module mkAxiSlaveFromRegFile#(RegFile#(Bit#(21), Bit#(busWidth)) rf)
-                             (AxiSlave#(busWidth, busWidthBytes)) provisos(Div#(busWidth,8,busWidthBytes));
-    Reg#(Bit#(21)) readAddrReg <- mkReg(0);
-    Reg#(Bit#(21)) writeAddrReg <- mkReg(0);
+module mkAxiSlaveFromRegFile#(RegFile#(Bit#(regFileBusWidth), Bit#(busWidth)) rf)
+                             (AxiSlave#(busWidth, busWidthBytes)) provisos(Div#(busWidth,8,busWidthBytes),
+                                                                           Add#(nz, regFileBusWidth, 32));
+    Reg#(Bit#(regFileBusWidth)) readAddrReg <- mkReg(0);
+    Reg#(Bit#(regFileBusWidth)) writeAddrReg <- mkReg(0);
     Reg#(Bit#(8)) readBurstCountReg <- mkReg(0);
     Reg#(Bit#(8)) writeBurstCountReg <- mkReg(0);
     FIFO#(Bit#(2)) writeRespFifo <- mkFIFO();
@@ -327,8 +343,8 @@ module mkAxiSlaveFromRegFile#(RegFile#(Bit#(21), Bit#(busWidth)) rf)
     interface AxiSlaveRead read;
         method Action readAddr(Bit#(32) addr, Bit#(8) burstLen, Bit#(3) burstWidth,
                                Bit#(2) burstType, Bit#(3) burstProt, Bit#(4) burstCache) if (readBurstCountReg == 0);
-            if (verbose) $display("axiSlave.read.readAddr %h bc %d", addr, burstLen+1);			       
-            readAddrReg <= truncate(addr/fromInteger(valueOf(busWidthBytes)));                               
+            if (verbose) $display("axiSlave.read.readAddr %h bc %d", addr, burstLen+1);
+            readAddrReg <= truncate(addr/fromInteger(valueOf(busWidthBytes)));
             readBurstCountReg <= burstLen+1;
         endmethod
 

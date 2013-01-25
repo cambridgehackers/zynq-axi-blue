@@ -54,7 +54,7 @@ module mkFrameBuffer(FrameBuffer);
     Reg#(Bit#(12)) pixelCountReg <- mkReg(0);
     Reg#(Bit#(11)) lineCountReg <- mkReg(0);
     
-    AxiMasterServer#(64,8) axiMaster <- mkAxiMasterServer;
+    AxiMasterServer#(64,8,1) axiMaster <- mkAxiMasterServer;
 
     let burstCount = 32;
     let bytesPerWord = 8;
