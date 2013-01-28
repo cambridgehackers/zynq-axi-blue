@@ -44,9 +44,6 @@ interface DUT;
     method ActionValue#(Bit#(96)) translationTableEntry();
     method ActionValue#(Bit#(96)) fbReading();
 
-    interface AxiMasterWrite#(64,8) axiw0;
-    interface AxiMasterRead#(64) axir0;
-    interface AxiMasterWrite#(64,8) axiw1;
-    interface AxiMasterRead#(64) axir1;
+    interface AxiMaster#(64,8) axihp0;
     interface HDMI hdmi;
 endinterface

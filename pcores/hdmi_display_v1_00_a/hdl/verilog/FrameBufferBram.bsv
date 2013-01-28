@@ -40,8 +40,7 @@ interface FrameBufferBram;
     method Action startLine();
     method Action setSgEntry(Bit#(8) index, Bit#(24) startingOffset, Bit#(20) address, Bit#(20) length);
     method ActionValue#(Bit#(96)) reading();
-    interface AxiMasterRead#(64) axir;
-    interface AxiMasterWrite#(64,8) axiw;
+    interface AxiMaster#(64,8) axi;
     interface BRAM#(Bit#(12), Bit#(64)) buffer;
 endinterface
 
@@ -220,48 +219,50 @@ module mkFrameBufferBram#(Clock displayClk, Reset displayRst)(FrameBufferBram);
         end
     endmethod
 
-   interface AxiMasterRead axir;
-       method ActionValue#(Bit#(32)) readAddr() if (runningReg
-                                                    && readAddrReg != 24'hFFFFFF
-                                                    && readAddrReg < readLimitReg
-                                                    && readAddrReg <= segmentLimitReg
-                                                    );
-           Bit#(32) addr = extend(readAddrReg) + segmentOffsetReg;
-           // $display("readAddr %h %h", readAddrReg, addr);
-           readAddrReg <= readAddrReg + burstCount*bytesPerWord;
-           return addr;
-       endmethod
-       method Bit#(8) readBurstLen();
-           return burstCount-1;
-       endmethod
-       method Bit#(3) readBurstWidth();
-           if (busWidth == 32)
-               return 3'b010; // 3'b010: 32bit, 3'b011: 64bit, 3'b100: 128bit
-           else if (busWidth == 64)
-               return 3'b011;
-           else
-               return 3'b100;
-       endmethod
-       method Bit#(2) readBurstType();  // drive with 2'b01
-           return 2'b01;
-       endmethod
-       method Bit#(3) readBurstProt(); // drive with 3'b000
-           return 3'b000;
-       endmethod
-       method Bit#(4) readBurstCache(); // drive with 4'b0011
-           return 4'b0011;
-       endmethod
-       method Bit#(1) readId();
-           return 0;
-       endmethod
-       method Action readData(Bit#(64) data, Bit#(2) resp, Bit#(1) last, Bit#(1) id);
-           let newPixelCount = pixelCountReg2 + pixelsPerWord;
-           pixelCountReg2 <= newPixelCount;
+   interface AxiMaster axi;
+       interface AxiMasterRead read;
+           method ActionValue#(Bit#(32)) readAddr() if (runningReg
+                                                        && readAddrReg != 24'hFFFFFF
+                                                        && readAddrReg < readLimitReg
+                                                        && readAddrReg <= segmentLimitReg
+                                                        );
+               Bit#(32) addr = extend(readAddrReg) + segmentOffsetReg;
+               // $display("readAddr %h %h", readAddrReg, addr);
+               readAddrReg <= readAddrReg + burstCount*bytesPerWord;
+               return addr;
+           endmethod
+           method Bit#(8) readBurstLen();
+               return burstCount-1;
+           endmethod
+           method Bit#(3) readBurstWidth();
+               if (busWidth == 32)
+                   return 3'b010; // 3'b010: 32bit, 3'b011: 64bit, 3'b100: 128bit
+               else if (busWidth == 64)
+                   return 3'b011;
+               else
+                   return 3'b100;
+           endmethod
+           method Bit#(2) readBurstType();  // drive with 2'b01
+               return 2'b01;
+           endmethod
+           method Bit#(3) readBurstProt(); // drive with 3'b000
+               return 3'b000;
+           endmethod
+           method Bit#(4) readBurstCache(); // drive with 4'b0011
+               return 4'b0011;
+           endmethod
+           method Bit#(1) readId();
+               return 0;
+           endmethod
+           method Action readData(Bit#(64) data, Bit#(2) resp, Bit#(1) last, Bit#(1) id);
+               let newPixelCount = pixelCountReg2 + pixelsPerWord;
+               pixelCountReg2 <= newPixelCount;
 
-           syncBRAM.portB.write(pixelCountReg2 / pixelsPerWord, data);
-       endmethod
+               syncBRAM.portB.write(pixelCountReg2 / pixelsPerWord, data);
+           endmethod
+       endinterface
+
+       interface AxiMasterWrite write = nullAxiMaster.write;
    endinterface
-
-   interface AxiMasterWrite axiw = nullAxiMaster.write;
    interface NrccBRAM buffer = syncBRAM.portA;
 endmodule

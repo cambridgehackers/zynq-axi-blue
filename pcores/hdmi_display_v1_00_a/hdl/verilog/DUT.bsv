@@ -173,7 +173,6 @@ module mkDUT#(Clock hdmi_clk)(DUT);
         return v;
     endmethod
 
-    interface AxiMasterWrite axiw0 = frameBuffer.axiw;
-    interface AxiMasterWrite axir0 = frameBuffer.axir;
+    interface AxiMaster axihp0 = frameBuffer.axi;
     interface HDMI hdmi = hdmiTpg.hdmi;
 endmodule

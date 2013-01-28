@@ -62,15 +62,8 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 
-library proc_common_v3_00_a;
-use proc_common_v3_00_a.proc_common_pkg.all;
-use proc_common_v3_00_a.ipif_pkg.all;
-
-library axi_slave_burst_v1_00_a;
-use axi_slave_burst_v1_00_a.axi_slave_burst;
-
-library hdmi_display_v1_00_a;
-use hdmi_display_v1_00_a.user_logic;
+Library UNISIM;
+use UNISIM.vcomponents.all;
 
 entity hdmi_display is
   generic
@@ -222,161 +215,571 @@ end entity hdmi_display;
 
 architecture IMP of hdmi_display is
 
-  constant USER_SLV_DWIDTH                : integer              := C_S_AXI_DATA_WIDTH;
+  signal mem0_araddr_matches : boolean;
+  signal mem1_araddr_matches : boolean;
+  signal mem0_awaddr_matches : boolean;
+  signal mem1_awaddr_matches : boolean;
 
-  constant IPIF_SLV_DWIDTH                : integer              := C_S_AXI_DATA_WIDTH;
+  signal ctrl_read_readData : std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
+  signal fifo_read_readData : std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
+  signal ctrl_write_writeResponse : std_logic_vector(1 downto 0);
+  signal fifo_write_writeResponse : std_logic_vector(1 downto 0);
 
-  constant ZERO_ADDR_PAD                  : std_logic_vector(0 to 31) := (others => '0');
+  signal rdy_writeAddr : std_logic;
+  signal rdy_writeData : std_logic;
 
-  constant IPIF_ARD_ADDR_RANGE_ARRAY      : SLV64_ARRAY_TYPE     := 
-    (
-      ZERO_ADDR_PAD & C_S_AXI_MEM0_BASEADDR,-- user logic memory space 0 base address
-      ZERO_ADDR_PAD & C_S_AXI_MEM0_HIGHADDR, -- user logic memory space 0 high address
-      ZERO_ADDR_PAD & C_S_AXI_MEM1_BASEADDR,-- user logic memory space 0 base address
-      ZERO_ADDR_PAD & C_S_AXI_MEM1_HIGHADDR -- user logic memory space 0 high address
-    );
+  signal EN_ctrl_read_readAddr : std_logic;
+  signal RDY_ctrl_read_readAddr : std_logic;
+  signal EN_ctrl_read_readData : std_logic;
+  signal RDY_ctrl_read_readData : std_logic;
+  signal EN_ctrl_write_writeAddr : std_logic;
+  signal RDY_ctrl_write_writeAddr : std_logic;
+  signal EN_ctrl_write_writeData : std_logic;
+  signal RDY_ctrl_write_writeData : std_logic;
+  signal EN_ctrl_write_writeResponse : std_logic;
+  signal RDY_ctrl_write_writeResponse : std_logic;
+  signal ctrl_read_last : std_logic;
 
-  constant USER_NUM_MEM                   : integer              := 2;
+  signal EN_fifo_read_readAddr : std_logic;
+  signal RDY_fifo_read_readAddr : std_logic;
+  signal EN_fifo_read_readData : std_logic;
+  signal RDY_fifo_read_readData : std_logic;
+  signal EN_fifo_write_writeAddr : std_logic;
+  signal RDY_fifo_write_writeAddr : std_logic;
+  signal EN_fifo_write_writeData : std_logic;
+  signal RDY_fifo_write_writeData : std_logic;
+  signal EN_fifo_write_writeResponse : std_logic;
+  signal RDY_fifo_write_writeResponse : std_logic;
+  signal fifo_read_last : std_logic;
 
-  constant IPIF_ARD_NUM_CE_ARRAY          : INTEGER_ARRAY_TYPE   := 
-    (
-      0  => 1,                            -- number of ce for user logic memory space 0 (always 1 chip enable)
-      1  => 1                             -- number of ce for user logic memory space 1 (always 1 chip enable)
-    );
+  signal RDY_axihp0_write_writeAddr : std_logic;
+  signal RDY_axihp0_write_writeData : std_logic;
+  signal RDY_axihp0_write_writeResponse : std_logic;
+  signal RDY_axihp0_read_readAddr : std_logic;
+  signal RDY_axihp0_read_readData : std_logic;
+  signal WILL_FIRE_axihp0_write_writeAddr : std_logic;
+  signal WILL_FIRE_axihp0_write_writeData : std_logic;
+  signal WILL_FIRE_axihp0_write_writeResponse : std_logic;
+  signal WILL_FIRE_axihp0_read_readAddr : std_logic;
+  signal WILL_FIRE_axihp0_read_readData : std_logic;
 
-  ------------------------------------------
-  -- Width of the slave address bus (32 only)
-  ------------------------------------------
-  constant USER_SLV_AWIDTH                : integer              := C_S_AXI_ADDR_WIDTH;
+  signal RDY_axihp1_writeAddr : std_logic;
+  signal RDY_axihp1_writeData : std_logic;
+  signal RDY_axihp1_writeResponse : std_logic;
+  signal RDY_axihp1_readAddr : std_logic;
+  signal RDY_axihp1_readData : std_logic;
+  signal WILL_FIRE_axihp1_writeAddr : std_logic;
+  signal WILL_FIRE_axihp1_writeData : std_logic;
+  signal WILL_FIRE_axihp1_writeResponse : std_logic;
+  signal WILL_FIRE_axihp1_readAddr : std_logic;
+  signal WILL_FIRE_axihp1_readData : std_logic;
 
-  ------------------------------------------
-  -- Index for CS/CE
-  ------------------------------------------
-  constant USER_MEM0_CS_INDEX             : integer              := 0;
-
-  constant USER_CS_INDEX                  : integer              := USER_MEM0_CS_INDEX;
+  signal hdmi_vsync_unbuf, hdmi_hsync_unbuf, hdmi_de_unbuf : std_logic;
+  signal hdmi_data_unbuf : std_logic_vector(15 downto 0);
+  signal usr_clk : std_logic;
+  attribute SIGIS of usr_clk      : signal is "CLK";
 
 begin
 
+  --USER logic implementation added here
+
   ------------------------------------------
-  -- instantiate User Logic
+  -- Example code to access user logic memory region
+  -- 
+  -- Note:
+  -- The example code presented here is to show you one way of using
+  -- the user logic memory space features. The Bus2IP_Addr, Bus2IP_CS,
+  -- and Bus2IP_RNW IPIC signals are dedicated to these user logic
+  -- memory spaces. Each user logic memory space has its own address
+  -- range and is allocated one bit on the Bus2IP_CS signal to indicated
+  -- selection of that memory space. Typically these user logic memory
+  -- spaces are used to implement memory controller type cores, but it
+  -- can also be used in cores that need to access additional address space
+  -- (non C_BASEADDR based), s.t. bridges. This code snippet infers
+  -- 1 256x32-bit (byte accessible) single-port Block RAM by XST.
   ------------------------------------------
-  USER_LOGIC_I : entity hdmi_display_v1_00_a.user_logic
-    generic map
-    (
-      -- MAP USER GENERICS BELOW THIS LINE ---------------
-      --USER generics mapped here
-      C_M_AXI0_ADDR_WIDTH => C_M_AXI0_ADDR_WIDTH,
-      C_M_AXI0_DATA_WIDTH => C_M_AXI0_DATA_WIDTH,
-      C_M_AXI0_ID_WIDTH => C_M_AXI0_ID_WIDTH,
-      -- MAP USER GENERICS ABOVE THIS LINE ---------------
 
-      C_S_AXI_DATA_WIDTH => C_S_AXI_DATA_WIDTH,
-      C_S_AXI_ADDR_WIDTH => C_S_AXI_ADDR_WIDTH,
-      C_S_AXI_ID_WIDTH => C_S_AXI_ID_WIDTH,
-      C_S_AXI_MEM0_BASEADDR => C_S_AXI_MEM0_BASEADDR,
-      C_S_AXI_MEM0_HIGHADDR => C_S_AXI_MEM0_HIGHADDR,
-      C_S_AXI_MEM1_BASEADDR => C_S_AXI_MEM1_BASEADDR,
-      C_S_AXI_MEM1_HIGHADDR => C_S_AXI_MEM1_HIGHADDR,
-      C_NUM_MEM                      => USER_NUM_MEM
-    )
-    port map
-    (
-      -- MAP USER PORTS BELOW THIS LINE ------------------
-      interrupt                     => interrupt,
+  ------------------------------------------
+  -- Example code to drive IP to Bus signals
+  ------------------------------------------
+  DUT : entity mkDUTWrapper
+    port map (
+      CLK_hdmi_clk => usr_clk,
+      CLK => S_AXI_ACLK,
+      RST_N  => S_AXI_ARESETN,
 
-      md_error				=> md_error,
+      ctrl_read_readAddr_addr => S_AXI_ARADDR,
+      ctrl_read_readAddr_burstLen => S_AXI_ARLEN,
+      ctrl_read_readAddr_burstWidth => S_AXI_ARSIZE,
+      ctrl_read_readAddr_burstType => S_AXI_ARBURST,
+      ctrl_read_readAddr_burstProt => S_AXI_ARPROT,
+      ctrl_read_readAddr_burstCache => S_AXI_ARCACHE,
+      EN_ctrl_read_readAddr => EN_ctrl_read_readAddr,
+      RDY_ctrl_read_readAddr => RDY_ctrl_read_readAddr,
 
-      m_axi0_aclk			=> m_axi0_aclk,
-      m_axi0_aresetn 			=> m_axi0_aresetn,
-      m_axi0_arready			=> m_axi0_arready,
-      m_axi0_arvalid			=> m_axi0_arvalid,
-      m_axi0_arid			=> m_axi0_arid,
-      m_axi0_araddr			=> m_axi0_araddr,
-      m_axi0_arlen			=> m_axi0_arlen,
-      m_axi0_arsize			=> m_axi0_arsize,
-      m_axi0_arburst			=> m_axi0_arburst,
-      m_axi0_arprot			=> m_axi0_arprot,
-      m_axi0_arcache			=> m_axi0_arcache,
-      m_axi0_rready			=> m_axi0_rready,
-      m_axi0_rvalid			=> m_axi0_rvalid,
-      m_axi0_rid			=> m_axi0_rid,
-      m_axi0_rdata			=> m_axi0_rdata,
-      m_axi0_rresp			=> m_axi0_rresp,
-      m_axi0_rlast			=> m_axi0_rlast,
-      m_axi0_awready			=> m_axi0_awready,
-      m_axi0_awvalid			=> m_axi0_awvalid,
-      m_axi0_awid			=> m_axi0_awid,
-      m_axi0_awaddr			=> m_axi0_awaddr,
-      m_axi0_awlen			=> m_axi0_awlen,
-      m_axi0_awsize			=> m_axi0_awsize,
-      m_axi0_awburst			=> m_axi0_awburst,
-      m_axi0_awprot			=> m_axi0_awprot,
-      m_axi0_awcache			=> m_axi0_awcache,
-      m_axi0_wready			=> m_axi0_wready,
-      m_axi0_wvalid			=> m_axi0_wvalid,
-      m_axi0_wdata			=> m_axi0_wdata,
-      m_axi0_wstrb			=> m_axi0_wstrb,
-      m_axi0_wlast			=> m_axi0_wlast,
-      m_axi0_bready			=> m_axi0_bready,
-      m_axi0_bid			=> m_axi0_bid,
-      m_axi0_bvalid			=> m_axi0_bvalid,
-      m_axi0_bresp			=> m_axi0_bresp,
+      ctrl_read_last => ctrl_read_last,
+      EN_ctrl_read_readData => EN_ctrl_read_readData,
+      ctrl_read_readData => ctrl_read_readData,
+      RDY_ctrl_read_readData => RDY_ctrl_read_readData,
 
-      usr_clk_p => usr_clk_p,
-      usr_clk_n => usr_clk_n,
+      ctrl_write_writeAddr_addr => S_AXI_AWADDR,
+      ctrl_write_writeAddr_burstLen => S_AXI_AWLEN,
+      ctrl_write_writeAddr_burstWidth => S_AXI_AWSIZE,
+      ctrl_write_writeAddr_burstType => S_AXI_AWBURST,
+      ctrl_write_writeAddr_burstProt => S_AXI_AWPROT,
+      ctrl_write_writeAddr_burstCache => S_AXI_AWCACHE,
+      EN_ctrl_write_writeAddr => EN_ctrl_write_writeAddr,
+      RDY_ctrl_write_writeAddr => RDY_ctrl_write_writeAddr,
 
-      xadc_gpio_0 => xadc_gpio_0,
-      xadc_gpio_1 => xadc_gpio_1,
-      xadc_gpio_2 => xadc_gpio_2,
-      xadc_gpio_3 => xadc_gpio_3,
+      ctrl_write_writeData_data => S_AXI_WDATA,
+      ctrl_write_writeData_byteEnable => S_AXI_WSTRB,
+      ctrl_write_writeData_last => S_AXI_WLAST,
+      RDY_ctrl_write_writeData => RDY_ctrl_write_writeData,
+      EN_ctrl_write_writeData => EN_ctrl_write_writeData,
 
-      hdmi_ref_clk => hdmi_ref_clk,
-      hdmi_clk => hdmi_clk,
-      hdmi_vsync => hdmi_vsync,
-      hdmi_hsync => hdmi_hsync,
-      hdmi_de => hdmi_de,
-      hdmi_data => hdmi_data,
+      EN_ctrl_write_writeResponse => EN_ctrl_write_writeResponse,
+      RDY_ctrl_write_writeResponse => RDY_ctrl_write_writeResponse,
+      ctrl_write_writeResponse => ctrl_write_writeResponse,
 
-      -- MAP USER PORTS ABOVE THIS LINE ------------------
+      fifo_read_readAddr_addr => S_AXI_ARADDR,
+      fifo_read_readAddr_burstLen => S_AXI_ARLEN,
+      fifo_read_readAddr_burstWidth => S_AXI_ARSIZE,
+      fifo_read_readAddr_burstType => S_AXI_ARBURST,
+      fifo_read_readAddr_burstProt => S_AXI_ARPROT,
+      fifo_read_readAddr_burstCache => S_AXI_ARCACHE,
+      EN_fifo_read_readAddr => EN_fifo_read_readAddr,
+      RDY_fifo_read_readAddr => RDY_fifo_read_readAddr,
 
-      S_AXI_ACLK => S_AXI_ACLK,
-      S_AXI_ARESETN => S_AXI_ARESETN,
-      S_AXI_AWADDR => S_AXI_AWADDR,
-      S_AXI_AWVALID => S_AXI_AWVALID,
-      S_AXI_WDATA => S_AXI_WDATA,
-      S_AXI_WSTRB => S_AXI_WSTRB,
-      S_AXI_WVALID => S_AXI_WVALID,
-      S_AXI_BREADY => S_AXI_BREADY,
-      S_AXI_ARADDR => S_AXI_ARADDR,
-      S_AXI_ARVALID => S_AXI_ARVALID,
-      S_AXI_RREADY => S_AXI_RREADY,
-      S_AXI_ARREADY => S_AXI_ARREADY,
-      S_AXI_RDATA => S_AXI_RDATA,
-      S_AXI_RRESP => S_AXI_RRESP,
-      S_AXI_RVALID => S_AXI_RVALID,
-      S_AXI_WREADY => S_AXI_WREADY,
-      S_AXI_BRESP => S_AXI_BRESP,
-      S_AXI_BVALID => S_AXI_BVALID,
-      S_AXI_AWREADY => S_AXI_AWREADY,
-      S_AXI_AWID => S_AXI_AWID,
-      S_AXI_AWLEN => S_AXI_AWLEN,
-      S_AXI_AWSIZE => S_AXI_AWSIZE,
-      S_AXI_AWBURST => S_AXI_AWBURST,
-      S_AXI_AWLOCK => S_AXI_AWLOCK,
-      S_AXI_AWCACHE => S_AXI_AWCACHE,
-      S_AXI_AWPROT => S_AXI_AWPROT,
-      S_AXI_WLAST => S_AXI_WLAST,
-      S_AXI_BID => S_AXI_BID,
-      S_AXI_ARID => S_AXI_ARID,
-      S_AXI_ARLEN => S_AXI_ARLEN,
-      S_AXI_ARSIZE => S_AXI_ARSIZE,
-      S_AXI_ARBURST => S_AXI_ARBURST,
-      S_AXI_ARLOCK => S_AXI_ARLOCK,
-      S_AXI_ARCACHE => S_AXI_ARCACHE,
-      S_AXI_ARPROT => S_AXI_ARPROT,
-      S_AXI_RID => S_AXI_RID,
-      S_AXI_RLAST => S_AXI_RLAST
+      fifo_read_last => fifo_read_last,
+      EN_fifo_read_readData => EN_fifo_read_readData,
+      fifo_read_readData => fifo_read_readData,
+      RDY_fifo_read_readData => RDY_fifo_read_readData,
+
+      fifo_write_writeAddr_addr => S_AXI_AWADDR,
+      fifo_write_writeAddr_burstLen => S_AXI_AWLEN,
+      fifo_write_writeAddr_burstWidth => S_AXI_AWSIZE,
+      fifo_write_writeAddr_burstType => S_AXI_AWBURST,
+      fifo_write_writeAddr_burstProt => S_AXI_AWPROT,
+      fifo_write_writeAddr_burstCache => S_AXI_AWCACHE,
+      EN_fifo_write_writeAddr => EN_fifo_write_writeAddr,
+      RDY_fifo_write_writeAddr => RDY_fifo_write_writeAddr,
+
+      fifo_write_writeData_data => S_AXI_WDATA,
+      fifo_write_writeData_byteEnable => S_AXI_WSTRB,
+      fifo_write_writeData_last => S_AXI_WLAST,
+      EN_fifo_write_writeData => EN_fifo_write_writeData,
+      RDY_fifo_write_writeData => RDY_fifo_write_writeData,
+
+      EN_fifo_write_writeResponse => EN_fifo_write_writeResponse,
+      RDY_fifo_write_writeResponse => RDY_fifo_write_writeResponse,
+      fifo_write_writeResponse => fifo_write_writeResponse,
+
+      interrupt => interrupt,
+
+      EN_axihp0_write_writeAddr => WILL_FIRE_axihp0_write_writeAddr,
+      axihp0_write_writeAddr => m_axi0_awaddr,
+      axihp0_write_writeId => m_axi0_awid(0),
+      RDY_axihp0_write_writeAddr => RDY_axihp0_write_writeAddr,
+
+      axihp0_write_writeBurstLen => m_axi0_awlen,
+      -- RDY_axihp0_write_writeBurstLen,
+
+      axihp0_write_writeBurstWidth => m_axi0_awsize,
+      -- RDY_axihp0_write_writeBurstWidth,
+
+      axihp0_write_writeBurstType => m_axi0_awburst,
+      -- RDY_axihp0_write_writeBurstType,
+
+      axihp0_write_writeBurstProt => m_axi0_awprot,
+      -- RDY_axihp0_write_writeBurstProt,
+
+      axihp0_write_writeBurstCache => m_axi0_awcache,
+      -- RDY_axihp0_write_writeBurstCache,
+
+      EN_axihp0_write_writeData => WILL_FIRE_axihp0_write_writeData,
+      axihp0_write_writeData => m_axi0_wdata,
+      RDY_axihp0_write_writeData => RDY_axihp0_write_writeData,
+
+      axihp0_write_writeDataByteEnable => m_axi0_wstrb,
+      -- RDY_axihp0_write_writeDataByteEnable,
+
+      axihp0_write_writeLastDataBeat => m_axi0_wlast,
+      -- RDY_axihp0_write_writeLastDataBeat,
+
+      EN_axihp0_write_writeResponse => WILL_FIRE_axihp0_write_writeResponse,
+      axihp0_write_writeResponse_responseCode => m_axi0_bresp,
+      axihp0_write_writeResponse_id => m_axi0_bid(0),
+      RDY_axihp0_write_writeResponse => RDY_axihp0_write_writeResponse,
+
+      EN_axihp0_read_readAddr => WILL_FIRE_axihp0_read_readAddr,
+      axihp0_read_readId => m_axi0_arid(0),
+      axihp0_read_readAddr => m_axi0_araddr,
+      RDY_axihp0_read_readAddr => RDY_axihp0_read_readAddr,
+
+      axihp0_read_readBurstLen => m_axi0_arlen,
+      -- RDY_axihp0_read_readBurstLen,
+
+      axihp0_read_readBurstWidth => m_axi0_arsize,
+      -- RDY_axihp0_read_readBurstWidth,
+
+      axihp0_read_readBurstType => m_axi0_arburst,
+      -- RDY_axihp0_read_readBurstType,
+
+      axihp0_read_readBurstProt => m_axi0_arprot,
+      -- RDY_axihp0_read_readBurstProt,
+
+      axihp0_read_readBurstCache => m_axi0_arcache,
+      -- RDY_axihp0_read_readBurstCache,
+
+      axihp0_read_readData_data => m_axi0_rdata,
+      axihp0_read_readData_resp => m_axi0_rresp,
+      axihp0_read_readData_last => m_axi0_rlast,
+      axihp0_read_readData_id => m_axi0_rid(0),
+      EN_axihp0_read_readData => WILL_FIRE_axihp0_read_readData,
+      RDY_axihp0_read_readData => RDY_axihp0_read_readData,
+
+      hdmi_hdmi_vsync => hdmi_vsync_unbuf,
+      hdmi_hdmi_hsync => hdmi_hsync_unbuf,
+      hdmi_hdmi_de => hdmi_de_unbuf,
+      hdmi_hdmi_data => hdmi_data_unbuf
+      );
+
+    OBUF_clk : OBUF
+    generic map (
+    DRIVE => 12,
+    IOSTANDARD => "LVCMOS25",
+    SLEW => "SLOW")
+    port map (
+    O => hdmi_clk,
+    -- Buffer output (connect directly to top-level port)
+    I => usr_clk
+    -- Buffer input
     );
+    OBUF_hsync : OBUF
+    generic map (
+    DRIVE => 12,
+    IOSTANDARD => "LVCMOS25",
+    SLEW => "SLOW")
+    port map (
+    O => hdmi_hsync,
+    -- Buffer output (connect directly to top-level port)
+    I => hdmi_hsync_unbuf
+    -- Buffer input
+    );
+    OBUF_vsync : OBUF
+    generic map (
+    DRIVE => 12,
+    IOSTANDARD => "LVCMOS25",
+    SLEW => "SLOW")
+    port map (
+    O => hdmi_vsync,
+    -- Buffer output (connect directly to top-level port)
+    I => hdmi_vsync_unbuf
+    -- Buffer input
+    );
+    OBUF_de : OBUF
+    generic map (
+    DRIVE => 12,
+    IOSTANDARD => "LVCMOS25",
+    SLEW => "SLOW")
+    port map (
+    O => hdmi_de,
+    -- Buffer output (connect directly to top-level port)
+    I => hdmi_de_unbuf
+    -- Buffer input
+    );
+
+    OBUF_data_0 : OBUF
+    generic map (
+    DRIVE => 12,
+    IOSTANDARD => "LVCMOS25",
+    SLEW => "SLOW")
+    port map (
+    O => hdmi_data(0),
+    -- Buffer output (connect directly to top-level port)
+    I => hdmi_data_unbuf(0)
+    -- Buffer input
+    );
+    OBUF_data_1 : OBUF
+    generic map (
+    DRIVE => 12,
+    IOSTANDARD => "LVCMOS25",
+    SLEW => "SLOW")
+    port map (
+    O => hdmi_data(1),
+    -- Buffer output (connect directly to top-level port)
+    I => hdmi_data_unbuf(1)
+    -- Buffer input
+    );
+    OBUF_data_2 : OBUF
+    generic map (
+    DRIVE => 12,
+    IOSTANDARD => "LVCMOS25",
+    SLEW => "SLOW")
+    port map (
+    O => hdmi_data(2),
+    -- Buffer output (connect directly to top-level port)
+    I => hdmi_data_unbuf(2)
+    -- Buffer input
+    );
+    OBUF_data_3 : OBUF
+    generic map (
+    DRIVE => 12,
+    IOSTANDARD => "LVCMOS25",
+    SLEW => "SLOW")
+    port map (
+    O => hdmi_data(3),
+    -- Buffer output (connect directly to top-level port)
+    I => hdmi_data_unbuf(3)
+    -- Buffer input
+    );
+    OBUF_data_4 : OBUF
+    generic map (
+    DRIVE => 12,
+    IOSTANDARD => "LVCMOS25",
+    SLEW => "SLOW")
+    port map (
+    O => hdmi_data(4),
+    -- Buffer output (connect directly to top-level port)
+    I => hdmi_data_unbuf(4)
+    -- Buffer input
+    );
+    OBUF_data_5 : OBUF
+    generic map (
+    DRIVE => 12,
+    IOSTANDARD => "LVCMOS25",
+    SLEW => "SLOW")
+    port map (
+    O => hdmi_data(5),
+    -- Buffer output (connect directly to top-level port)
+    I => hdmi_data_unbuf(5)
+    -- Buffer input
+    );
+    OBUF_data_6 : OBUF
+    generic map (
+    DRIVE => 12,
+    IOSTANDARD => "LVCMOS25",
+    SLEW => "SLOW")
+    port map (
+    O => hdmi_data(6),
+    -- Buffer output (connect directly to top-level port)
+    I => hdmi_data_unbuf(6)
+    -- Buffer input
+    );
+    OBUF_data_7 : OBUF
+    generic map (
+    DRIVE => 12,
+    IOSTANDARD => "LVCMOS25",
+    SLEW => "SLOW")
+    port map (
+    O => hdmi_data(7),
+    -- Buffer output (connect directly to top-level port)
+    I => hdmi_data_unbuf(7)
+    -- Buffer input
+    );
+    OBUF_data_8 : OBUF
+    generic map (
+    DRIVE => 12,
+    IOSTANDARD => "LVCMOS25",
+    SLEW => "SLOW")
+    port map (
+    O => hdmi_data(8),
+    -- Buffer output (connect directly to top-level port)
+    I => hdmi_data_unbuf(8)
+    -- Buffer input
+    );
+    OBUF_data_9 : OBUF
+    generic map (
+    DRIVE => 12,
+    IOSTANDARD => "LVCMOS25",
+    SLEW => "SLOW")
+    port map (
+    O => hdmi_data(9),
+    -- Buffer output (connect directly to top-level port)
+    I => hdmi_data_unbuf(9)
+    -- Buffer input
+    );
+    OBUF_data_10 : OBUF
+    generic map (
+    DRIVE => 12,
+    IOSTANDARD => "LVCMOS25",
+    SLEW => "SLOW")
+    port map (
+    O => hdmi_data(10),
+    -- Buffer output (connect directly to top-level port)
+    I => hdmi_data_unbuf(10)
+    -- Buffer input
+    );
+    OBUF_data_11 : OBUF
+    generic map (
+    DRIVE => 12,
+    IOSTANDARD => "LVCMOS25",
+    SLEW => "SLOW")
+    port map (
+    O => hdmi_data(11),
+    -- Buffer output (connect directly to top-level port)
+    I => hdmi_data_unbuf(11)
+    -- Buffer input
+    );
+    OBUF_data_12 : OBUF
+    generic map (
+    DRIVE => 12,
+    IOSTANDARD => "LVCMOS25",
+    SLEW => "SLOW")
+    port map (
+    O => hdmi_data(12),
+    -- Buffer output (connect directly to top-level port)
+    I => hdmi_data_unbuf(12)
+    -- Buffer input
+    );
+    OBUF_data_13 : OBUF
+    generic map (
+    DRIVE => 12,
+    IOSTANDARD => "LVCMOS25",
+    SLEW => "SLOW")
+    port map (
+    O => hdmi_data(13),
+    -- Buffer output (connect directly to top-level port)
+    I => hdmi_data_unbuf(13)
+    -- Buffer input
+    );
+    OBUF_data_14 : OBUF
+    generic map (
+    DRIVE => 12,
+    IOSTANDARD => "LVCMOS25",
+    SLEW => "SLOW")
+    port map (
+    O => hdmi_data(14),
+    -- Buffer output (connect directly to top-level port)
+    I => hdmi_data_unbuf(14)
+    -- Buffer input
+    );
+    OBUF_data_15 : OBUF
+    generic map (
+    DRIVE => 12,
+    IOSTANDARD => "LVCMOS25",
+    SLEW => "SLOW")
+    port map (
+    O => hdmi_data(15),
+    -- Buffer output (connect directly to top-level port)
+    I => hdmi_data_unbuf(15)
+    -- Buffer input
+    );
+
+    IBUFGDS_ref_clk : IBUFGDS
+    generic map (
+    DIFF_TERM => FALSE, -- Differential Termination
+    IBUF_LOW_PWR => TRUE, -- Low power (TRUE) vs. performance (FALSE) setting for referenced I/O standards
+    IOSTANDARD => "DEFAULT")
+    port map (
+    O => usr_clk, -- Clock buffer output
+    I => usr_clk_p, -- Diff_p clock buffer input (connect directly to top-level port)
+    IB => usr_clk_n -- Diff_n clock buffer input (connect directly to top-level port)
+    );
+
+  -- mirror signals for logic analyzer
+    OBUF_vsync_mirror : OBUF
+    generic map (
+    DRIVE => 12,
+    IOSTANDARD => "LVCMOS25",
+    SLEW => "SLOW")
+    port map (
+    O => xadc_gpio_0,
+    -- Buffer output (connect directly to top-level port)
+    I => S_AXI_AWVALID -- hdmi_vsync_unbuf
+    -- Buffer input
+    );
+    OBUF_readAddr_mirror : OBUF
+    generic map (
+    DRIVE => 12,
+    IOSTANDARD => "LVCMOS25",
+    SLEW => "SLOW")
+    port map (
+    O => xadc_gpio_1,
+    -- Buffer output (connect directly to top-level port)
+    I => rdy_writeAddr -- WILL_FIRE_axihp0_read_readAddr
+    -- Buffer input
+    );
+    OBUF_readData_mirror : OBUF
+    generic map (
+    DRIVE => 12,
+    IOSTANDARD => "LVCMOS25",
+    SLEW => "SLOW")
+    port map (
+    O => xadc_gpio_2,
+    -- Buffer output (connect directly to top-level port)
+    I => rdy_writeData -- WILL_FIRE_axihp0_read_readData
+    -- Buffer input
+    );
+    OBUF_de_mirror : OBUF
+    generic map (
+    DRIVE => 12,
+    IOSTANDARD => "LVCMOS25",
+    SLEW => "SLOW")
+    port map (
+    O => xadc_gpio_3,
+    -- Buffer output (connect directly to top-level port)
+    I => S_AXI_WLAST -- hdmi_de_unbuf
+    -- Buffer input
+    );
+  
+  mem0_araddr_matches <= (S_AXI_ARADDR >= C_S_AXI_MEM0_BASEADDR and S_AXI_ARADDR <= C_S_AXI_MEM0_HIGHADDR);
+  mem1_araddr_matches <= (S_AXI_ARADDR >= C_S_AXI_MEM1_BASEADDR and S_AXI_ARADDR <= C_S_AXI_MEM1_HIGHADDR);
+  mem0_awaddr_matches <= (S_AXI_AWADDR >= C_S_AXI_MEM0_BASEADDR and S_AXI_AWADDR <= C_S_AXI_MEM0_HIGHADDR);
+  mem1_awaddr_matches <= (S_AXI_AWADDR >= C_S_AXI_MEM1_BASEADDR and S_AXI_AWADDR <= C_S_AXI_MEM1_HIGHADDR);
+
+  S_AXI_ARREADY  <= RDY_ctrl_read_readAddr when mem0_araddr_matches else
+                    RDY_fifo_read_readAddr when mem1_araddr_matches else
+                    '0';
+  S_AXI_RVALID <= EN_ctrl_read_readData or EN_fifo_read_readData;
+  S_AXI_RRESP  <= "00";
+
+  S_AXI_RDATA  <= ctrl_read_readData when EN_ctrl_read_readData = '1' else
+                  fifo_read_readData when EN_fifo_read_readData = '1' else
+                  (others => '0');
+  S_AXI_RLAST  <= ctrl_read_last when EN_ctrl_read_readData = '1' else
+                  fifo_read_last when EN_fifo_read_readData = '1' else
+                  '0';
+
+
+  S_AXI_RID <= (others => '0');
+  S_AXI_BID <= (others => '0');
+  rdy_writeAddr <= RDY_ctrl_write_writeAddr when mem0_awaddr_matches else
+                   RDY_fifo_write_writeAddr when mem1_awaddr_matches else
+                   '0';
+  S_AXI_AWREADY  <= rdy_writeAddr;
+
+  rdy_writeData  <= RDY_ctrl_write_writeData or RDY_fifo_write_writeData;
+  S_AXI_WREADY <= rdy_writeData;
+
+  S_AXI_BVALID  <= EN_ctrl_write_writeResponse or EN_fifo_write_writeResponse;
+  S_AXI_BRESP <= ctrl_write_writeResponse when EN_ctrl_write_writeResponse = '1' else
+                 fifo_write_writeResponse when EN_fifo_write_writeResponse = '1' else
+                 (others => '0');
+
+  -- scheduler
+  EN_ctrl_read_readAddr <= RDY_ctrl_read_readAddr and S_AXI_ARVALID when mem0_araddr_matches else '0';
+  EN_fifo_read_readAddr <= RDY_fifo_read_readAddr and S_AXI_ARVALID when mem1_araddr_matches else '0';
+  EN_ctrl_read_readData <= RDY_ctrl_read_readData and S_AXI_RREADY;
+  EN_fifo_read_readData <= RDY_fifo_read_readData and S_AXI_RREADY;
+
+  EN_ctrl_write_writeAddr <= RDY_ctrl_write_writeAddr and S_AXI_AWVALID when mem0_awaddr_matches else '0';
+  EN_fifo_write_writeAddr <= RDY_fifo_write_writeAddr and S_AXI_AWVALID when mem1_awaddr_matches else '0';
+  EN_ctrl_write_writeData <= RDY_ctrl_write_writeData and S_AXI_WVALID;
+  EN_fifo_write_writeData <= RDY_fifo_write_writeData and S_AXI_WVALID;
+  EN_ctrl_write_writeResponse <= RDY_ctrl_write_writeResponse and S_AXI_BREADY;
+  EN_fifo_write_writeResponse <= RDY_fifo_write_writeResponse and S_AXI_BREADY;
+
+  WILL_FIRE_axihp0_read_readAddr <= (m_axi0_arready and RDY_axihp0_read_readAddr);
+  WILL_FIRE_axihp0_read_readData <= (m_axi0_rvalid and RDY_axihp0_read_readData);
+  m_axi0_arvalid <= RDY_axihp0_read_readAddr;
+  m_axi0_rready <= RDY_axihp0_read_readData;
+
+  WILL_FIRE_axihp0_write_writeAddr <= (m_axi0_awready and RDY_axihp0_write_writeAddr);
+  WILL_FIRE_axihp0_write_writeData <= (m_axi0_wready and RDY_axihp0_write_writeData);
+  WILL_FIRE_axihp0_write_writeResponse <= (m_axi0_bvalid and RDY_axihp0_write_writeResponse);
+  m_axi0_awvalid <= RDY_axihp0_write_writeAddr;
+  m_axi0_wvalid <= RDY_axihp0_write_writeData;
+  m_axi0_bready <= RDY_axihp0_write_writeResponse;
 
 end IMP;
