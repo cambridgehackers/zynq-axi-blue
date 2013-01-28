@@ -143,8 +143,6 @@ CORE_STATE_DEVELOPMENT_FILES = /home/xilinx/14.3/ISE_DS/EDK/hw/XilinxProcessorIP
 /home/xilinx/14.3/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_master_burst_v1_00_a/hdl/vhdl/axi_master_burst_wr_llink.vhd \
 /home/xilinx/14.3/ISE_DS/EDK/hw/XilinxProcessorIPLib/pcores/axi_master_burst_v1_00_a/hdl/vhdl/axi_master_burst.vhd \
 pcores/hdmi_display_v1_00_a/hdl/vhdl/hdmi_display.vhd \
-pcores/hdmi_display_v1_00_a/hdl/vhdl/user_logic.vhd \
-pcores/hdmi_display_v1_00_a/hdl/verilog/mkIpSlaveWithMaster.v \
 pcores/hdmi_display_v1_00_a/hdl/verilog/mkFifoToAxi.v \
 pcores/hdmi_display_v1_00_a/hdl/verilog/BRAM2.v \
 pcores/hdmi_display_v1_00_a/hdl/verilog/RegFile.v \
