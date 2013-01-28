@@ -7,16 +7,9 @@ import AxiMasterSlave::*;
 import HDMI::*;
 import Clocks::*;
 import TypesAndInterfaces::*;
-import DUT::*;
+import Dut::*;
 
 
-interface DUTWrapper;
-   method Bit#(1) interrupt();
-   interface AxiSlave#(32, 4) ctrl;
-   interface AxiSlave#(32, 4) fifo;
-   interface AxiMaster#(64,8) axihp0;
-   interface HDMI hdmi;
-endinterface
 
 typedef union tagged {
 
@@ -78,12 +71,22 @@ typedef union tagged {
 
   Bit#(0) DutResponseUnused;
 } DutResponse deriving (Bits);
+
+interface DutWrapper;
+   method Bit#(1) interrupt();
+   interface AxiSlave#(32,4) ctrl;
+   interface AxiSlave#(32,4) fifo;
+
+    interface AxiMaster#(64,8) axihp0;
+    interface HDMI hdmi;
+endinterface
+
 typedef SizeOf#(DutRequest) DutRequestSize;
 typedef SizeOf#(DutResponse) DutResponseSize;
 
-module mkDUTWrapper#(Clock hdmi_clk)(DUTWrapper);
+module mkDutWrapper#(Clock hdmi_clk)(DutWrapper);
 
-    DUT dut <- mkDUT(hdmi_clk);
+    Dut dut <- mkDut(hdmi_clk);
     FromBit32#(DutRequest) requestFifo <- mkFromBit32();
     ToBit32#(DutResponse) responseFifo <- mkToBit32();
     Reg#(Bit#(32)) requestFired <- mkReg(0);
@@ -105,6 +108,12 @@ module mkDUTWrapper#(Clock hdmi_clk)(DUTWrapper);
     rule responseTimer if (!responseFifo.notFull);
         responseTimerReg <= responseTimerReg + 1;
     endrule
+
+    //rule handleJunkRequest if (pack(requestFifo.first)[4+32-1:32] > maxTag);
+    //    requestFifo.deq;
+    //    junkReqReg <= junkReqReg + 1;
+    //endrule
+
 
     rule handle$setPatternReg$request if (requestFifo.first matches tagged SetPatternReg$Request .sp);
         requestFifo.deq;
@@ -390,6 +399,7 @@ module mkDUTWrapper#(Clock hdmi_clk)(DUTWrapper);
         else
             return 1'd0;
     endmethod
+
 
     interface AxiMaster axihp0 = dut.axihp0;
     interface HDMI hdmi = dut.hdmi;

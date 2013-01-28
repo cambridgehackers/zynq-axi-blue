@@ -8,7 +8,7 @@ lib proc_common_v3_00_a  all
 lib axi_slave_burst_v1_00_a  all 
 lib axi_master_burst_v1_00_a  all 
 lib hdmi_display_v1_00_a hdmi_display vhdl
-lib hdmi_display_v1_00_a mkDUTWrapper verilog
+lib hdmi_display_v1_00_a mkDutWrapper verilog
 lib hdmi_display_v1_00_a BRAM2 verilog
 lib hdmi_display_v1_00_a RegFile verilog
 lib hdmi_display_v1_00_a FIFO1 verilog

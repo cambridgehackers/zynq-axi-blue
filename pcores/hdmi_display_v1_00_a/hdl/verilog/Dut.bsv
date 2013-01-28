@@ -45,7 +45,7 @@ function Put#(item_t) syncFifoToPut( SyncFIFOIfc#(item_t) f);
     );
 endfunction
 
-module mkDUT#(Clock hdmi_clk)(DUT);
+module mkDut#(Clock hdmi_clk)(Dut);
 
     let busWidthBytes=8;
 
@@ -66,9 +66,7 @@ module mkDUT#(Clock hdmi_clk)(DUT);
 
     SyncPulseIfc vsyncPulse <- mkSyncHandshake(hdmi_clk, hdmi_reset, clock);
     SyncPulseIfc hsyncPulse <- mkSyncHandshake(hdmi_clk, hdmi_reset, clock);
-    //SyncFIFOIfc#(Yuv422) yuv422Fifo <- mkSyncFIFOFromCC(2, hdmi_clk);
-    SyncFIFOIfc#(Bit#(64)) rgbrgbFifo <- mkSyncFIFOFromCC(4, hdmi_clk);
-    SyncFIFOIfc#(HdmiCommand) commandFifo <- mkSyncFIFOFromCC(2, hdmi_clk);
+    SyncFIFOIfc#(HdmiCommand) commandFifo <- mkSyncFIFOFromCC(1, hdmi_clk);
 
     Reg#(Bit#(8)) segmentIndexReg <- mkReg(0);
     Reg#(Bit#(24)) segmentOffsetReg <- mkReg(0);

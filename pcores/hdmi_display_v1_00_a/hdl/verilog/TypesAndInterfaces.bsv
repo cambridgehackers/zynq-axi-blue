@@ -25,7 +25,7 @@ import AxiMasterSlave::*;
 import HDMI::*;
 import FifoToAxi::*;
 
-interface DUT;
+interface Dut;
     method Action setPatternReg(Bit#(32) yuv422);
     method Action startFrameBuffer(Bit#(32) base);
 
