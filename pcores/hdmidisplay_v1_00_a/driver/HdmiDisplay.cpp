@@ -1,25 +1,25 @@
 #include "ushw.h"
-#include "DUT.h"
+#include "HdmiDisplay.h"
 
-DUT *DUT::createDUT(const char *instanceName)
+HdmiDisplay *HdmiDisplay::createHdmiDisplay(const char *instanceName)
 {
     PortalInstance *p = portalOpen(instanceName);
-    DUT *instance = new DUT(p);
+    HdmiDisplay *instance = new HdmiDisplay(p);
     return instance;
 }
 
-DUT::DUT(PortalInstance *p, int baseChannelNumber)
+HdmiDisplay::HdmiDisplay(PortalInstance *p, int baseChannelNumber)
  : p(p), baseChannelNumber(baseChannelNumber)
 {
-  p->messageHandlers = new PortalInstance::MessageHandler [DUT::DUTNumChannels]();
+  p->messageHandlers = new PortalInstance::MessageHandler [HdmiDisplay::HdmiDisplayNumChannels]();
 }
-DUT::~DUT()
+HdmiDisplay::~HdmiDisplay()
 {
     p->close();
 }
 
 
-struct DUTsetPatternRegMSG : public PortalMessage
+struct HdmiDisplaysetPatternRegMSG : public PortalMessage
 {
 struct Request {
 //fix Adapter.bsv to unreverse these
@@ -29,9 +29,9 @@ unsigned int yuv422;
 int channelNumber;
 };
 
-void DUT::setPatternReg ( unsigned int yuv422 )
+void HdmiDisplay::setPatternReg ( unsigned int yuv422 )
 {
-    DUTsetPatternRegMSG msg;
+    HdmiDisplaysetPatternRegMSG msg;
     msg.size = sizeof(msg.request) + sizeof(msg.channelNumber);
     msg.channelNumber = baseChannelNumber + 0;
 msg.request.yuv422 = yuv422;
@@ -39,7 +39,7 @@ msg.request.yuv422 = yuv422;
     p->sendMessage(&msg);
 };
 
-struct DUTstartFrameBufferMSG : public PortalMessage
+struct HdmiDisplaystartFrameBufferMSG : public PortalMessage
 {
 struct Request {
 //fix Adapter.bsv to unreverse these
@@ -49,9 +49,9 @@ unsigned int base;
 int channelNumber;
 };
 
-void DUT::startFrameBuffer ( unsigned int base )
+void HdmiDisplay::startFrameBuffer ( unsigned int base )
 {
-    DUTstartFrameBufferMSG msg;
+    HdmiDisplaystartFrameBufferMSG msg;
     msg.size = sizeof(msg.request) + sizeof(msg.channelNumber);
     msg.channelNumber = baseChannelNumber + 1;
 msg.request.base = base;
@@ -59,7 +59,7 @@ msg.request.base = base;
     p->sendMessage(&msg);
 };
 
-struct DUTwaitForVsyncMSG : public PortalMessage
+struct HdmiDisplaywaitForVsyncMSG : public PortalMessage
 {
 struct Request {
 //fix Adapter.bsv to unreverse these
@@ -69,9 +69,9 @@ unsigned int unused;
 int channelNumber;
 };
 
-void DUT::waitForVsync ( unsigned int unused )
+void HdmiDisplay::waitForVsync ( unsigned int unused )
 {
-    DUTwaitForVsyncMSG msg;
+    HdmiDisplaywaitForVsyncMSG msg;
     msg.size = sizeof(msg.request) + sizeof(msg.channelNumber);
     msg.channelNumber = baseChannelNumber + 2;
 msg.request.unused = unused;
@@ -79,7 +79,7 @@ msg.request.unused = unused;
     p->sendMessage(&msg);
 };
 
-struct DUThdmiLinesPixelsMSG : public PortalMessage
+struct HdmiDisplayhdmiLinesPixelsMSG : public PortalMessage
 {
 struct Request {
 //fix Adapter.bsv to unreverse these
@@ -89,9 +89,9 @@ unsigned int value;
 int channelNumber;
 };
 
-void DUT::hdmiLinesPixels ( unsigned int value )
+void HdmiDisplay::hdmiLinesPixels ( unsigned int value )
 {
-    DUThdmiLinesPixelsMSG msg;
+    HdmiDisplayhdmiLinesPixelsMSG msg;
     msg.size = sizeof(msg.request) + sizeof(msg.channelNumber);
     msg.channelNumber = baseChannelNumber + 3;
 msg.request.value = value;
@@ -99,7 +99,7 @@ msg.request.value = value;
     p->sendMessage(&msg);
 };
 
-struct DUThdmiBlankLinesPixelsMSG : public PortalMessage
+struct HdmiDisplayhdmiBlankLinesPixelsMSG : public PortalMessage
 {
 struct Request {
 //fix Adapter.bsv to unreverse these
@@ -109,9 +109,9 @@ unsigned int value;
 int channelNumber;
 };
 
-void DUT::hdmiBlankLinesPixels ( unsigned int value )
+void HdmiDisplay::hdmiBlankLinesPixels ( unsigned int value )
 {
-    DUThdmiBlankLinesPixelsMSG msg;
+    HdmiDisplayhdmiBlankLinesPixelsMSG msg;
     msg.size = sizeof(msg.request) + sizeof(msg.channelNumber);
     msg.channelNumber = baseChannelNumber + 4;
 msg.request.value = value;
@@ -119,7 +119,7 @@ msg.request.value = value;
     p->sendMessage(&msg);
 };
 
-struct DUThdmiStrideBytesMSG : public PortalMessage
+struct HdmiDisplayhdmiStrideBytesMSG : public PortalMessage
 {
 struct Request {
 //fix Adapter.bsv to unreverse these
@@ -129,9 +129,9 @@ unsigned int strideBytes;
 int channelNumber;
 };
 
-void DUT::hdmiStrideBytes ( unsigned int strideBytes )
+void HdmiDisplay::hdmiStrideBytes ( unsigned int strideBytes )
 {
-    DUThdmiStrideBytesMSG msg;
+    HdmiDisplayhdmiStrideBytesMSG msg;
     msg.size = sizeof(msg.request) + sizeof(msg.channelNumber);
     msg.channelNumber = baseChannelNumber + 5;
 msg.request.strideBytes = strideBytes;
@@ -139,7 +139,7 @@ msg.request.strideBytes = strideBytes;
     p->sendMessage(&msg);
 };
 
-struct DUThdmiLineCountMinMaxMSG : public PortalMessage
+struct HdmiDisplayhdmiLineCountMinMaxMSG : public PortalMessage
 {
 struct Request {
 //fix Adapter.bsv to unreverse these
@@ -149,9 +149,9 @@ unsigned int value;
 int channelNumber;
 };
 
-void DUT::hdmiLineCountMinMax ( unsigned int value )
+void HdmiDisplay::hdmiLineCountMinMax ( unsigned int value )
 {
-    DUThdmiLineCountMinMaxMSG msg;
+    HdmiDisplayhdmiLineCountMinMaxMSG msg;
     msg.size = sizeof(msg.request) + sizeof(msg.channelNumber);
     msg.channelNumber = baseChannelNumber + 6;
 msg.request.value = value;
@@ -159,7 +159,7 @@ msg.request.value = value;
     p->sendMessage(&msg);
 };
 
-struct DUThdmiPixelCountMinMaxMSG : public PortalMessage
+struct HdmiDisplayhdmiPixelCountMinMaxMSG : public PortalMessage
 {
 struct Request {
 //fix Adapter.bsv to unreverse these
@@ -169,9 +169,9 @@ unsigned int value;
 int channelNumber;
 };
 
-void DUT::hdmiPixelCountMinMax ( unsigned int value )
+void HdmiDisplay::hdmiPixelCountMinMax ( unsigned int value )
 {
-    DUThdmiPixelCountMinMaxMSG msg;
+    HdmiDisplayhdmiPixelCountMinMaxMSG msg;
     msg.size = sizeof(msg.request) + sizeof(msg.channelNumber);
     msg.channelNumber = baseChannelNumber + 7;
 msg.request.value = value;
@@ -179,7 +179,7 @@ msg.request.value = value;
     p->sendMessage(&msg);
 };
 
-struct DUThdmiSyncWidthsMSG : public PortalMessage
+struct HdmiDisplayhdmiSyncWidthsMSG : public PortalMessage
 {
 struct Request {
 //fix Adapter.bsv to unreverse these
@@ -189,9 +189,9 @@ unsigned int value;
 int channelNumber;
 };
 
-void DUT::hdmiSyncWidths ( unsigned int value )
+void HdmiDisplay::hdmiSyncWidths ( unsigned int value )
 {
-    DUThdmiSyncWidthsMSG msg;
+    HdmiDisplayhdmiSyncWidthsMSG msg;
     msg.size = sizeof(msg.request) + sizeof(msg.channelNumber);
     msg.channelNumber = baseChannelNumber + 8;
 msg.request.value = value;
@@ -199,19 +199,19 @@ msg.request.value = value;
     p->sendMessage(&msg);
 };
 
-struct DUTbeginTranslationTableMSG : public PortalMessage
+struct HdmiDisplaybeginTranslationTableMSG : public PortalMessage
 {
 struct Request {
 //fix Adapter.bsv to unreverse these
-unsigned int index:6;
+unsigned int index:8;
 
 } request;
 int channelNumber;
 };
 
-void DUT::beginTranslationTable ( unsigned int index )
+void HdmiDisplay::beginTranslationTable ( unsigned int index )
 {
-    DUTbeginTranslationTableMSG msg;
+    HdmiDisplaybeginTranslationTableMSG msg;
     msg.size = sizeof(msg.request) + sizeof(msg.channelNumber);
     msg.channelNumber = baseChannelNumber + 9;
 msg.request.index = index;
@@ -219,7 +219,7 @@ msg.request.index = index;
     p->sendMessage(&msg);
 };
 
-struct DUTaddTranslationEntryMSG : public PortalMessage
+struct HdmiDisplayaddTranslationEntryMSG : public PortalMessage
 {
 struct Request {
 //fix Adapter.bsv to unreverse these
@@ -230,9 +230,9 @@ unsigned int address:20;
 int channelNumber;
 };
 
-void DUT::addTranslationEntry ( unsigned int address, unsigned int length )
+void HdmiDisplay::addTranslationEntry ( unsigned int address, unsigned int length )
 {
-    DUTaddTranslationEntryMSG msg;
+    HdmiDisplayaddTranslationEntryMSG msg;
     msg.size = sizeof(msg.request) + sizeof(msg.channelNumber);
     msg.channelNumber = baseChannelNumber + 10;
 msg.request.address = address;

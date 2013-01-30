@@ -25,7 +25,7 @@ import AxiMasterSlave::*;
 import HDMI::*;
 import FifoToAxi::*;
 
-interface Dut;
+interface HdmiDisplay;
     method Action setPatternReg(Bit#(32) yuv422);
     method Action startFrameBuffer(Bit#(32) base);
 
@@ -44,6 +44,6 @@ interface Dut;
     method ActionValue#(Bit#(96)) translationTableEntry();
     method ActionValue#(Bit#(96)) fbReading();
 
-    interface AxiMaster#(64,8) axihp0;
+    interface AxiMaster#(64,8) m_axi;
     interface HDMI hdmi;
 endinterface

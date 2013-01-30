@@ -45,7 +45,7 @@ function Put#(item_t) syncFifoToPut( SyncFIFOIfc#(item_t) f);
     );
 endfunction
 
-module mkDut#(Clock hdmi_clk)(Dut);
+module mkHdmiDisplay#(Clock hdmi_clk)(HdmiDisplay);
 
     let busWidthBytes=8;
 
@@ -171,6 +171,6 @@ module mkDut#(Clock hdmi_clk)(Dut);
         return v;
     endmethod
 
-    interface AxiMaster axihp0 = frameBuffer.axi;
+    interface AxiMaster m_axi = frameBuffer.axi;
     interface HDMI hdmi = hdmiTpg.hdmi;
 endmodule

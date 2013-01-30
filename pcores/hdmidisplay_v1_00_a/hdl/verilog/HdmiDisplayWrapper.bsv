@@ -7,7 +7,7 @@ import AxiMasterSlave::*;
 import HDMI::*;
 import Clocks::*;
 import TypesAndInterfaces::*;
-import Dut::*;
+import HdmiDisplay::*;
 
 
 
@@ -59,7 +59,7 @@ typedef union tagged {
     } AddTranslationEntry$Request;
 
   Bit#(0) DutRequestUnused;
-} DutRequest deriving (Bits);
+} HdmiDisplayRequest deriving (Bits);
 
 typedef union tagged {
 
@@ -70,25 +70,25 @@ typedef union tagged {
     Bit#(96) FbReading$Response;
 
   Bit#(0) DutResponseUnused;
-} DutResponse deriving (Bits);
+} HdmiDisplayResponse deriving (Bits);
 
-interface DutWrapper;
+interface HdmiDisplayWrapper;
    method Bit#(1) interrupt();
    interface AxiSlave#(32,4) ctrl;
    interface AxiSlave#(32,4) fifo;
 
-    interface AxiMaster#(64,8) axihp0;
+    interface AxiMaster#(64,8) m_axi;
     interface HDMI hdmi;
 endinterface
 
-typedef SizeOf#(DutRequest) DutRequestSize;
-typedef SizeOf#(DutResponse) DutResponseSize;
+typedef SizeOf#(HdmiDisplayRequest) HdmiDisplayRequestSize;
+typedef SizeOf#(HdmiDisplayResponse) HdmiDisplayResponseSize;
 
-module mkDutWrapper#(Clock hdmi_clk)(DutWrapper);
+module mkHdmiDisplayWrapper#(Clock hdmi_clk)(HdmiDisplayWrapper);
 
-    Dut dut <- mkDut(hdmi_clk);
-    FromBit32#(DutRequest) requestFifo <- mkFromBit32();
-    ToBit32#(DutResponse) responseFifo <- mkToBit32();
+    HdmiDisplay hdmiDisplay <- mkHdmiDisplay(hdmi_clk);
+    FromBit32#(HdmiDisplayRequest) requestFifo <- mkFromBit32();
+    ToBit32#(HdmiDisplayResponse) responseFifo <- mkToBit32();
     Reg#(Bit#(32)) requestFired <- mkReg(0);
     Reg#(Bit#(32)) responseFired <- mkReg(0);
     Reg#(Bit#(32)) junkReqReg <- mkReg(0);
@@ -117,27 +117,27 @@ module mkDutWrapper#(Clock hdmi_clk)(DutWrapper);
 
     rule handle$setPatternReg$request if (requestFifo.first matches tagged SetPatternReg$Request .sp);
         requestFifo.deq;
-        dut.setPatternReg(sp.yuv422);
+        hdmiDisplay.setPatternReg(sp.yuv422);
         requestFired <= requestFired + 1;
         requestTimerReg <= 0;
     endrule
 
     rule handle$startFrameBuffer$request if (requestFifo.first matches tagged StartFrameBuffer$Request .sp);
         requestFifo.deq;
-        dut.startFrameBuffer(sp.base);
+        hdmiDisplay.startFrameBuffer(sp.base);
         requestFired <= requestFired + 1;
         requestTimerReg <= 0;
     endrule
 
     rule handle$waitForVsync$request if (requestFifo.first matches tagged WaitForVsync$Request .sp);
         requestFifo.deq;
-        dut.waitForVsync(sp.unused);
+        hdmiDisplay.waitForVsync(sp.unused);
         requestFired <= requestFired + 1;
         requestTimerReg <= 0;
     endrule
 
     rule vsyncReceived$response;
-        Bit#(32) r <- dut.vsyncReceived();
+        Bit#(32) r <- hdmiDisplay.vsyncReceived();
         let response = tagged VsyncReceived$Response r;
         responseFifo.enq(response);
         responseFired <= responseFired + 1;
@@ -145,69 +145,69 @@ module mkDutWrapper#(Clock hdmi_clk)(DutWrapper);
 
     rule handle$hdmiLinesPixels$request if (requestFifo.first matches tagged HdmiLinesPixels$Request .sp);
         requestFifo.deq;
-        dut.hdmiLinesPixels(sp.value);
+        hdmiDisplay.hdmiLinesPixels(sp.value);
         requestFired <= requestFired + 1;
         requestTimerReg <= 0;
     endrule
 
     rule handle$hdmiBlankLinesPixels$request if (requestFifo.first matches tagged HdmiBlankLinesPixels$Request .sp);
         requestFifo.deq;
-        dut.hdmiBlankLinesPixels(sp.value);
+        hdmiDisplay.hdmiBlankLinesPixels(sp.value);
         requestFired <= requestFired + 1;
         requestTimerReg <= 0;
     endrule
 
     rule handle$hdmiStrideBytes$request if (requestFifo.first matches tagged HdmiStrideBytes$Request .sp);
         requestFifo.deq;
-        dut.hdmiStrideBytes(sp.strideBytes);
+        hdmiDisplay.hdmiStrideBytes(sp.strideBytes);
         requestFired <= requestFired + 1;
         requestTimerReg <= 0;
     endrule
 
     rule handle$hdmiLineCountMinMax$request if (requestFifo.first matches tagged HdmiLineCountMinMax$Request .sp);
         requestFifo.deq;
-        dut.hdmiLineCountMinMax(sp.value);
+        hdmiDisplay.hdmiLineCountMinMax(sp.value);
         requestFired <= requestFired + 1;
         requestTimerReg <= 0;
     endrule
 
     rule handle$hdmiPixelCountMinMax$request if (requestFifo.first matches tagged HdmiPixelCountMinMax$Request .sp);
         requestFifo.deq;
-        dut.hdmiPixelCountMinMax(sp.value);
+        hdmiDisplay.hdmiPixelCountMinMax(sp.value);
         requestFired <= requestFired + 1;
         requestTimerReg <= 0;
     endrule
 
     rule handle$hdmiSyncWidths$request if (requestFifo.first matches tagged HdmiSyncWidths$Request .sp);
         requestFifo.deq;
-        dut.hdmiSyncWidths(sp.value);
+        hdmiDisplay.hdmiSyncWidths(sp.value);
         requestFired <= requestFired + 1;
         requestTimerReg <= 0;
     endrule
 
     rule handle$beginTranslationTable$request if (requestFifo.first matches tagged BeginTranslationTable$Request .sp);
         requestFifo.deq;
-        dut.beginTranslationTable(sp.index);
+        hdmiDisplay.beginTranslationTable(sp.index);
         requestFired <= requestFired + 1;
         requestTimerReg <= 0;
     endrule
 
     rule handle$addTranslationEntry$request if (requestFifo.first matches tagged AddTranslationEntry$Request .sp);
         requestFifo.deq;
-        dut.addTranslationEntry(sp.address, sp.length);
+        hdmiDisplay.addTranslationEntry(sp.address, sp.length);
         requestFired <= requestFired + 1;
         requestTimerReg <= 0;
     endrule
 
     rule translationTableEntry$response;
-        Bit#(96) r <- dut.translationTableEntry();
+        Bit#(96) r <- hdmiDisplay.translationTableEntry();
         let response = tagged TranslationTableEntry$Response r;
         responseFifo.enq(response);
         responseFired <= responseFired + 1;
     endrule
 
     rule fbReading$response;
-        Bit#(96) r <- dut.fbReading();
+        Bit#(96) r <- hdmiDisplay.fbReading();
         let response = tagged FbReading$Response r;
         responseFifo.enq(response);
         responseFired <= responseFired + 1;
@@ -293,9 +293,9 @@ module mkDutWrapper#(Clock hdmi_clk)(DutWrapper);
                 if (addr == 12'h004)
                     v = interruptEnableReg;
                 if (addr == 12'h008)
-                    v = fromInteger(valueOf(DutRequestSize));
+                    v = fromInteger(valueOf(HdmiDisplayRequestSize));
                 if (addr == 12'h00C)
-                    v = fromInteger(valueOf(DutResponseSize));
+                    v = fromInteger(valueOf(HdmiDisplayResponseSize));
                 if (addr == 12'h010)
                     v = requestFired;
                 if (addr == 12'h014)
@@ -401,6 +401,6 @@ module mkDutWrapper#(Clock hdmi_clk)(DutWrapper);
     endmethod
 
 
-    interface AxiMaster axihp0 = dut.axihp0;
-    interface HDMI hdmi = dut.hdmi;
+    interface AxiMaster m_axi = hdmiDisplay.m_axi;
+    interface HDMI hdmi = hdmiDisplay.hdmi;
 endmodule

@@ -1,15 +1,15 @@
 
-class DUT {
+class HdmiDisplay {
 public:
-    enum DUTResponseChannel {
-        VsyncReceivedResponseChannel, TranslationTableEntryResponseChannel, FbReadingResponseChannel, DUTNumChannels
+    enum HdmiDisplayResponseChannel {
+        VsyncReceivedResponseChannel, TranslationTableEntryResponseChannel, FbReadingResponseChannel, HdmiDisplayNumChannels
     };
-    int connectHandler(DUTResponseChannel c, PortalInstance::MessageHandler h) {
+    int connectHandler(HdmiDisplayResponseChannel c, PortalInstance::MessageHandler h) {
         p->messageHandlers[c] = h;
         return 0;
     }
 
-    static DUT *createDUT(const char *instanceName);
+    static HdmiDisplay *createHdmiDisplay(const char *instanceName);
     void setPatternReg ( unsigned int );
     void startFrameBuffer ( unsigned int );
     void waitForVsync ( unsigned int );
@@ -22,8 +22,8 @@ public:
     void beginTranslationTable ( unsigned int );
     void addTranslationEntry ( unsigned int, unsigned int );
 private:
-    DUT(PortalInstance *, int baseChannelNumber=0);
-    ~DUT();
+    HdmiDisplay(PortalInstance *, int baseChannelNumber=0);
+    ~HdmiDisplay();
     PortalInstance *p;
     int baseChannelNumber;
 };

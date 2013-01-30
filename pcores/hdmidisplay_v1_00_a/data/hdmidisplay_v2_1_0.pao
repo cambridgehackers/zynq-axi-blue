@@ -1,0 +1,15 @@
+
+lib proc_common_v3_00_a  all 
+lib hdmidisplay_v1_00_a HdmiDisplay vhdl
+lib hdmidisplay_v1_00_a mkHdmiDisplayWrapper verilog
+lib hdmidisplay_v1_00_a BRAM2 verilog
+lib hdmidisplay_v1_00_a RegFile verilog
+lib hdmidisplay_v1_00_a FIFO1 verilog
+lib hdmidisplay_v1_00_a FIFO2 verilog
+lib hdmidisplay_v1_00_a NRCCBRAM2 verilog
+lib hdmidisplay_v1_00_a RevertReg verilog
+lib hdmidisplay_v1_00_a SizedFIFO verilog
+lib hdmidisplay_v1_00_a SyncFIFO verilog
+lib hdmidisplay_v1_00_a SyncFIFO1 verilog
+lib hdmidisplay_v1_00_a SyncHandshake verilog
+lib hdmidisplay_v1_00_a SyncResetA verilog

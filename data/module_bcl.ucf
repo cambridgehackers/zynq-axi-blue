@@ -56,22 +56,6 @@ NET "hdmi_data_pin[15]" IOSTANDARD = LVCMOS25;
 #
 # additional constraints
 #
-# NET axi_gpio_0_GPIO_IO_pin[0]        LOC = AB21 | IOSTANDARD = "LVCMOS25";
-# NET axi_gpio_0_GPIO_IO_pin[1]        LOC = AA21 | IOSTANDARD = "LVCMOS25";
-# NET axi_gpio_0_GPIO_IO_pin[2]        LOC = AB22 | IOSTANDARD = "LVCMOS25";
-# NET axi_gpio_0_GPIO_IO_pin[3]        LOC = AA22 | IOSTANDARD = "LVCMOS25";
-# NET axi_gpio_0_GPIO_IO_pin[4]        LOC = V19  | IOSTANDARD = "LVCMOS25";
-# NET axi_gpio_0_GPIO_IO_pin[5]        LOC = V18  | IOSTANDARD = "LVCMOS25";
-# NET axi_gpio_0_GPIO_IO_pin[6]        LOC = V20  | IOSTANDARD = "LVCMOS25";
-# NET axi_gpio_0_GPIO_IO_pin[7]        LOC = U20  | IOSTANDARD = "LVCMOS25";
-# NET axi_gpio_0_GPIO_IO_pin[8]        LOC = W21  | IOSTANDARD = "LVCMOS25";
-# NET axi_gpio_0_GPIO_IO_pin[9]        LOC = W20  | IOSTANDARD = "LVCMOS25";
-# NET axi_gpio_0_GPIO_IO_pin[10]       LOC = W18  | IOSTANDARD = "LVCMOS25";
-# NET axi_gpio_0_GPIO_IO_pin[11]       LOC = T19  | IOSTANDARD = "LVCMOS25";
-# NET axi_gpio_0_GPIO_IO_pin[12]       LOC = U19  | IOSTANDARD = "LVCMOS25";
-# NET axi_gpio_0_GPIO_IO_pin[13]       LOC = R19  | IOSTANDARD = "LVCMOS25";
-# NET axi_gpio_0_GPIO_IO_pin[14]       LOC = T17  | IOSTANDARD = "LVCMOS25";
-# NET axi_gpio_0_GPIO_IO_pin[15]       LOC = T16  | IOSTANDARD = "LVCMOS25";
 
 NET "usr_clk_p_pin" LOC = Y9;
 NET "usr_clk_p_pin" IOSTANDARD = LVDS_25;
@@ -97,7 +81,7 @@ NET "xadc_gpio_3_pin" LOC = H18;
 NET "xadc_gpio_3_pin" IOSTANDARD = LVCMOS25;
 
 
-INST "hdmi_display_0" AREA_GROUP = "pblock_hdmi_display_0";
+INST "hdmidisplay_0" AREA_GROUP = "pblock_hdmi_display_0";
 AREA_GROUP "pblock_hdmi_display_0" RANGE=SLICE_X28Y93:SLICE_X67Y149;
 AREA_GROUP "pblock_hdmi_display_0" RANGE=DSP48_X2Y38:DSP48_X2Y59;
 AREA_GROUP "pblock_hdmi_display_0" RANGE=RAMB18_X2Y38:RAMB18_X3Y59;

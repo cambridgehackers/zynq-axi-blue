@@ -1,5 +1,5 @@
 #include "ushw.h"
-#include "DUT.h"
+#include "HdmiDisplay.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -12,14 +12,14 @@
 
 struct ResultIorMsg : public PortalMessage
 {
-struct Response {
+    struct Response {
 //fix Adapter.bsv to unreverse these
-int value;
-int responseChannel;
-} response;
+        int value;
+        int responseChannel;
+    } response;
 };
 
-DUT *dut = 0;
+HdmiDisplay *hdmiDisplay = 0;
 const char *si570path = "/sys/devices/amba.0/e0004000.i2c/i2c-0/i2c-1/1-005d/frequency";
 
 
@@ -58,24 +58,24 @@ int updateFrequency(long frequency)
 void idleFunc(void)
 {
     if (idleCalls++ == 0) {
-        //dut->readRange(0x8000);
+        //hdmiDisplay->readRange(0x8000);
         if (1) {
             unsigned short vsyncwidth = 5;
             unsigned short lmin = 40;
             unsigned short lmax = lmin + nlines;
             unsigned short pmin = 192;
             unsigned short pmax = pmin + npixels;
-            dut->hdmiLinesPixels((pmin + npixels) << 16 | (lmin + vsyncwidth + nlines));
-            dut->hdmiStrideBytes(stridebytes);
-            dut->hdmiLineCountMinMax(lmax << 16 | lmin);
-            dut->hdmiPixelCountMinMax(pmax << 16 | pmin);
+            hdmiDisplay->hdmiLinesPixels((pmin + npixels) << 16 | (lmin + vsyncwidth + nlines));
+            hdmiDisplay->hdmiStrideBytes(stridebytes);
+            hdmiDisplay->hdmiLineCountMinMax(lmax << 16 | lmin);
+            hdmiDisplay->hdmiPixelCountMinMax(pmax << 16 | pmin);
             updateFrequency(60l * (long)(pmin + npixels) * (long)(lmin + vsyncwidth + nlines));
-            //dut->hdmiSyncWidths(hsyncWidth << 16 | vsyncWidth);
-            dut->startFrameBuffer(bases[0]);
+            //hdmiDisplay->hdmiSyncWidths(hsyncWidth << 16 | vsyncWidth);
+            hdmiDisplay->startFrameBuffer(bases[0]);
         }
     }
 
-    //dut->startFrameBuffer(bases[idleCalls & 1]);
+    //hdmiDisplay->startFrameBuffer(bases[idleCalls & 1]);
     if (line < nlines/2) {
         for (int j = 0; j < 1920; j++) {
             fbs[0][line*1920+j] = newColor[(line >> 6) & 3];
@@ -98,9 +98,9 @@ void handleNextEntMessage(PortalMessage *msg)
     if (w2 == 0xffffff) {
         int base = bases[idleCalls++ & 1];
         //fprintf(stderr, "starting frame buffer base=%x\n", base);
-        //dut->startFrameBuffer(base);
+        //hdmiDisplay->startFrameBuffer(base);
     }
-    dut->waitForVsync(0);
+    hdmiDisplay->waitForVsync(0);
 }
 
 int main(int argc, char **argv)
@@ -126,9 +126,9 @@ int main(int argc, char **argv)
         }
     }
     fprintf(stderr, "%s:%d\n", __FUNCTION__, __LINE__);
-    dut = DUT::createDUT(devname);
-    fprintf(stderr, "%s:%d dut=%p nlines=%d npixels=%d stridebytes=%d\n",
-            __FUNCTION__, __LINE__, dut, nlines, npixels, stridebytes);
+    hdmiDisplay = HdmiDisplay::createHdmiDisplay(devname);
+    fprintf(stderr, "%s:%d hdmiDisplay=%p nlines=%d npixels=%d stridebytes=%d\n",
+            __FUNCTION__, __LINE__, hdmiDisplay, nlines, npixels, stridebytes);
 
     unsigned long fbsize = nlines*stridebytes;
     int fd = 0;
@@ -142,12 +142,12 @@ int main(int argc, char **argv)
     bases[0] = 0x10000;
     numEntries[0] = portalAlloc.numEntries;
 
-    dut->beginTranslationTable(0);
+    hdmiDisplay->beginTranslationTable(0);
     for (int i = 0; i < portalAlloc.numEntries; i++) {
         unsigned long entry = ((portalAlloc.entries[i].dma_address&0xFFFFF000)
                                | ((portalAlloc.entries[i].length >> 12)&0x00000FFF));
-        dut->addTranslationEntry(portalAlloc.entries[i].dma_address >> 12,
-                                 portalAlloc.entries[i].length >> 12);
+        hdmiDisplay->addTranslationEntry(portalAlloc.entries[i].dma_address >> 12,
+                                         portalAlloc.entries[i].length >> 12);
     }
 
     fb = mmap(0, fbsize, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
@@ -181,10 +181,10 @@ int main(int argc, char **argv)
         portal.alloc(fbsize, &fd, &portalAlloc);
         if (fd) {
             fprintf(stderr, "Allocated second fb fd=%d numEntries=%d\n", fd, portalAlloc.numEntries);
-            dut->beginTranslationTable(numEntries[0]);
+            hdmiDisplay->beginTranslationTable(numEntries[0]);
             for (int i = 0; i < portalAlloc.numEntries; i++) {
-                dut->addTranslationEntry(portalAlloc.entries[i].dma_address >> 12, 
-                                         portalAlloc.entries[i].length >> 12);
+                hdmiDisplay->addTranslationEntry(portalAlloc.entries[i].dma_address >> 12, 
+                                                 portalAlloc.entries[i].length >> 12);
             }
 
             bases[1] = numEntries[0];
@@ -199,8 +199,8 @@ int main(int argc, char **argv)
         }
     }
     fprintf(stderr, "%s:%d\n", __FUNCTION__, __LINE__);
-    dut->connectHandler(DUT::FbReadingResponseChannel, handleNextEntMessage);
-    dut->connectHandler(DUT::VsyncReceivedResponseChannel, handleVsyncMessage);
+    hdmiDisplay->connectHandler(HdmiDisplay::FbReadingResponseChannel, handleNextEntMessage);
+    hdmiDisplay->connectHandler(HdmiDisplay::VsyncReceivedResponseChannel, handleVsyncMessage);
     portal.exec(idleFunc);
     return 0;
 }

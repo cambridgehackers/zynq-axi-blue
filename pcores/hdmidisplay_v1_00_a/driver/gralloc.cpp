@@ -40,7 +40,7 @@
 #include "gr.h"
 
 #include "ushw.h"
-#include "DUT.h"
+#include "HdmiDisplay.h"
 
 /*****************************************************************************/
 
@@ -50,7 +50,7 @@ struct gralloc_context_t {
     volatile int vsync;
     pthread_mutex_t vsync_lock;
     pthread_cond_t vsync_cond;
-    DUT *dut;
+    HdmiDisplay *hdmiDisplay;
     uint32_t nextSegmentNumber;
 };
 
@@ -123,7 +123,7 @@ static int gralloc_alloc_buffer(alloc_device_t* dev,
     
     struct gralloc_context_t *ctx = reinterpret_cast<gralloc_context_t*>(dev);
 
-    if (ctx->dut != 0) {
+    if (ctx->hdmiDisplay != 0) {
         PortalAlloc portalAlloc;
         memset(&portalAlloc, 0, sizeof(portalAlloc));
         portal.alloc(size, &fd, &portalAlloc);
@@ -132,10 +132,10 @@ static int gralloc_alloc_buffer(alloc_device_t* dev,
             ALOGD("adding translation table entries\n");
             segmentNumber = ctx->nextSegmentNumber;
             ctx->nextSegmentNumber += portalAlloc.numEntries;
-            ctx->dut->beginTranslationTable(segmentNumber);
+            ctx->hdmiDisplay->beginTranslationTable(segmentNumber);
             for (int i = 0; i < portalAlloc.numEntries; i++) {
                 ALOGD("adding translation entry %lx %lx", portalAlloc.entries[i].dma_address, portalAlloc.entries[i].length);
-                ctx->dut->addTranslationEntry(portalAlloc.entries[i].dma_address >> 12,
+                ctx->hdmiDisplay->addTranslationEntry(portalAlloc.entries[i].dma_address >> 12,
                                               portalAlloc.entries[i].length >> 12);
             }
         }
@@ -223,7 +223,7 @@ static int gralloc_free(alloc_device_t* dev,
     struct gralloc_context_t *ctx = reinterpret_cast<gralloc_context_t*>(dev);
 
     private_handle_t *private_handle = const_cast<private_handle_t*>(hnd);
-    if (ctx->dut) {
+    if (ctx->hdmiDisplay) {
         ALOGD("freeing ion buffer fd %d\n", private_handle->fd);
         portal.free(private_handle->fd);
     } else {
@@ -280,12 +280,12 @@ static int fb_post(struct framebuffer_device_t* dev, buffer_handle_t buffer)
     private_gralloc_module_t* m = reinterpret_cast<private_gralloc_module_t*>(
             dev->common.module);
 
-    if (gralloc_dev && gralloc_dev->dut) {
+    if (gralloc_dev && gralloc_dev->hdmiDisplay) {
         //ALOGD("fb_post segmentNumber=%d\n", hnd->segmentNumber);
         pthread_mutex_lock(&gralloc_dev->vsync_lock);
         gralloc_dev->vsync = 0;
-        gralloc_dev->dut->waitForVsync(0);
-        gralloc_dev->dut->startFrameBuffer(hnd->segmentNumber);
+        gralloc_dev->hdmiDisplay->waitForVsync(0);
+        gralloc_dev->hdmiDisplay->startFrameBuffer(hnd->segmentNumber);
         while (!gralloc_dev->vsync) {
             pthread_cond_wait(&gralloc_dev->vsync_cond, &gralloc_dev->vsync_lock);
         }
@@ -360,7 +360,7 @@ int gralloc_device_open(const hw_module_t* module, const char* name,
         pthread_condattr_t condattr;
         pthread_condattr_init(&condattr);
         pthread_cond_init(&dev->vsync_cond, &condattr);
-        dev->dut = DUT::createDUT("foomaster0");
+        dev->hdmiDisplay = HdmiDisplay::createHdmiDisplay("foomaster0");
         dev->nextSegmentNumber = 0;
 
         status = 0;
@@ -413,11 +413,11 @@ int gralloc_device_open(const hw_module_t* module, const char* name,
             const_cast<int&>(dev->minSwapInterval) = 1;
             const_cast<int&>(dev->maxSwapInterval) = 1;
 
-            gralloc_dev->dut->connectHandler(DUT::VsyncReceivedResponseChannel, vsyncReceivedHandler);
-            gralloc_dev->dut->hdmiLinesPixels((pmin + npixels) << 16 | (lmin + vsyncwidth + nlines));
-            gralloc_dev->dut->hdmiStrideBytes(stridebytes);
-            gralloc_dev->dut->hdmiLineCountMinMax(lmax << 16 | lmin);
-            gralloc_dev->dut->hdmiPixelCountMinMax(pmax << 16 | pmin);
+            gralloc_dev->hdmiDisplay->connectHandler(HdmiDisplay::VsyncReceivedResponseChannel, vsyncReceivedHandler);
+            gralloc_dev->hdmiDisplay->hdmiLinesPixels((pmin + npixels) << 16 | (lmin + vsyncwidth + nlines));
+            gralloc_dev->hdmiDisplay->hdmiStrideBytes(stridebytes);
+            gralloc_dev->hdmiDisplay->hdmiLineCountMinMax(lmax << 16 | lmin);
+            gralloc_dev->hdmiDisplay->hdmiPixelCountMinMax(pmax << 16 | pmin);
             updateFrequency(60l * (long)(pmin + npixels) * (long)(lmin + vsyncwidth + nlines));
 
             *device = &dev->common;
