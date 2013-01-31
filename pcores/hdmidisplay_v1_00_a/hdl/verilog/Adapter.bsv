@@ -55,7 +55,7 @@ module mkToBit32(ToBit32#(a))
    Bit#(32) size = fromInteger(valueOf(asz));
    Bit#(32) max  = (size >> 5) + ((size[4:0] == 0) ? 0 : 1)-1;
    
-   FIFOF#(Bit#(asz))   fifo <- mkUGSizedFIFOF(8);
+   FIFOF#(Bit#(asz))   fifo <- mkSizedBRAMFIFOF(8);
    Reg#(Bit#(32))      count <- mkReg(0);
 
    method Action enq(a val) if (fifo.notFull);
@@ -201,13 +201,14 @@ endmodule
 
 module mkFromBit64(FromBit64#(a))
    provisos(Bits#(a,asz),
+            Add#(1,zzz,asz),
 	    Add#(64,asz,asz64));
 
    Bit#(64) size   = fromInteger(valueOf(asz));
    Bit#(6)  offset = size[5:0];
    Bit#(64) max    = (size >> 6) + ((offset == 0) ? 0 : 1) -1;
    
-   FIFOF#(Bit#(asz))   fifo <- mkUGFIFOF();
+   FIFOF#(Bit#(asz))   fifo <- mkSizedBRAMFIFOF(8);
    Reg#(Bit#(asz))    buff <- mkReg(0);
    Reg#(Bit#(64))    count <- mkReg(0);   
    
