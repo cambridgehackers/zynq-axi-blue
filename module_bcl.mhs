@@ -32,13 +32,17 @@
  PORT processing_system7_0_DDR_DQS_n = processing_system7_0_DDR_DQS_n, DIR = IO, VEC = [3:0]
  PORT processing_system7_0_DDR_VRN = processing_system7_0_DDR_VRN, DIR = IO
  PORT processing_system7_0_DDR_VRP = processing_system7_0_DDR_VRP, DIR = IO
- PORT usr_clk_p_pin = hdmidisplay_0_usr_clk, DIR = I, BUFFER_TYPE = IBUFGDS, SIGIS = CLK, DIFFERENTIAL_POLARITY = P
- PORT usr_clk_n_pin = hdmidisplay_0_usr_clk, DIR = I, BUFFER_TYPE = IBUFGDS, SIGIS = CLK, DIFFERENTIAL_POLARITY = N
- PORT hdmi_clk_pin = hdmidisplay_0_hdmi_clk, DIR = O, SIGIS = CLK
+ PORT usr_clk_n_pin = hdmidisplay_0_usr_clk_n, DIR = I
+ PORT usr_clk_p_pin = hdmidisplay_0_usr_clk_p, DIR = I
  PORT hdmi_vsync_pin = hdmidisplay_0_hdmi_vsync, DIR = O
  PORT hdmi_hsync_pin = hdmidisplay_0_hdmi_hsync, DIR = O
  PORT hdmi_de_pin = hdmidisplay_0_hdmi_de, DIR = O
  PORT hdmi_data_pin = hdmidisplay_0_hdmi_data, DIR = O, VEC = [15:0]
+ PORT hdmi_clk_pin = hdmidisplay_0_hdmi_clk, DIR = O, SIGIS = CLK
+ PORT xadc_gpio_0_pin = hdmidisplay_0_xadc_gpio_0, DIR = O
+ PORT xadc_gpio_1_pin = hdmidisplay_0_xadc_gpio_1, DIR = O
+ PORT xadc_gpio_2_pin = hdmidisplay_0_xadc_gpio_2, DIR = O
+ PORT xadc_gpio_3_pin = hdmidisplay_0_xadc_gpio_3, DIR = O
 
 
 BEGIN processing_system7
@@ -95,7 +99,7 @@ BEGIN processing_system7
  PARAMETER C_EN_WDT = 0
  PARAMETER C_EN_DDR = 1
  PARAMETER C_EN_GPIO = 1
- PARAMETER C_FCLK_CLK0_FREQ = 100000000
+ PARAMETER C_FCLK_CLK0_FREQ = 133333344
  PARAMETER C_FCLK_CLK1_FREQ = 142857132
  PARAMETER C_FCLK_CLK2_FREQ = 50000000
  PARAMETER C_FCLK_CLK3_FREQ = 50000000
@@ -175,11 +179,16 @@ BEGIN hdmidisplay
  PORT clk = processing_system7_0_FCLK_CLK0_0
  PORT rst_n = processing_system7_0_M_AXI_GP0_ARESETN
  PORT interrupt = hdmidisplay_0_interrupt
- PORT usr_clk = hdmidisplay_0_usr_clk
+ PORT usr_clk_p = hdmidisplay_0_usr_clk_p
+ PORT usr_clk_n = hdmidisplay_0_usr_clk_n
  PORT hdmi_clk = hdmidisplay_0_hdmi_clk
  PORT hdmi_vsync = hdmidisplay_0_hdmi_vsync
  PORT hdmi_hsync = hdmidisplay_0_hdmi_hsync
  PORT hdmi_de = hdmidisplay_0_hdmi_de
  PORT hdmi_data = hdmidisplay_0_hdmi_data
+ PORT xadc_gpio_0 = hdmidisplay_0_xadc_gpio_0
+ PORT xadc_gpio_1 = hdmidisplay_0_xadc_gpio_1
+ PORT xadc_gpio_2 = hdmidisplay_0_xadc_gpio_2
+ PORT xadc_gpio_3 = hdmidisplay_0_xadc_gpio_3
 END
 

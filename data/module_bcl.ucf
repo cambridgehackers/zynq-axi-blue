@@ -69,7 +69,7 @@ NET "usr_clk_n_pin" TNM_NET = "usr_clk_n_pin";
 TIMESPEC TS_usr_clk_n_pin = PERIOD "usr_clk_n_pin" 165 MHz;
 
 NET "processing_system7_0/FCLK_CLK0" TNM_NET = "processing_system7_0/FCLK_CLK0";
-TIMESPEC TS_FCLK0 = PERIOD "processing_system7_0/FCLK_CLK0" 100 MHz;
+TIMESPEC TS_FCLK0 = PERIOD "processing_system7_0/FCLK_CLK0" 133 MHz;
 
 NET "xadc_gpio_0_pin" LOC = H17;
 NET "xadc_gpio_0_pin" IOSTANDARD = LVCMOS25;
