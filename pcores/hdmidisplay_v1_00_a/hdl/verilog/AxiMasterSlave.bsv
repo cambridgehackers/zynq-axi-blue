@@ -60,6 +60,38 @@ interface AxiMaster#(type busWidth, type busWidthBytes);
    interface AxiMasterWrite#(busWidth, busWidthBytes) write;
 endinterface
 
+interface Axi3MasterRead#(type busWidth);
+   method ActionValue#(Bit#(32)) readAddr();
+   method Bit#(4) readBurstLen();
+   method Bit#(3) readBurstWidth();
+   method Bit#(2) readBurstType();  // drive with 2'b01
+   method Bit#(2) readBurstProt(); // drive with 3'b000
+   method Bit#(3) readBurstCache(); // drive with 4'b0011
+   method Bit#(1) readId();
+
+   method Action readData(Bit#(busWidth) data, Bit#(2) resp, Bit#(1) last, Bit#(1) id);
+endinterface
+
+interface Axi3MasterWrite#(type busWidth, type busWidthBytes);
+   method ActionValue#(Bit#(32)) writeAddr();
+   method Bit#(4) writeBurstLen();
+   method Bit#(3) writeBurstWidth();
+   method Bit#(2) writeBurstType();  // drive with 2'b01
+   method Bit#(2) writeBurstProt(); // drive with 3'b000
+   method Bit#(3) writeBurstCache(); // drive with 4'b0011
+   method Bit#(1) writeId();
+
+   method ActionValue#(Bit#(busWidth)) writeData();
+   method Bit#(busWidthBytes) writeDataByteEnable();
+   method Bit#(1) writeLastDataBeat(); // last data beat
+   method Action writeResponse(Bit#(2) responseCode, Bit#(1) id);
+endinterface
+
+interface Axi3Master#(type busWidth, type busWidthBytes);
+   interface Axi3MasterRead#(busWidth) read;
+   interface Axi3MasterWrite#(busWidth, busWidthBytes) write;
+endinterface
+
 interface AxiSlaveRead#(type busWidth, type busWidthBytes);
    method Action readAddr(Bit#(32) addr, Bit#(8) burstLen, Bit#(3) burstWidth,
                           Bit#(2) burstType, Bit#(3) burstProt, Bit#(4) burstCache);
@@ -321,6 +353,81 @@ module mkNullAxiMaster(AxiMaster#(busWidth,busWidthBytes)) provisos(Div#(busWidt
        endmethod
        method Bit#(4) readBurstCache(); // drive with 4'b0011
            return 4'b0011;
+       endmethod
+       method Bit#(1) readId();
+           return 0;
+       endmethod
+       method Action readData(Bit#(busWidth) data, Bit#(2) resp, Bit#(1) last, Bit#(1) id);
+       endmethod
+   endinterface
+endmodule
+
+module mkNullAxi3Master(Axi3Master#(busWidth,busWidthBytes)) provisos(Div#(busWidth,8,busWidthBytes),Add#(1,a,busWidth));
+   interface Axi3MasterWrite write;
+       method ActionValue#(Bit#(32)) writeAddr() if (False);
+           return 0;
+       endmethod
+       method Bit#(4) writeBurstLen();
+           return 0;
+       endmethod
+       method Bit#(3) writeBurstWidth();
+           if (valueOf(busWidth) == 32)
+               return 3'b010; // 3'b010: 32bit, 3'b011: 64bit, 3'b100: 128bit
+           else if (valueOf(busWidth) == 64)
+               return 3'b011;
+           else
+               return 3'b100;
+       endmethod
+       method Bit#(2) writeBurstType();  // drive with 2'b01 increment address
+           return 2'b01; // increment address
+       endmethod
+       method Bit#(2) writeBurstProt(); // drive with 3'b000
+           return 2'b00;
+       endmethod
+       method Bit#(3) writeBurstCache(); // drive with 4'b0011
+           return 3'b011;
+       endmethod
+       method Bit#(1) writeId();
+           return 0;
+       endmethod
+
+       method ActionValue#(Bit#(busWidth)) writeData();
+           return 0;
+       endmethod
+       method Bit#(busWidthBytes) writeDataByteEnable();
+           return maxBound;
+       endmethod
+       method Bit#(1) writeLastDataBeat(); // last data beat
+           return 0;
+       endmethod
+
+       method Action writeResponse(Bit#(2) responseCode, Bit#(1) id);
+       endmethod
+   endinterface
+
+   interface Axi3MasterRead read;
+       method ActionValue#(Bit#(32)) readAddr() if (False);
+           return 0;
+       endmethod
+       method Bit#(4) readBurstLen();
+           return 0;
+       endmethod
+       method Bit#(3) readBurstWidth();
+           if (valueOf(busWidth) == 32)
+               return 3'b010; // 3'b010: 32bit, 3'b011: 64bit, 3'b100: 128bit
+           else if (valueOf(busWidth) == 64)
+               return 3'b011;
+           else
+               return 3'b100;
+       endmethod
+       method Bit#(2) readBurstType();  // drive with 2'b01
+           return 2'b01;
+       endmethod
+       method Bit#(2) readBurstProt(); // drive with 3'b000
+           return 2'b00;
+       endmethod
+       method Bit#(3) readBurstCache(); // drive with 4'b0011
+           return 3'b011;
        endmethod
        method Bit#(1) readId();
            return 0;
