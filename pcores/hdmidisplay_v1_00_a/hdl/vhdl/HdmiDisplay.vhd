@@ -13,6 +13,9 @@ entity hdmiDisplay is
 
     C_M_AXI_DATA_WIDTH             : integer              := 64;
     C_M_AXI_ADDR_WIDTH             : integer              := 32;
+    C_M_AXI_BURSTLEN_WIDTH         : integer              := 4;
+    C_M_AXI_PROT_WIDTH             : integer              := 2;
+    C_M_AXI_CACHE_WIDTH            : integer              := 3;
     C_M_AXI_ID_WIDTH               : integer              := 1;
 
 
@@ -47,11 +50,11 @@ entity hdmiDisplay is
     m_axi_arvalid                  : out std_logic;
     m_axi_arid                     : out std_logic_vector(C_m_axi_ID_WIDTH-1 downto 0);
     m_axi_araddr                   : out std_logic_vector(C_m_axi_ADDR_WIDTH-1 downto 0);
-    m_axi_arlen                    : out std_logic_vector(7 downto 0);
+    m_axi_arlen                    : out std_logic_vector(C_m_axi_BURSTLEN_WIDTH-1 downto 0);
     m_axi_arsize                   : out std_logic_vector(2 downto 0);
     m_axi_arburst                  : out std_logic_vector(1 downto 0);
-    m_axi_arprot                   : out std_logic_vector(2 downto 0);
-    m_axi_arcache                  : out std_logic_vector(3 downto 0);
+    m_axi_arprot                   : out std_logic_vector((C_M_AXI_PROT_WIDTH-1) downto 0);
+    m_axi_arcache                  : out std_logic_vector((C_M_AXI_CACHE_WIDTH-1) downto 0);
     m_axi_rready                   : out std_logic;
     m_axi_rvalid                   : in  std_logic;
     m_axi_rid                      : in  std_logic_vector(C_m_axi_ID_WIDTH-1 downto 0);
@@ -62,11 +65,11 @@ entity hdmiDisplay is
     m_axi_awvalid                  : out std_logic;
     m_axi_awid                     : out std_logic_vector(C_m_axi_ID_WIDTH-1 downto 0);
     m_axi_awaddr                   : out std_logic_vector(C_m_axi_ADDR_WIDTH-1 downto 0);
-    m_axi_awlen                    : out std_logic_vector(7 downto 0);
+    m_axi_awlen                    : out std_logic_vector(C_m_axi_BURSTLEN_WIDTH-1 downto 0);
     m_axi_awsize                   : out std_logic_vector(2 downto 0);
     m_axi_awburst                  : out std_logic_vector(1 downto 0);
-    m_axi_awprot                   : out std_logic_vector(2 downto 0);
-    m_axi_awcache                  : out std_logic_vector(3 downto 0);
+    m_axi_awprot                   : out std_logic_vector((C_M_AXI_PROT_WIDTH-1) downto 0);
+    m_axi_awcache                  : out std_logic_vector((C_M_AXI_CACHE_WIDTH-1) downto 0);
     m_axi_wready                   : in  std_logic;
     m_axi_wvalid                   : out std_logic;
     m_axi_wdata                    : out std_logic_vector(C_m_axi_DATA_WIDTH-1 downto 0);

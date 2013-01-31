@@ -40,7 +40,7 @@ interface FrameBufferBram;
     method Action startLine();
     method Action setSgEntry(Bit#(8) index, Bit#(24) startingOffset, Bit#(20) address, Bit#(20) length);
     method ActionValue#(Bit#(96)) reading();
-    interface AxiMaster#(64,8) axi;
+    interface Axi3Master#(64,8) axi;
     interface BRAM#(Bit#(12), Bit#(64)) buffer;
 endinterface
 
@@ -57,7 +57,8 @@ module mkFrameBufferBram#(Clock displayClk, Reset displayRst)(FrameBufferBram);
     Reg#(Bool) runningReg <- mkReg(False);
     Reg#(Bool) traceReadingReg <- mkReg(False);
 
-    let burstCount = 16;
+    //let burstCount = 16;
+    let burstCount = 4;
     let bytesPerWord = 8;
     let busWidth = bytesPerWord * 8;
     let bytesPerPixel = 4;
@@ -80,7 +81,7 @@ module mkFrameBufferBram#(Clock displayClk, Reset displayRst)(FrameBufferBram);
     //Vector#(16, Reg#(ScatterGather)) sglist <- replicateM(mkReg(unpack(0)));
     SyncBRAM#(Bit#(8), ScatterGather) sglist <- mkSyncBRAM( 256, clk, rst, clk, rst);
 
-    AxiMaster#(64,8) nullAxiMaster <- mkNullAxiMaster();
+    Axi3Master#(64,8) nullAxiMaster <- mkNullAxi3Master();
 
     SyncBRAM#(Bit#(12), Bit#(64)) syncBRAM <- mkSyncBRAM( 4096, displayClk, displayRst, clk, rst );
     //SyncBRAM#(Bit#(12), Bit#(64)) syncBRAM <- mkSimSyncBRAM( 4096, displayClk, displayRst, clk, rst );
@@ -219,8 +220,8 @@ module mkFrameBufferBram#(Clock displayClk, Reset displayRst)(FrameBufferBram);
         end
     endmethod
 
-   interface AxiMaster axi;
-       interface AxiMasterRead read;
+   interface Axi3Master axi;
+       interface Axi3MasterRead read;
            method ActionValue#(Bit#(32)) readAddr() if (runningReg
                                                         && readAddrReg != 24'hFFFFFF
                                                         && readAddrReg < readLimitReg
@@ -231,8 +232,9 @@ module mkFrameBufferBram#(Clock displayClk, Reset displayRst)(FrameBufferBram);
                readAddrReg <= readAddrReg + burstCount*bytesPerWord;
                return addr;
            endmethod
-           method Bit#(8) readBurstLen();
-               return burstCount-1;
+           method Bit#(4) readBurstLen();
+               Bit#(5) burstlen = burstCount-1;
+               return truncate(burstlen);
            endmethod
            method Bit#(3) readBurstWidth();
                if (busWidth == 32)
@@ -245,11 +247,11 @@ module mkFrameBufferBram#(Clock displayClk, Reset displayRst)(FrameBufferBram);
            method Bit#(2) readBurstType();  // drive with 2'b01
                return 2'b01;
            endmethod
-           method Bit#(3) readBurstProt(); // drive with 3'b000
-               return 3'b000;
+           method Bit#(2) readBurstProt(); // drive with 3'b000
+               return 2'b00;
            endmethod
-           method Bit#(4) readBurstCache(); // drive with 4'b0011
-               return 4'b0011;
+           method Bit#(3) readBurstCache(); // drive with 4'b0011
+               return 3'b011;
            endmethod
            method Bit#(1) readId();
                return 0;
@@ -262,7 +264,7 @@ module mkFrameBufferBram#(Clock displayClk, Reset displayRst)(FrameBufferBram);
            endmethod
        endinterface
 
-       interface AxiMasterWrite write = nullAxiMaster.write;
+       interface Axi3MasterWrite write = nullAxiMaster.write;
    endinterface
    interface NrccBRAM buffer = syncBRAM.portA;
 endmodule

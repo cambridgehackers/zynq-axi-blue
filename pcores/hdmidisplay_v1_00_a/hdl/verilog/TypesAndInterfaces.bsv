@@ -44,6 +44,6 @@ interface HdmiDisplay;
     method ActionValue#(Bit#(96)) translationTableEntry();
     method ActionValue#(Bit#(96)) fbReading();
 
-    interface AxiMaster#(64,8) m_axi;
+    interface Axi3Master#(64,8) m_axi;
     interface HDMI hdmi;
 endinterface

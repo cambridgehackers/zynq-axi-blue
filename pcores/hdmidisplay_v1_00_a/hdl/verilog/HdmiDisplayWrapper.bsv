@@ -77,7 +77,7 @@ interface HdmiDisplayWrapper;
    interface AxiSlave#(32,4) ctrl;
    interface AxiSlave#(32,4) fifo;
 
-    interface AxiMaster#(64,8) m_axi;
+    interface Axi3Master#(64,8) m_axi;
     interface HDMI hdmi;
 endinterface
 
@@ -401,6 +401,6 @@ module mkHdmiDisplayWrapper#(Clock hdmi_clk)(HdmiDisplayWrapper);
     endmethod
 
 
-    interface AxiMaster m_axi = hdmiDisplay.m_axi;
+    interface Axi3Master m_axi = hdmiDisplay.m_axi;
     interface HDMI hdmi = hdmiDisplay.hdmi;
 endmodule

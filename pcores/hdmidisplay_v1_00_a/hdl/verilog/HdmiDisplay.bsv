@@ -171,6 +171,6 @@ module mkHdmiDisplay#(Clock hdmi_clk)(HdmiDisplay);
         return v;
     endmethod
 
-    interface AxiMaster m_axi = frameBuffer.axi;
+    interface Axi3Master m_axi = frameBuffer.axi;
     interface HDMI hdmi = hdmiTpg.hdmi;
 endmodule
