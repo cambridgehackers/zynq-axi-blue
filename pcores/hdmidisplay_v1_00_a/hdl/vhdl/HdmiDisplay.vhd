@@ -266,7 +266,7 @@ begin
 
   HdmiDisplayIMPLEMENTATION : entity mkHdmiDisplayWrapper
     port map (
-      CLK_hdmi_clk => usr_clk,
+            CLK_hdmi_clk => usr_clk,
       CLK => CLK,
       RST_N  => RST_N,
       

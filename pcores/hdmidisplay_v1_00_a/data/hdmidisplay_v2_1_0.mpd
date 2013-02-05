@@ -23,7 +23,6 @@ BUS_INTERFACE BUS = CTRL, BUS_STD = AXI, BUS_TYPE = SLAVE
 BUS_INTERFACE BUS = FIFO, BUS_STD = AXI, BUS_TYPE = SLAVE
 
 IO_INTERFACE IO_IF = HDMI, IO_TYPE = HDMI
-IO_INTERFACE IO_IF = XADC_GPIO, IO_TYPE = XADC_GPIO
 
 ## Generics for VHDL or Parameters for Verilog
 
@@ -186,11 +185,11 @@ PORT hdmi_hsync = "", DIR = O, IO_IF=hdmi
 PORT hdmi_de = "", DIR = O, IO_IF=hdmi
 PORT hdmi_data = "", DIR = O, VEC = [15:0], IO_IF=hdmi
 
-
 PORT usr_clk_p = "", DIR = I
 PORT usr_clk_n = "", DIR = I
 PORT xadc_gpio_0 = "", DIR = O
 PORT xadc_gpio_1 = "", DIR = O
 PORT xadc_gpio_2 = "", DIR = O
 PORT xadc_gpio_3 = "", DIR = O
+
 END

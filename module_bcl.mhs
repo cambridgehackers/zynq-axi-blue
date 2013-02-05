@@ -1,7 +1,6 @@
 
 # ##############################################################################
-# Created by Base System Builder Wizard for Xilinx EDK 14.2 Build EDK_P.28xd
-# Fri Oct 19 13:21:47 2012
+# Created by xstgen
 # Target Board:  xilinx.com zc702 Rev C
 # Family:    zynq
 # Device:    xc7z020
@@ -99,21 +98,19 @@ BEGIN processing_system7
  PARAMETER C_EN_WDT = 0
  PARAMETER C_EN_DDR = 1
  PARAMETER C_EN_GPIO = 1
- PARAMETER C_FCLK_CLK0_FREQ = 133333344
+ PARAMETER C_FCLK_CLK0_FREQ = 100000000
  PARAMETER C_FCLK_CLK1_FREQ = 142857132
  PARAMETER C_FCLK_CLK2_FREQ = 50000000
  PARAMETER C_FCLK_CLK3_FREQ = 50000000
  PARAMETER C_USE_CR_FABRIC = 1
- PARAMETER C_USE_S_AXI_HP0 = 1
- PARAMETER C_USE_S_AXI_HP1 = 0
- PARAMETER C_USE_S_AXI_HP2 = 0
- PARAMETER C_USE_S_AXI_HP3 = 0
  PARAMETER C_USE_M_AXI_GP1 = 0
  PARAMETER C_USE_S_AXI_ACP = 0
- PARAMETER C_INTERCONNECT_S_AXI_HP0_MASTERS = hdmidisplay_0.M_AXI
  PARAMETER C_EMIO_GPIO_WIDTH = 64
- BUS_INTERFACE M_AXI_GP0 = axi4lite_0
- BUS_INTERFACE S_AXI_HP0 = axi_interconnect_0
+ PARAMETER C_INTERCONNECT_S_AXI_HP0_MASTERS = hdmidisplay_0.M_AXI
+ PARAMETER C_USE_S_AXI_HP0 = 1
+ PARAMETER C_INTERCONNECT_M_AXI_GP0_SINGLE_THREAD = 1
+ BUS_INTERFACE M_AXI_GP0 = axi_slave_interconnect_0
+ BUS_INTERFACE S_AXI_HP0 = axi_master_interconnect_0
  PORT MIO = processing_system7_0_MIO
  PORT PS_SRSTB = processing_system7_0_PS_SRSTB
  PORT PS_CLK = processing_system7_0_PS_CLK
@@ -135,20 +132,20 @@ BEGIN processing_system7
  PORT DDR_DQS_n = processing_system7_0_DDR_DQS_n
  PORT DDR_VRN = processing_system7_0_DDR_VRN
  PORT DDR_VRP = processing_system7_0_DDR_VRP
- PORT M_AXI_GP0_ARESETN = processing_system7_0_M_AXI_GP0_ARESETN
- PORT M_AXI_GP0_ACLK = processing_system7_0_FCLK_CLK0_0
+ PORT FCLK_CLK0 = processing_system7_0_FCLK_CLK0_0
+ PORT FCLK_CLK1 = processing_system7_0_FCLK_CLK1
  PORT FCLK_CLK2 = processing_system7_0_FCLK_CLK2
  PORT FCLK_CLK3 = processing_system7_0_FCLK_CLK3
- PORT FCLK_CLK0 = processing_system7_0_FCLK_CLK0_0
+ PORT M_AXI_GP0_ACLK = processing_system7_0_FCLK_CLK0_0
+ PORT M_AXI_GP0_ARESETN = processing_system7_0_M_AXI_GP0_ARESETN
  PORT S_AXI_HP0_ACLK = processing_system7_0_FCLK_CLK0_0
- PORT FCLK_RESET0_N = processing_system7_0_FCLK_RESET0_N
- PORT FCLK_CLK1 = processing_system7_0_FCLK_CLK1
  PORT S_AXI_HP0_ARESETN = processing_system7_0_S_AXI_HP0_ARESETN
+ PORT FCLK_RESET0_N = processing_system7_0_FCLK_RESET0_N
  PORT IRQ_F2P = hdmidisplay_0_interrupt
 END
 
 BEGIN axi_interconnect
- PARAMETER INSTANCE = axi_interconnect_0
+ PARAMETER INSTANCE = axi_master_interconnect_0
  PARAMETER HW_VER = 1.06.a
  PARAMETER C_INTERCONNECT_CONNECTIVITY_MODE = 1
  PORT INTERCONNECT_ACLK = processing_system7_0_FCLK_CLK0_0
@@ -156,11 +153,11 @@ BEGIN axi_interconnect
 END
 
 BEGIN axi_interconnect
- PARAMETER INSTANCE = axi4lite_0
+ PARAMETER INSTANCE = axi_slave_interconnect_0
  PARAMETER HW_VER = 1.06.a
  PARAMETER C_INTERCONNECT_CONNECTIVITY_MODE = 0
+ PORT INTERCONNECT_ACLK = processing_system7_0_FCLK_CLK0_0
  PORT INTERCONNECT_ARESETN = processing_system7_0_M_AXI_GP0_ARESETN
- PORT interconnect_aclk = processing_system7_0_FCLK_CLK0_0
 END
 
 BEGIN hdmidisplay
@@ -170,15 +167,15 @@ BEGIN hdmidisplay
  PARAMETER C_CTRL_MEM0_HIGHADDR = 0x6E400FFF
  PARAMETER C_FIFO_MEM0_BASEADDR = 0x6E401000
  PARAMETER C_FIFO_MEM0_HIGHADDR = 0x6E401FFF
- BUS_INTERFACE M_AXI = axi_interconnect_0
- BUS_INTERFACE CTRL = axi4lite_0
- BUS_INTERFACE FIFO = axi4lite_0
- PORT CTRL_ACLK = processing_system7_0_FCLK_CLK0_0
- PORT FIFO_ACLK = processing_system7_0_FCLK_CLK0_0
- PORT m_axi_aclk = processing_system7_0_FCLK_CLK0_0
+ BUS_INTERFACE M_AXI = axi_master_interconnect_0
+ BUS_INTERFACE CTRL = axi_slave_interconnect_0
+ BUS_INTERFACE FIFO = axi_slave_interconnect_0
  PORT clk = processing_system7_0_FCLK_CLK0_0
  PORT rst_n = processing_system7_0_M_AXI_GP0_ARESETN
  PORT interrupt = hdmidisplay_0_interrupt
+ PORT m_axi_aclk = processing_system7_0_FCLK_CLK0_0
+ PORT CTRL_ACLK = processing_system7_0_FCLK_CLK0_0
+ PORT FIFO_ACLK = processing_system7_0_FCLK_CLK0_0
  PORT usr_clk_p = hdmidisplay_0_usr_clk_p
  PORT usr_clk_n = hdmidisplay_0_usr_clk_n
  PORT hdmi_clk = hdmidisplay_0_hdmi_clk

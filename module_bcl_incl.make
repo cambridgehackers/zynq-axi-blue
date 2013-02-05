@@ -132,8 +132,8 @@ pcores/hdmidisplay_v1_00_a/hdl/verilog/SyncHandshake.v \
 pcores/hdmidisplay_v1_00_a/hdl/verilog/SyncResetA.v
 
 WRAPPER_NGC_FILES = implementation/module_bcl_processing_system7_0_wrapper.ngc \
-implementation/module_bcl_axi_interconnect_0_wrapper.ngc \
-implementation/module_bcl_axi4lite_0_wrapper.ngc \
+implementation/module_bcl_axi_master_interconnect_0_wrapper.ngc \
+implementation/module_bcl_axi_slave_interconnect_0_wrapper.ngc \
 implementation/module_bcl_hdmidisplay_0_wrapper.ngc
 
 POSTSYN_NETLIST = implementation/$(SYSTEM).ngc
